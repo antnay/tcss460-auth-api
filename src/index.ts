@@ -17,8 +17,9 @@
  */
 
 import { app } from './app';
-import { connectToDatabase, disconnectFromDatabase } from '@db';
-import { validateEnv, initializeEmailService } from '@utilities';
+import { connectToDatabase, disconnectFromDatabase } from './core/utilities';
+import { validateEnv, initializeEmailService } from './core/utilities';
+import dotenv from 'dotenv';
 
 const PORT = parseInt(process.env.PORT || '8000');
 
@@ -67,6 +68,7 @@ const PORT = parseInt(process.env.PORT || '8000');
  */
 async function startServer() {
     try {
+        dotenv.config()
         // Validate environment variables first
         validateEnv();
 

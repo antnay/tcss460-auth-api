@@ -2,10 +2,11 @@
     "compilerOptions": {
         "target": "ES2020",
         "module": "commonjs",
-        "lib": ["ES2020"],
+        "lib": [
+            "ES2020"
+        ],
         "outDir": "./dist",
         "rootDir": "./src",
-
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
@@ -14,20 +15,59 @@
         "declarationMap": true,
         "sourceMap": true,
         "moduleResolution": "node",
-
         // Path mapping configuration
         "baseUrl": "./src",
         "paths": {
-            "@core/*": ["core/*"],
-            "@routes/*": ["routes/*"],
-            "@controllers": ["controllers/index"],
-            "@utilities": ["core/utilities/index"],
-            "@middleware": ["core/middleware/index"],
-            "@models": ["core/models/index"],
-            "@db": ["core/utilities/database"], // Direct access to database
-            "@auth": ["core/utilities/credentialingUtils"] // Auth utilities
+            "@controllers/*": [
+                "controllers/*"
+            ],
+            "@controllers": [
+                "controllers"
+            ],
+            "@routes/*": [
+                "routes/*"
+            ],
+            "@routes": [
+                "routes"
+            ],
+            "@middleware/*": [
+                "core/middleware/*"
+            ],
+            "@middleware": [
+                "core/middleware"
+            ],
+            "@utilities/*": [
+                "core/utilities/*"
+            ],
+            "@utilities": [
+                "core/utilities"
+            ],
+            "@models/*": [
+                "core/models/*"
+            ],
+            "@models": [
+                "core/models"
+            ],
+            "@db": [
+                "core/utilities/database"
+            ],
+            "@/types": [
+                "types"
+            ],
+            "@/types/*": [
+                "types/*"
+            ],
+            "@auth": [
+                "core/utilities/credentialingUtils"
+            ] // Auth utilities
         }
     },
-    "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "**/*.test.ts"]
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
+    ]
 }

@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { AuthController, VerificationController } from '@controllers';
+import { AuthController, VerificationController } from '../../controllers';
 import {
     validateLogin,
     validateRegister,

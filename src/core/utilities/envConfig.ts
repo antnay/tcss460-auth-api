@@ -1,5 +1,6 @@
 // src/core/utilities/envConfig.ts
 
+
 /**
  * Required environment variables for the application
  */
@@ -30,6 +31,7 @@ const optionalEnvVars = {
  * Call this at application startup
  */
 export const validateEnv = (): void => {
+
     const missing = requiredEnvVars.filter((key) => !process.env[key]);
 
     if (missing.length > 0) {
