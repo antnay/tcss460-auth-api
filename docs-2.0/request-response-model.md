@@ -69,6 +69,7 @@ POST /auth/register HTTP/1.1
 ```
 
 **Components:**
+
 - **Method:** `POST` - What operation to perform
 - **Path:** `/auth/register` - What resource to target
 - **Protocol Version:** `HTTP/1.1` - Which HTTP version to use
@@ -86,6 +87,7 @@ Content-Length: 89
 **Purpose:** Provide metadata about the request
 
 **Common Headers:**
+
 - **Host:** Server address (required in HTTP/1.1)
 - **Content-Type:** Format of request body data
 - **Accept:** What response formats client can handle
@@ -95,7 +97,11 @@ Content-Length: 89
 ### 3. Request Body (Optional)
 
 ```json
-{"username": "newuser", "email": "user@example.com", "password": "SecurePass123!"}
+{
+    "username": "newuser",
+    "email": "user@example.com",
+    "password": "SecurePass123!"
+}
 ```
 
 **When used:** POST, PUT, PATCH requests that send data
@@ -138,6 +144,7 @@ HTTP/1.1 201 Created
 ```
 
 **Components:**
+
 - **Protocol Version:** `HTTP/1.1`
 - **Status Code:** `201` - Numeric result indicator
 - **Reason Phrase:** `Created` - Human-readable description
@@ -152,6 +159,7 @@ Server: Express
 ```
 
 **Common Headers:**
+
 - **Content-Type:** Format of response body
 - **Content-Length:** Size of response body in bytes
 - **Date:** When the response was generated
@@ -161,21 +169,22 @@ Server: Express
 
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "userid": 1,
-      "username": "newuser",
-      "email": "user@example.com"
+    "success": true,
+    "data": {
+        "user": {
+            "userid": 1,
+            "username": "newuser",
+            "email": "user@example.com"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
-  "message": "User registered successfully",
-  "timestamp": "2024-01-15T10:30:00.000Z"
+    "message": "User registered successfully",
+    "timestamp": "2024-01-15T10:30:00.000Z"
 }
 ```
 
 **Our API's Consistent Format:**
+
 - **success:** Boolean indicating operation result
 - **data:** The actual response content
 - **message:** Optional human-readable description
@@ -188,12 +197,13 @@ Server: Express
 ### Step-by-Step Process
 
 **1. Client Prepares Request**
+
 ```javascript
 // Browser JavaScript preparing a request
 const requestData = {
-    username: "newuser",
-    email: "user@example.com",
-    password: "SecurePass123!"
+    username: 'newuser',
+    email: 'user@example.com',
+    password: 'SecurePass123!',
 };
 
 const request = {
@@ -201,18 +211,20 @@ const request = {
     url: '/auth/register',
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
     },
-    body: JSON.stringify(requestData)
+    body: JSON.stringify(requestData),
 };
 ```
 
 **2. Network Transmission**
+
 ```
 [Client] ──── HTTP Request ────→ [Network] ──── HTTP Request ────→ [Server]
 ```
 
 **3. Server Receives and Routes**
+
 ```typescript
 // Our Express server routing
 app.use('/', routes);
@@ -221,26 +233,32 @@ app.use('/', routes);
 ```
 
 **4. Server Processes Request**
+
 ```typescript
 // src/controllers/authController.ts
-export const register = asyncHandler(async (
-    request: Request,
-    response: Response
-): Promise<void> => {
-    // Extract and validate data
-    const { username, email, password } = request.body;
+export const register = asyncHandler(
+    async (request: Request, response: Response): Promise<void> => {
+        // Extract and validate data
+        const { username, email, password } = request.body;
 
-    // Process the request (hash password, create user, generate token)
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await createUser(username, email, hashedPassword);
-    const token = generateAccessToken(newUser);
+        // Process the request (hash password, create user, generate token)
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await createUser(username, email, hashedPassword);
+        const token = generateAccessToken(newUser);
 
-    // Send standardized response
-    sendSuccess(response, { user: newUser, token }, 'User registered successfully', 201);
-});
+        // Send standardized response
+        sendSuccess(
+            response,
+            { user: newUser, token },
+            'User registered successfully',
+            201
+        );
+    }
+);
 ```
 
 **5. Server Sends Response**
+
 ```typescript
 // Response helper from our utilities
 export const sendSuccess = <T>(
@@ -253,7 +271,7 @@ export const sendSuccess = <T>(
         success: true,
         data,
         message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
 
     response.status(statusCode).json(apiResponse);
@@ -261,35 +279,36 @@ export const sendSuccess = <T>(
 ```
 
 **6. Client Receives and Processes**
+
 ```javascript
 // Client handling the response
 fetch('/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-        username: "newuser",
-        email: "user@example.com",
-        password: "SecurePass123!"
+        username: 'newuser',
+        email: 'user@example.com',
+        password: 'SecurePass123!',
+    }),
+})
+    .then((response) => {
+        if (response.ok) {
+            return response.json();
+        }
+        throw new Error(`HTTP ${response.status}`);
     })
-})
-.then(response => {
-    if (response.ok) {
-        return response.json();
-    }
-    throw new Error(`HTTP ${response.status}`);
-})
-.then(data => {
-    if (data.success) {
-        console.log('Success:', data.data);
-        // Store the token for authenticated requests
-        localStorage.setItem('token', data.data.token);
-    } else {
-        console.error('API Error:', data.message);
-    }
-})
-.catch(error => {
-    console.error('Network Error:', error);
-});
+    .then((data) => {
+        if (data.success) {
+            console.log('Success:', data.data);
+            // Store the token for authenticated requests
+            localStorage.setItem('token', data.data.token);
+        } else {
+            console.error('API Error:', data.message);
+        }
+    })
+    .catch((error) => {
+        console.error('Network Error:', error);
+    });
 ```
 
 **🔧 Try It:** Test this complete flow using `POST /auth/register` in [Swagger UI](http://localhost:8000/api-docs)
@@ -301,6 +320,7 @@ fetch('/auth/register', {
 ### Simple POST Request (Login)
 
 **Request:**
+
 ```http
 POST /auth/login HTTP/1.1
 Host: localhost:8000
@@ -311,6 +331,7 @@ Accept: application/json
 ```
 
 **Response:**
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -333,6 +354,7 @@ Content-Type: application/json
 ### Authenticated Request with Headers
 
 **Request:**
+
 ```http
 GET /users/me HTTP/1.1
 Host: localhost:8000
@@ -341,6 +363,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response:**
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -360,6 +383,7 @@ Content-Type: application/json
 ### Path Parameters Request
 
 **Request:**
+
 ```http
 GET /users/123 HTTP/1.1
 Host: localhost:8000
@@ -368,6 +392,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Response:**
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -387,6 +412,7 @@ Content-Type: application/json
 ### Error Response
 
 **Request:**
+
 ```http
 POST /auth/register HTTP/1.1
 Host: localhost:8000
@@ -396,6 +422,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```http
 HTTP/1.1 400 Bad Request
 Content-Type: application/json
@@ -434,53 +461,67 @@ Content-Type: application/json
 ### Request Headers Explained
 
 **Content-Type:**
+
 ```http
 Content-Type: application/json
 ```
+
 - Tells server what format the request body uses
 - Common values: `application/json`, `application/x-www-form-urlencoded`, `multipart/form-data`
 
 **Accept:**
+
 ```http
 Accept: application/json
 ```
+
 - Tells server what response formats client can handle
 - Server should respond with compatible format
 
 **Authorization:**
+
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
+
 - Provides authentication credentials
 - Our TCSS-460-auth-squared uses JWT tokens for protected routes
 
 **User-Agent:**
+
 ```http
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)
 ```
+
 - Identifies the client software
 - Helps servers optimize responses for different clients
 
 ### Response Headers Explained
 
 **Content-Type:**
+
 ```http
 Content-Type: application/json; charset=utf-8
 ```
+
 - Tells client how to interpret response body
 - Our API always responds with JSON
 
 **Content-Length:**
+
 ```http
 Content-Length: 156
 ```
+
 - Size of response body in bytes
 - Helps client know when full response is received
 
 **Cache-Control:**
+
 ```http
 Cache-Control: no-cache
 ```
+
 - Instructions for caching behavior
 - Our API uses `no-cache` for dynamic content
 
@@ -493,12 +534,14 @@ Cache-Control: no-cache
 ### Success Responses (2xx)
 
 **200 OK - Standard Success**
+
 ```typescript
 // Our successful responses
 sendSuccess(response, data, 'Operation completed successfully');
 ```
 
 **201 Created - Resource Created**
+
 ```typescript
 // When we create something new
 sendSuccess(response, newResource, 'Resource created', 201);
@@ -507,6 +550,7 @@ sendSuccess(response, newResource, 'Resource created', 201);
 ### Client Error Responses (4xx)
 
 **400 Bad Request - Invalid Input**
+
 ```typescript
 // Our validation error responses
 const errorResponse: ErrorResponse = {
@@ -514,12 +558,13 @@ const errorResponse: ErrorResponse = {
     message: 'Validation failed',
     code: ErrorCodes.INVALID_FIELD_VALUE,
     timestamp: new Date().toISOString(),
-    validationErrors
+    validationErrors,
 };
 response.status(400).json(errorResponse);
 ```
 
 **404 Not Found - Resource Doesn't Exist**
+
 ```typescript
 // Our 404 handler
 export const notFoundHandler = (request: Request, response: Response): void => {
@@ -527,7 +572,7 @@ export const notFoundHandler = (request: Request, response: Response): void => {
         success: false,
         message: `Endpoint '${request.method} ${request.originalUrl}' not found`,
         code: ErrorCodes.NOT_FOUND,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
     response.status(404).json(errorResponse);
 };
@@ -536,6 +581,7 @@ export const notFoundHandler = (request: Request, response: Response): void => {
 ### Server Error Responses (5xx)
 
 **500 Internal Server Error - Server Problem**
+
 ```typescript
 // Our error handling middleware
 export const errorHandler = (
@@ -550,7 +596,7 @@ export const errorHandler = (
         success: false,
         message: 'Internal server error',
         code: ErrorCodes.INTERNAL_ERROR,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
 
     response.status(500).json(errorResponse);
@@ -566,6 +612,7 @@ export const errorHandler = (
 ### Health Check Flow
 
 **Simple Health Check:**
+
 ```
 Client Request: GET /health
 ↓
@@ -575,23 +622,24 @@ Server Response: 200 OK with health data
 ```
 
 **Implementation:**
-```typescript
-export const getHealth = asyncHandler(async (
-    request: Request,
-    response: Response
-): Promise<void> => {
-    const healthData: HealthResponse = {
-        status: 'OK',
-        timestamp: new Date().toISOString()
-    };
 
-    sendSuccess(response, healthData, 'API is healthy');
-});
+```typescript
+export const getHealth = asyncHandler(
+    async (request: Request, response: Response): Promise<void> => {
+        const healthData: HealthResponse = {
+            status: 'OK',
+            timestamp: new Date().toISOString(),
+        };
+
+        sendSuccess(response, healthData, 'API is healthy');
+    }
+);
 ```
 
 ### Parameter Validation Flow
 
 **Request with Validation:**
+
 ```
 Client Request: POST /auth/register with invalid data
 ↓
@@ -603,22 +651,29 @@ Server Response: 400 Bad Request with validation errors
 ```
 
 **Implementation:**
+
 ```typescript
 // Validation middleware runs first
-router.post('/register',
+router.post(
+    '/register',
     [
-        body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
+        body('username')
+            .isLength({ min: 3 })
+            .withMessage('Username must be at least 3 characters'),
         body('email').isEmail().withMessage('Must be a valid email address'),
-        body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters'),
     ],
-    handleValidationErrors,  // This catches validation failures
-    register                 // This only runs if validation passes
+    handleValidationErrors, // This catches validation failures
+    register // This only runs if validation passes
 );
 ```
 
 ### Documentation Serving Flow
 
 **Static Content Serving:**
+
 ```
 Client Request: GET /docs/http-fundamentals.md
 ↓
@@ -628,6 +683,7 @@ Server Response: 200 OK with styled HTML content
 ```
 
 **Implementation:**
+
 ```typescript
 router.get('/:filename', (req: Request, res: Response) => {
     const filename = req.params.filename;
@@ -639,7 +695,7 @@ router.get('/:filename', (req: Request, res: Response) => {
     if (!htmlContent) {
         return res.status(404).json({
             success: false,
-            message: `Documentation file '${filename}' not found`
+            message: `Documentation file '${filename}' not found`,
         });
     }
 
@@ -655,43 +711,46 @@ router.get('/:filename', (req: Request, res: Response) => {
 ### Common Error Scenarios
 
 **1. Network Errors**
+
 ```javascript
 // Client can't reach server
-fetch('/auth/login')
-.catch(error => {
+fetch('/auth/login').catch((error) => {
     // Network error, server unreachable
     console.error('Connection failed:', error);
 });
 ```
 
 **2. HTTP Errors**
+
 ```javascript
 // Server responds with error status
 fetch('/invalid-endpoint')
-.then(response => {
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    return response.json();
-})
-.catch(error => {
-    console.error('HTTP error:', error);
-});
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .catch((error) => {
+        console.error('HTTP error:', error);
+    });
 ```
 
 **3. Parse Errors**
+
 ```javascript
 // Response isn't valid JSON
 fetch('/auth/login')
-.then(response => response.json()) // This might fail
-.catch(error => {
-    console.error('Invalid JSON response:', error);
-});
+    .then((response) => response.json()) // This might fail
+    .catch((error) => {
+        console.error('Invalid JSON response:', error);
+    });
 ```
 
 ### Our API's Error Handling
 
 **Consistent Error Format:**
+
 ```typescript
 interface ErrorResponse {
     success: false;
@@ -704,6 +763,7 @@ interface ErrorResponse {
 ```
 
 **Error Response Examples:**
+
 ```json
 // Validation error
 {
@@ -734,6 +794,7 @@ interface ErrorResponse {
 ### Client-Side Best Practices
 
 **1. Always Check Response Status**
+
 ```javascript
 const response = await fetch('/auth/login');
 if (!response.ok) {
@@ -743,18 +804,20 @@ if (!response.ok) {
 ```
 
 **2. Set Appropriate Headers**
+
 ```javascript
 fetch('/auth/login', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json',
     },
-    body: JSON.stringify(data)
+    body: JSON.stringify(data),
 });
 ```
 
 **3. Handle All Error Cases**
+
 ```javascript
 try {
     const response = await fetch('/auth/login');
@@ -773,18 +836,19 @@ try {
 ### Server-Side Best Practices
 
 **1. Validate All Input**
+
 ```typescript
 // Always validate request data
-router.post('/endpoint',
-    [
-        body('field').notEmpty().withMessage('Field is required')
-    ],
+router.post(
+    '/endpoint',
+    [body('field').notEmpty().withMessage('Field is required')],
     handleValidationErrors,
     handler
 );
 ```
 
 **2. Use Consistent Response Format**
+
 ```typescript
 // Standard success response
 sendSuccess(response, data, message, statusCode);
@@ -794,6 +858,7 @@ sendError(response, statusCode, message, errorCode, details);
 ```
 
 **3. Set Appropriate Status Codes**
+
 ```typescript
 // Use semantic status codes
 response.status(200); // Success
@@ -813,10 +878,12 @@ Now that you understand the request-response model, continue with:
 2. **[HTTP Status Codes](/docs/http-status-codes.md)** - Complete status code reference
 
 **🔧 Immediate Practice:**
+
 - Monitor Network tab in browser DevTools while using [our API](http://localhost:8000/api-docs)
 - Try different request types and observe the request-response patterns
 
 **✋ Hands-On Exploration:**
+
 - Examine `/src/core/utilities/responseUtils.ts` for response patterns
 - Look at `/src/core/middleware/validation.ts` for request processing
 - Check `/src/routes/` for various request-response implementations
@@ -828,17 +895,20 @@ Now that you understand the request-response model, continue with:
 The Request-Response Model is HTTP's fundamental communication pattern:
 
 **Requests contain:**
+
 - Method (what to do)
 - URL (what resource)
 - Headers (metadata)
 - Body (optional data)
 
 **Responses contain:**
+
 - Status code (what happened)
 - Headers (metadata)
 - Body (the content)
 
 **Key principles:**
+
 - Each request is independent (stateless)
 - Responses should be meaningful and consistent
 - Error handling is as important as success handling
@@ -850,4 +920,4 @@ Understanding this model is crucial because every web interaction—from loading
 
 ---
 
-*Continue your learning with [HTTP Methods](/docs/http-methods.md) to explore the different types of requests you can make.*
+_Continue your learning with [HTTP Methods](/docs/http-methods.md) to explore the different types of requests you can make._

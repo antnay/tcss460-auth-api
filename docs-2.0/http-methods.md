@@ -15,6 +15,7 @@ By studying this guide, you'll understand:
 ## 🧭 Learning Path
 
 **📚 Study Path:**
+
 1. [HTTP Fundamentals](/docs/http-fundamentals.md) - Foundation concepts
 2. [HTTP History & Evolution](/docs/http-history-evolution.md) - How HTTP developed
 3. [Client-Server Architecture](/docs/client-server-architecture.md) - Web architecture
@@ -25,11 +26,13 @@ By studying this guide, you'll understand:
 8. [Web Security Guide](/docs/web-security-guide.md) - Security considerations
 
 **🔧 Practice:**
+
 - Test all examples at [Swagger UI](http://localhost:8000/api-docs)
 - Try each method with our TCSS-460-auth-squared endpoints
 - Experiment with different data in request bodies
 
 **✋ Hands-On:**
+
 - Examine `/src/routes/open/index.ts` and `/src/routes/closed/index.ts` for method implementations
 - Review `/src/controllers/authController.ts` and `/src/controllers/adminController.ts` for method handlers
 - Test validation in `/src/core/middleware/validation.ts`
@@ -44,15 +47,15 @@ By studying this guide, you'll understand:
 
 Consider a library book system:
 
-| Action | HTTP Method | What It Does |
-|--------|-------------|--------------|
-| **Look at** a book | `GET` | Read without changing anything |
-| **Add** a new book | `POST` | Create something new |
-| **Replace** a book entirely | `PUT` | Complete replacement |
-| **Update** just the book's label | `PATCH` | Partial modification |
-| **Remove** a book | `DELETE` | Take it away |
-| **Check if** a book exists | `HEAD` | Verify without retrieving |
-| **Ask what** you can do with a book | `OPTIONS` | Get available actions |
+| Action                              | HTTP Method | What It Does                   |
+| ----------------------------------- | ----------- | ------------------------------ |
+| **Look at** a book                  | `GET`       | Read without changing anything |
+| **Add** a new book                  | `POST`      | Create something new           |
+| **Replace** a book entirely         | `PUT`       | Complete replacement           |
+| **Update** just the book's label    | `PATCH`     | Partial modification           |
+| **Remove** a book                   | `DELETE`    | Take it away                   |
+| **Check if** a book exists          | `HEAD`      | Verify without retrieving      |
+| **Ask what** you can do with a book | `OPTIONS`   | Get available actions          |
 
 ### Why HTTP Methods Matter
 
@@ -82,6 +85,7 @@ Authorization: Bearer <token>
 ```
 
 **Characteristics:**
+
 - **Safe** - No side effects on the server
 - **Idempotent** - Multiple requests have the same effect
 - **Cacheable** - Responses can be cached by browsers/proxies
@@ -90,6 +94,7 @@ Authorization: Bearer <token>
 **🔧 Try It:** [GET /admin/users/:id](http://localhost:8000/api-docs/#/Admin/get_admin_users__id_)
 
 **Real Example from Our API:**
+
 ```javascript
 // In /src/controllers/adminController.ts
 export const getUser = asyncHandler(async (request: Request, response: Response): Promise<void> => {
@@ -104,12 +109,14 @@ export const getUser = asyncHandler(async (request: Request, response: Response)
 ```
 
 **When to Use GET:**
+
 - Retrieving user profiles: `GET /users/123`
 - Fetching product lists: `GET /products?category=electronics`
 - Getting search results: `GET /search?q=javascript`
 - Loading web pages and resources
 
 **Best Practices:**
+
 - Use query parameters for filters and pagination
 - Keep URLs under 2048 characters
 - Never include sensitive data in URLs
@@ -136,6 +143,7 @@ Content-Type: application/json
 ```
 
 **Characteristics:**
+
 - **Not safe** - Can have side effects
 - **Not idempotent** - Multiple requests may create multiple resources
 - **Not cacheable** - Responses shouldn't be cached
@@ -144,6 +152,7 @@ Content-Type: application/json
 **🔧 Try It:** [POST /auth/register](http://localhost:8000/api-docs/#/Authentication/post_auth_register)
 
 **Real Example from Our API:**
+
 ```javascript
 // In /src/controllers/authController.ts
 export const register = asyncHandler(async (request: Request, response: Response): Promise<void> => {
@@ -161,12 +170,14 @@ export const register = asyncHandler(async (request: Request, response: Response
 ```
 
 **When to Use POST:**
+
 - Creating new users: `POST /users`
 - Submitting forms: `POST /contact`
 - Uploading files: `POST /uploads`
 - Complex searches: `POST /search` (when query is too complex for GET)
 
 **Best Practices:**
+
 - Return 201 (Created) for successful resource creation
 - Include location of new resource in response headers
 - Validate all input data thoroughly
@@ -195,6 +206,7 @@ Authorization: Bearer <token>
 ```
 
 **Characteristics:**
+
 - **Not safe** - Can have side effects
 - **Idempotent** - Multiple identical requests have the same effect
 - **Not cacheable** - Responses shouldn't be cached
@@ -203,6 +215,7 @@ Authorization: Bearer <token>
 **🔧 Try It:** [PUT /admin/users/:id](http://localhost:8000/api-docs/#/Admin/put_admin_users__id_)
 
 **Real Example from Our API:**
+
 ```javascript
 // In /src/controllers/adminController.ts
 export const updateUser = asyncHandler(async (request: Request, response: Response): Promise<void> => {
@@ -219,11 +232,13 @@ export const updateUser = asyncHandler(async (request: Request, response: Respon
 ```
 
 **When to Use PUT:**
+
 - Updating entire user profile: `PUT /users/123`
 - Replacing configuration: `PUT /settings`
 - Uploading files to specific location: `PUT /files/document.pdf`
 
 **Best Practices:**
+
 - Send complete resource representation
 - Return 200 (OK) for updates, 201 (Created) for new resources
 - Ensure idempotency in implementation
@@ -247,6 +262,7 @@ Authorization: Bearer <token>
 ```
 
 **Characteristics:**
+
 - **Not safe** - Can have side effects
 - **May be idempotent** - Depends on implementation
 - **Not cacheable** - Responses shouldn't be cached
@@ -255,6 +271,7 @@ Authorization: Bearer <token>
 **🔧 Try It:** [PATCH /admin/users/:id/role](http://localhost:8000/api-docs/#/Admin/patch_admin_users__id__role)
 
 **Real Example from Our API:**
+
 ```javascript
 // In /src/controllers/adminController.ts
 export const updateUserRole = asyncHandler(async (request: Request, response: Response): Promise<void> => {
@@ -271,11 +288,13 @@ export const updateUserRole = asyncHandler(async (request: Request, response: Re
 ```
 
 **When to Use PATCH:**
+
 - Updating specific user fields: `PATCH /users/123` with `{"email": "new@email.com"}`
 - Changing password only: `PATCH /users/123/password`
 - Updating status: `PATCH /orders/456` with `{"status": "shipped"}`
 
 **Best Practices:**
+
 - Send only fields that need updating
 - Define clear patch format (JSON Patch, merge patch, etc.)
 - Validate partial data appropriately
@@ -294,6 +313,7 @@ Authorization: Bearer <token>
 ```
 
 **Characteristics:**
+
 - **Not safe** - Has side effects (removes data)
 - **Idempotent** - Multiple deletes have same effect
 - **Not cacheable** - Responses shouldn't be cached
@@ -302,6 +322,7 @@ Authorization: Bearer <token>
 **🔧 Try It:** [DELETE /admin/users/:id](http://localhost:8000/api-docs/#/Admin/delete_admin_users__id_)
 
 **Real Example from Our API:**
+
 ```javascript
 // In /src/controllers/adminController.ts
 export const deleteUser = asyncHandler(async (request: Request, response: Response): Promise<void> => {
@@ -317,11 +338,13 @@ export const deleteUser = asyncHandler(async (request: Request, response: Respon
 ```
 
 **When to Use DELETE:**
+
 - Removing user accounts: `DELETE /users/123`
 - Deleting posts: `DELETE /posts/456`
 - Clearing shopping cart: `DELETE /cart/items`
 
 **Best Practices:**
+
 - Return 200 (OK) with content or 204 (No Content)
 - Consider soft deletes for important data
 - Implement proper authorization checks
@@ -340,18 +363,21 @@ Authorization: Bearer <token>
 ```
 
 **Characteristics:**
+
 - **Safe** - No side effects
 - **Idempotent** - Multiple requests have same effect
 - **Cacheable** - Response headers can be cached
 - **No body** - Returns headers only
 
 **When to Use HEAD:**
+
 - Checking if resource exists without downloading it
 - Getting file size before download: `HEAD /files/large-file.zip`
 - Verifying last modification time: `HEAD /documents/report.pdf`
 - Testing endpoint availability
 
 **Example Response:**
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -360,6 +386,7 @@ Last-Modified: Mon, 15 Jan 2024 10:30:00 GMT
 ```
 
 **Best Practices:**
+
 - Ensure HEAD returns same headers as GET would
 - Use for existence checks and metadata retrieval
 - Implement for resources that support GET
@@ -376,12 +403,14 @@ Host: localhost:8000
 ```
 
 **Characteristics:**
+
 - **Safe** - No side effects
 - **Idempotent** - Multiple requests have same effect
 - **Informational** - Describes available operations
 - **CORS support** - Used in preflight requests
 
 **Example Response:**
+
 ```http
 HTTP/1.1 200 OK
 Allow: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
@@ -390,12 +419,14 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 ```
 
 **When to Use OPTIONS:**
+
 - CORS preflight requests (automatic)
 - API discovery and documentation
 - Checking allowed methods before making requests
 - Security and capability testing
 
 **Best Practices:**
+
 - Return accurate Allow header with supported methods
 - Include CORS headers for web applications
 - Keep response lightweight and informative
@@ -411,6 +442,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 **Safe Methods:** `GET`, `HEAD`, `OPTIONS`
 
 **Why It Matters:**
+
 - Browsers can prefetch safe requests
 - Proxies and caches can store responses
 - Web crawlers safely index content
@@ -420,14 +452,14 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 
 ```javascript
 // Safe - Can be called repeatedly without issues
-GET /users/123         // Always returns same user data
-HEAD /files/report.pdf // Always returns same headers
-OPTIONS /api/endpoint  // Always returns same capabilities
+GET / users / 123; // Always returns same user data
+HEAD / files / report.pdf; // Always returns same headers
+OPTIONS / api / endpoint; // Always returns same capabilities
 
 // Unsafe - May cause changes each time
-POST /users           // Creates new user each time
-DELETE /files/temp    // Removes file (once)
-PUT /settings         // Updates configuration
+POST / users; // Creates new user each time
+DELETE / files / temp; // Removes file (once)
+PUT / settings; // Updates configuration
 ```
 
 ### Idempotent Methods
@@ -438,6 +470,7 @@ PUT /settings         // Updates configuration
 **Non-Idempotent Methods:** `POST`, sometimes `PATCH`
 
 **Why It Matters:**
+
 - Network libraries can safely retry idempotent requests
 - Reduces issues from network timeouts or duplicates
 - Enables reliable distributed systems
@@ -447,29 +480,29 @@ PUT /settings         // Updates configuration
 
 ```javascript
 // Idempotent - Same result every time
-GET /users/123           // Always returns same user
-PUT /users/123           // Always results in same user state
-DELETE /users/123        // User deleted (or already deleted)
+GET / users / 123; // Always returns same user
+PUT / users / 123; // Always results in same user state
+DELETE / users / 123; // User deleted (or already deleted)
 
 // Non-Idempotent - Different results
-POST /users              // Creates new user each time
-POST /orders             // Places new order each time
-PATCH /counter/increment // Increases counter each time
+POST / users; // Creates new user each time
+POST / orders; // Places new order each time
+PATCH / counter / increment; // Increases counter each time
 ```
 
 ### Method Semantics and Proper Usage
 
 **🎯 Learning Objective:** Choose the right method for each operation
 
-| Operation | Correct Method | Why |
-|-----------|----------------|-----|
-| **Read data** | `GET` | Safe, cacheable, no side effects |
-| **Create resource** | `POST` | Allows server to assign ID, not idempotent |
-| **Replace resource** | `PUT` | Idempotent, client provides complete data |
-| **Update partially** | `PATCH` | Efficient for small changes |
-| **Remove resource** | `DELETE` | Clear intent, idempotent |
-| **Check existence** | `HEAD` | Efficient, no unnecessary data transfer |
-| **Discover options** | `OPTIONS` | Standard way to check capabilities |
+| Operation            | Correct Method | Why                                        |
+| -------------------- | -------------- | ------------------------------------------ |
+| **Read data**        | `GET`          | Safe, cacheable, no side effects           |
+| **Create resource**  | `POST`         | Allows server to assign ID, not idempotent |
+| **Replace resource** | `PUT`          | Idempotent, client provides complete data  |
+| **Update partially** | `PATCH`        | Efficient for small changes                |
+| **Remove resource**  | `DELETE`       | Clear intent, idempotent                   |
+| **Check existence**  | `HEAD`         | Efficient, no unnecessary data transfer    |
+| **Discover options** | `OPTIONS`      | Standard way to check capabilities         |
 
 ---
 
@@ -480,6 +513,7 @@ PATCH /counter/increment // Increases counter each time
 Our TCSS-460-auth-squared provides a complete testing ground for HTTP methods:
 
 **🔧 Interactive Testing:**
+
 1. Open [Swagger UI](http://localhost:8000/api-docs)
 2. Navigate to "Authentication" and "Admin" sections
 3. Try each method with the `/auth/*` and `/admin/*` endpoints
@@ -525,18 +559,21 @@ curl -X OPTIONS http://localhost:8000/admin/users
 Our TCSS-460-auth-squared also demonstrates parameter handling with different methods:
 
 **Query Parameters (GET):**
+
 ```bash
 curl "http://localhost:8000/admin/users?role=admin" \
   -H "Authorization: Bearer <token>"
 ```
 
 **Path Parameters (GET):**
+
 ```bash
 curl "http://localhost:8000/admin/users/123" \
   -H "Authorization: Bearer <token>"
 ```
 
 **Request Body (POST):**
+
 ```bash
 curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
@@ -544,6 +581,7 @@ curl -X POST http://localhost:8000/auth/register \
 ```
 
 **Request Body (PATCH):**
+
 ```bash
 curl -X PATCH http://localhost:8000/admin/users/123/role \
   -H "Content-Type: application/json" \
@@ -558,6 +596,7 @@ curl -X PATCH http://localhost:8000/admin/users/123/role \
 ### 1. Choose the Right Method
 
 **✅ Do:**
+
 - Use GET for reading data
 - Use POST for creating when server assigns ID
 - Use PUT for complete resource replacement
@@ -565,6 +604,7 @@ curl -X PATCH http://localhost:8000/admin/users/123/role \
 - Use DELETE for resource removal
 
 **❌ Don't:**
+
 - Use GET for operations that change data
 - Use POST when PUT or PATCH is more appropriate
 - Mix method semantics (e.g., DELETE that creates resources)
@@ -576,6 +616,7 @@ Always validate and sanitize user input to prevent security vulnerabilities. See
 ### 3. Design for Idempotency
 
 **✅ Do:**
+
 ```javascript
 // Idempotent PUT - same result every time
 PUT /users/123
@@ -590,6 +631,7 @@ DELETE /users/123 // Returns 204 or 404, both acceptable
 ```
 
 **❌ Don't:**
+
 ```javascript
 // Non-idempotent operation disguised as PUT
 PUT /users/123/increment-login-count  // Wrong!
@@ -602,12 +644,14 @@ PATCH /users/123 {"login_count": 5}   // Correct for setting specific value
 ### 4. Handle Methods Consistently
 
 **✅ Do:**
+
 - Return appropriate status codes (200, 201, 204, etc.)
 - Include relevant headers (Location, Content-Type, etc.)
 - Provide consistent response formats
 - Implement proper error handling
 
 **Example from Our TCSS-460-auth-squared:**
+
 ```javascript
 // Consistent response structure across all methods
 {
@@ -628,12 +672,14 @@ PATCH /users/123 {"login_count": 5}   // Correct for setting specific value
 ### 5. Security Considerations
 
 **Safe Methods (GET, HEAD, OPTIONS):**
+
 - Can be cached by proxies
 - Appear in browser history and logs
 - Should not contain sensitive data in URLs
 - Can be prefetched by browsers
 
 **Unsafe Methods (POST, PUT, PATCH, DELETE):**
+
 - Should include CSRF protection
 - Require proper authentication/authorization
 - Sensitive data goes in request body
@@ -646,15 +692,17 @@ PATCH /users/123 {"login_count": 5}   // Correct for setting specific value
 ### 1. Using GET for State Changes
 
 **❌ Wrong:**
+
 ```javascript
 GET /users/123/delete  // Deleting with GET!
 GET /cart/add?item=456 // Adding items with GET!
 ```
 
 **✅ Correct:**
+
 ```javascript
-DELETE /users/123      // Proper deletion
-POST /cart/items       // Proper creation
+DELETE / users / 123; // Proper deletion
+POST / cart / items; // Proper creation
 ```
 
 **Why It's Wrong:** GET should be safe and idempotent. Using it for state changes violates HTTP semantics and can cause issues with caching, prefetching, and web crawlers.
@@ -662,6 +710,7 @@ POST /cart/items       // Proper creation
 ### 2. Confusing PUT and PATCH
 
 **❌ Wrong:**
+
 ```javascript
 // Using PUT for partial updates
 PUT /users/123
@@ -671,6 +720,7 @@ PUT /users/123
 ```
 
 **✅ Correct:**
+
 ```javascript
 // PUT with complete resource
 PUT /users/123
@@ -690,12 +740,14 @@ PATCH /users/123
 ### 3. Not Implementing Idempotency Properly
 
 **❌ Wrong:**
+
 ```javascript
 // Non-idempotent PUT
-PUT /users/123/increment-score  // Changes result each time!
+PUT / users / 123 / increment - score; // Changes result each time!
 ```
 
 **✅ Correct:**
+
 ```javascript
 // Idempotent PUT
 PUT /users/123
@@ -714,6 +766,7 @@ POST /users/123/actions
 ### 4. Ignoring Status Codes
 
 **❌ Wrong:**
+
 ```javascript
 // Returning 200 for everything
 POST /users → 200 OK  // Should be 201 Created
@@ -721,6 +774,7 @@ DELETE /users/123 → 200 OK  // Could be 204 No Content
 ```
 
 **✅ Correct:**
+
 ```javascript
 POST /users → 201 Created
 DELETE /users/123 → 204 No Content
@@ -739,16 +793,19 @@ Now that you understand HTTP methods, continue with:
 3. **[Node.js & Express Architecture](/docs/node-express-architecture.md)** - Server implementation patterns
 
 **🔧 Immediate Practice:**
+
 - Test all methods in our [API documentation](http://localhost:8000/api-docs)
 - Try the "Authentication" and "Admin" endpoints
 - Notice how each method behaves differently
 
 **✋ Hands-On Exploration:**
+
 - Examine `/src/routes/open/index.ts` and `/src/routes/closed/index.ts` for method routing
 - Review `/src/controllers/authController.ts` and `/src/controllers/adminController.ts` for method implementations
 - Study `/src/core/middleware/validation.ts` for validation patterns
 
 **🎯 Build Your Understanding:**
+
 - Practice with curl commands or Postman
 - Try breaking the rules (use GET for creation) to see what happens
 - Implement your own endpoints following these patterns
@@ -776,4 +833,4 @@ Understanding HTTP methods is essential because they:
 
 ---
 
-*Continue your learning with [HTTP Status Codes](/docs/http-status-codes.md) to understand how servers communicate the results of your HTTP method requests.*
+_Continue your learning with [HTTP Status Codes](/docs/http-status-codes.md) to understand how servers communicate the results of your HTTP method requests._

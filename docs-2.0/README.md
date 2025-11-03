@@ -21,6 +21,7 @@ Welcome to the comprehensive educational documentation for the TCSS-460-auth-squ
 By studying this documentation alongside the codebase, students will gain:
 
 ### **HTTP & REST API Fundamentals**
+
 - JSON data format for web APIs
 - Understanding of HTTP methods and their semantic meanings
 - RESTful API design principles and conventions
@@ -33,6 +34,7 @@ By studying this documentation alongside the codebase, students will gain:
 **✋ Hands-On:** Test `POST /auth/register`, `POST /auth/login`, `GET /auth/verify`
 
 ### **API Documentation & Testing**
+
 - Interactive API documentation with Swagger/OpenAPI
 - API testing methodologies and tools
 - Documentation-driven development practices
@@ -42,6 +44,7 @@ By studying this documentation alongside the codebase, students will gain:
 **✋ Hands-On:** Test authentication endpoints: `POST /auth/login`, `POST /auth/register`
 
 ### **API Security & Authentication**
+
 - API authentication patterns (API Keys vs JWT)
 - Stateful vs stateless authentication
 - Protected endpoints and middleware authorization
@@ -54,6 +57,7 @@ By studying this documentation alongside the codebase, students will gain:
 **✋ Hands-On:** Test protected endpoints: `GET /admin/users` with Authorization header
 
 ### **Backend Development Foundations**
+
 - Node.js and Express.js application architecture
 - Asynchronous programming and the event loop
 - Middleware patterns and request processing pipelines
@@ -66,6 +70,7 @@ By studying this documentation alongside the codebase, students will gain:
 **✋ Hands-On:** Test validation with `POST /auth/register` using JSON data
 
 ### **Professional Development Practices**
+
 - TypeScript type safety and interface design
 - Code organization and maintainability patterns
 - Modern tooling and development workflows
@@ -76,9 +81,11 @@ By studying this documentation alongside the codebase, students will gain:
 **✋ Hands-On:** Create a new utility module and export it using named exports
 
 ### **Advanced Implementation Guides**
+
 Deep dives into specific TCSS-460-auth-squared features and patterns.
 
 **📚 Study:**
+
 - [JWT Implementation Guide](/doc/jwt-implementation-guide.md) - Token generation, validation, security
 - [Password Security Guide](/doc/password-security-guide.md) - Hashing, salts, timing-safe comparison
 - [RBAC Guide](/doc/rbac-guide.md) - Role-based access control and hierarchy
@@ -113,27 +120,30 @@ This project demonstrates key concepts through practical implementation:
 ## 🚀 Getting Started
 
 1. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+
+    ```bash
+    npm run dev
+    ```
 
 2. **Explore the interactive documentation:**
-   - [Swagger UI](http://localhost:8000/api-docs) - Test endpoints interactively
-   - [API Documentation](http://localhost:8000/doc/API_DOCUMENTATION.md) - Comprehensive endpoint reference
+    - [Swagger UI](http://localhost:8000/api-docs) - Test endpoints interactively
+    - [API Documentation](http://localhost:8000/doc/API_DOCUMENTATION.md) - Comprehensive endpoint reference
 
 3. **Test the API endpoints:**
-   - Health check: `GET /health`
-   - Register user: `POST /auth/register`
-   - Login: `POST /auth/login`
+    - Health check: `GET /health`
+    - Register user: `POST /auth/register`
+    - Login: `POST /auth/login`
 
 ## 📚 Browse All Educational Resources
 
 **Quick Access:**
+
 - **[Browse All Documentation Files](http://localhost:8000/doc)** - Complete list of educational materials
 - **[Interactive API Testing](http://localhost:8000/api-docs)** - Swagger UI for hands-on learning
 - **[Complete API Reference](http://localhost:8000/doc/API_DOCUMENTATION.md)** - Detailed endpoint documentation
 
 **Fundamentals Series:**
+
 - [JSON Fundamentals](http://localhost:8000/doc/json-fundamentals.md) - **START HERE** - Understanding JSON, the data format APIs use
 - [HTTP Fundamentals](http://localhost:8000/doc/http-fundamentals.md) - Core HTTP concepts and introduction
 - [HTTP History & Evolution](http://localhost:8000/doc/http-history-evolution.md) - How HTTP developed over time
@@ -143,6 +153,7 @@ This project demonstrates key concepts through practical implementation:
 - [HTTP Status Codes](http://localhost:8000/doc/http-status-codes.md) - Response codes reference
 
 **Development & Architecture:**
+
 - [Async JavaScript & Node.js](http://localhost:8000/doc/async-javascript-nodejs.md) - Asynchronous programming and event loop
 - [Development Workflow](http://localhost:8000/doc/development-workflow.md) - TypeScript compilation, build process, and tooling
 - [Import/Export Patterns](http://localhost:8000/doc/import-export-patterns.md) - Module system, exports, and imports
@@ -153,6 +164,7 @@ This project demonstrates key concepts through practical implementation:
 - [Environment Configuration](http://localhost:8000/doc/environment-configuration.md) - Configuration management
 
 **Advanced Topics:**
+
 - [API Authentication Guide](http://localhost:8000/doc/authentication-guide.md) - API Keys vs JWT, authentication patterns
 - [JWT Implementation Guide](http://localhost:8000/doc/jwt-implementation-guide.md) - Complete JWT implementation
 - [Password Security Guide](http://localhost:8000/doc/password-security-guide.md) - Password hashing and security
@@ -167,4 +179,4 @@ This project demonstrates key concepts through practical implementation:
 
 ---
 
-*This documentation is part of the TCSS-460 coursework and demonstrates industry-standard practices for educational purposes.*
+_This documentation is part of the TCSS-460 coursework and demonstrates industry-standard practices for educational purposes._

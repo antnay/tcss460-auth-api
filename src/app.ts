@@ -18,7 +18,6 @@ import { routes } from './routes';
  * safely for testing without requiring a complete .env file.
  */
 export const createApp = (): Express => {
-
     const app: Express = express();
 
     // Middleware
@@ -43,7 +42,9 @@ export const createApp = (): Express => {
         const swaggerDocument = YAML.load('./docs/swagger.yaml');
         app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
     } catch (error) {
-        console.warn('⚠️ Swagger documentation not found at ./docs/swagger.yaml');
+        console.warn(
+            '⚠️ Swagger documentation not found at ./docs/swagger.yaml'
+        );
     }
 
     // Routes (mounted after public endpoints)

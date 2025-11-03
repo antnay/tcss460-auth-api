@@ -5,6 +5,7 @@ A comprehensive educational guide to user account management from birth to death
 > **Learning Objectives**: Understand complete user account lifecycle, state management, security considerations, and administrative operations for senior CS students.
 
 ## Quick Navigation
+
 - **Registration Phase**: [Account Creation](#1-registration-phase-account-birth)
 - **Verification Phase**: [Email & SMS Verification](#2-verification-phase-account-activation)
 - **Active Use Phase**: [Login & Password Management](#3-active-use-phase-normal-operations)
@@ -86,13 +87,13 @@ The account lifecycle spans four primary tables:
 
 ### Account States
 
-| State | Description | Can Login? | Database Status |
-|-------|-------------|-----------|-----------------|
-| **pending** | Newly registered, awaiting verification | Yes | Account_Status = 'pending' |
-| **active** | Fully verified and operational | Yes | Account_Status = 'active' |
-| **suspended** | Temporarily disabled by admin | No | Account_Status = 'suspended' |
-| **locked** | Security lock (too many failed attempts) | No | Account_Status = 'locked' |
-| **deleted** | Soft-deleted by admin | No | Account_Status = 'deleted' |
+| State         | Description                              | Can Login? | Database Status              |
+| ------------- | ---------------------------------------- | ---------- | ---------------------------- |
+| **pending**   | Newly registered, awaiting verification  | Yes        | Account_Status = 'pending'   |
+| **active**    | Fully verified and operational           | Yes        | Account_Status = 'active'    |
+| **suspended** | Temporarily disabled by admin            | No         | Account_Status = 'suspended' |
+| **locked**    | Security lock (too many failed attempts) | No         | Account_Status = 'locked'    |
+| **deleted**   | Soft-deleted by admin                    | No         | Account_Status = 'deleted'   |
 
 ---
 
@@ -105,6 +106,7 @@ Registration is the entry point to the system. Users provide basic information a
 ### Endpoint Details
 
 **POST /auth/register**
+
 - **Access**: Public (open routes)
 - **Validation**: Email format, password strength, unique username/email/phone
 - **Initial Role**: 1 (User) - hardcoded for security
@@ -131,6 +133,7 @@ Content-Type: application/json
 ### Step-by-Step Process
 
 #### Step 1: Validation
+
 ```typescript
 // Middleware: validateRegister (runs BEFORE controller)
 // Located in: /src/core/middleware/authValidation.ts
@@ -142,13 +145,14 @@ Content-Type: application/json
 ```
 
 #### Step 2: Uniqueness Check
+
 ```typescript
 // Controller: AuthController.register()
 // Lines 30-34 in authController.ts
 
 const userExists = await validateUserUniqueness(
-  { email, username, phone },
-  response
+    { email, username, phone },
+    response
 );
 if (userExists) return; // Stops execution if duplicate found
 
@@ -159,68 +163,70 @@ if (userExists) return; // Stops execution if duplicate found
 ```
 
 #### Step 3: Transaction - Create Account & Credentials
+
 ```typescript
 // Lines 37-85 in authController.ts
 // Uses executeTransactionWithResponse() for atomicity
 
 await executeTransactionWithResponse(
-  async (client) => {
-    // 3a. Create Account record
-    const insertAccountResult = await client.query(
-      `INSERT INTO Account
+    async (client) => {
+        // 3a. Create Account record
+        const insertAccountResult = await client.query(
+            `INSERT INTO Account
        (FirstName, LastName, Username, Email, Phone, Account_Role,
         Email_Verified, Phone_Verified, Account_Status)
        VALUES ($1, $2, $3, $4, $5, 1, FALSE, FALSE, 'pending')
        RETURNING Account_ID`,
-      [firstname, lastname, username, email, phone]
-    );
+            [firstname, lastname, username, email, phone]
+        );
 
-    const accountId = insertAccountResult.rows[0].account_id;
+        const accountId = insertAccountResult.rows[0].account_id;
 
-    // 3b. Generate secure password credentials
-    const salt = generateSalt();              // Random salt
-    const saltedHash = generateHash(password, salt); // bcrypt hash
+        // 3b. Generate secure password credentials
+        const salt = generateSalt(); // Random salt
+        const saltedHash = generateHash(password, salt); // bcrypt hash
 
-    // 3c. Store credentials in separate table
-    await client.query(
-      `INSERT INTO Account_Credential
+        // 3c. Store credentials in separate table
+        await client.query(
+            `INSERT INTO Account_Credential
        (Account_ID, Salted_Hash, Salt)
        VALUES ($1, $2, $3)`,
-      [accountId, saltedHash, salt]
-    );
+            [accountId, saltedHash, salt]
+        );
 
-    // 3d. Generate JWT access token
-    const token = generateAccessToken({
-      id: accountId,
-      email,
-      role: 1
-    });
+        // 3d. Generate JWT access token
+        const token = generateAccessToken({
+            id: accountId,
+            email,
+            role: 1,
+        });
 
-    // 3e. Return success response
-    return {
-      accessToken: token,
-      user: {
-        id: accountId,
-        email,
-        name: firstname,
-        lastname,
-        username,
-        role: 'User',
-        emailVerified: false,
-        phoneVerified: false,
-        accountStatus: 'pending'
-      }
-    };
-  },
-  response,
-  'User registration successful',
-  'Registration failed'
+        // 3e. Return success response
+        return {
+            accessToken: token,
+            user: {
+                id: accountId,
+                email,
+                name: firstname,
+                lastname,
+                username,
+                role: 'User',
+                emailVerified: false,
+                phoneVerified: false,
+                accountStatus: 'pending',
+            },
+        };
+    },
+    response,
+    'User registration successful',
+    'Registration failed'
 );
 ```
 
 ### Database Changes
 
 **Table: Account**
+
 ```sql
 INSERT INTO Account (
   FirstName,           -- 'Jane'
@@ -238,6 +244,7 @@ INSERT INTO Account (
 ```
 
 **Table: Account_Credential**
+
 ```sql
 INSERT INTO Account_Credential (
   Account_ID,          -- From Account table
@@ -249,43 +256,45 @@ INSERT INTO Account_Credential (
 ### Security Considerations - Registration
 
 1. **Password Hashing**: Never store plaintext passwords
-   - Uses bcrypt algorithm via `generateHash()`
-   - Salt stored separately for additional security
+    - Uses bcrypt algorithm via `generateHash()`
+    - Salt stored separately for additional security
 
 2. **Role Hardcoding**: Initial role always set to 1 (User)
-   - Prevents privilege escalation during registration
-   - Admins must explicitly promote users later
+    - Prevents privilege escalation during registration
+    - Admins must explicitly promote users later
 
 3. **Uniqueness Constraints**: Prevents duplicate accounts
-   - Database-level UNIQUE constraints on Email, Username, Phone
-   - Application-level validation before insertion
+    - Database-level UNIQUE constraints on Email, Username, Phone
+    - Application-level validation before insertion
 
 4. **Transaction Safety**: All-or-nothing operation
-   - If credential creation fails, account creation is rolled back
-   - Prevents orphaned accounts without credentials
+    - If credential creation fails, account creation is rolled back
+    - Prevents orphaned accounts without credentials
 
 ### What Can User Do After Registration?
 
 ✅ **User CAN:**
+
 - Login with credentials (even with status='pending')
 - Request email verification
 - Request SMS verification
 - Change password (if they know old password)
 
 ❌ **User CANNOT:**
+
 - Access certain protected features (depends on implementation)
 - Verify without requesting verification codes/links
 - Change role (requires admin intervention)
 
 ### Common Registration Errors
 
-| Error Code | Message | Cause |
-|------------|---------|-------|
-| `VALD_MISSING_FIELDS` | Missing required fields | Incomplete request body |
-| `VALD_INVALID_EMAIL` | Invalid email format | Malformed email address |
-| `VALD_INVALID_PASSWORD` | Password too weak | Doesn't meet strength requirements |
-| `USER_EXISTS` | User already exists | Email, username, or phone already taken |
-| `SRVR_TRANSACTION_FAILED` | Registration failed | Database transaction error |
+| Error Code                | Message                 | Cause                                   |
+| ------------------------- | ----------------------- | --------------------------------------- |
+| `VALD_MISSING_FIELDS`     | Missing required fields | Incomplete request body                 |
+| `VALD_INVALID_EMAIL`      | Invalid email format    | Malformed email address                 |
+| `VALD_INVALID_PASSWORD`   | Password too weak       | Doesn't meet strength requirements      |
+| `USER_EXISTS`             | User already exists     | Email, username, or phone already taken |
+| `SRVR_TRANSACTION_FAILED` | Registration failed     | Database transaction error              |
 
 ---
 
@@ -303,8 +312,8 @@ After registration, users should verify their email and phone to confirm ownersh
 
 ```typescript
 // Client requests email verification
-POST /auth/verify/email/send
-Authorization: Bearer <jwt_token>
+POST / auth / verify / email / send;
+Authorization: Bearer<jwt_token>;
 
 // Controller: VerificationController.sendEmailVerification()
 // Lines 22-103 in verificationController.ts
@@ -318,37 +327,36 @@ const userId = request.claims.id;
 
 // Step 2: Get user information
 const userResult = await pool.query(
-  'SELECT FirstName, Email, Email_Verified FROM Account WHERE Account_ID = $1',
-  [userId]
+    'SELECT FirstName, Email, Email_Verified FROM Account WHERE Account_ID = $1',
+    [userId]
 );
 
 // Step 3: Check if already verified
 if (email_verified) {
-  sendError(response, 400, 'Email is already verified');
-  return;
+    sendError(response, 400, 'Email is already verified');
+    return;
 }
 
 // Step 4: Rate limiting check (prevent spam)
 // Checks for recent verification request within last 5 minutes
 const recentVerification = await pool.query(
-  `SELECT COUNT(*) as count
+    `SELECT COUNT(*) as count
    FROM Email_Verification
    WHERE Account_ID = $1
    AND Token_Expires > NOW()
    AND Created_At > NOW() - INTERVAL '5 minutes'`,
-  [userId]
+    [userId]
 );
 
 if (count > 0) {
-  sendError(response, 429, 'Please wait before requesting another email');
-  return;
+    sendError(response, 429, 'Please wait before requesting another email');
+    return;
 }
 
 // Step 5: Delete old verification tokens (cleanup)
-await pool.query(
-  'DELETE FROM Email_Verification WHERE Account_ID = $1',
-  [userId]
-);
+await pool.query('DELETE FROM Email_Verification WHERE Account_ID = $1', [
+    userId,
+]);
 
 // Step 6: Generate verification token
 const verificationToken = generateSecureToken(); // Random 64-char string
@@ -356,10 +364,10 @@ const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
 
 // Step 7: Store token in database
 await pool.query(
-  `INSERT INTO Email_Verification
+    `INSERT INTO Email_Verification
    (Account_ID, Email, Verification_Token, Token_Expires)
    VALUES ($1, $2, $3, $4)`,
-  [userId, email, verificationToken, expiresAt]
+    [userId, email, verificationToken, expiresAt]
 );
 
 // Step 8: Create verification URL
@@ -367,16 +375,25 @@ const baseUrl = getEnvVar('APP_BASE_URL', 'http://localhost:8000');
 const verificationUrl = `${baseUrl}/auth/verify/email/confirm?token=${verificationToken}`;
 
 // Step 9: Send email (actual SMTP sending)
-const emailSent = await sendVerificationEmail(email, firstname, verificationUrl);
+const emailSent = await sendVerificationEmail(
+    email,
+    firstname,
+    verificationUrl
+);
 
 // Step 10: Return success response
-sendSuccess(response, {
-  expiresIn: '48 hours',
-  verificationUrl: isDevelopment() ? verificationUrl : undefined
-}, 'Verification email sent successfully');
+sendSuccess(
+    response,
+    {
+        expiresIn: '48 hours',
+        verificationUrl: isDevelopment() ? verificationUrl : undefined,
+    },
+    'Verification email sent successfully'
+);
 ```
 
 **Database Changes:**
+
 ```sql
 -- Email_Verification table
 INSERT INTO Email_Verification (
@@ -409,56 +426,57 @@ const { token } = request.query;
 
 // Step 2: Find verification record and join with Account
 const verificationResult = await pool.query(
-  `SELECT ev.Account_ID, ev.Email, ev.Token_Expires, a.Email_Verified
+    `SELECT ev.Account_ID, ev.Email, ev.Token_Expires, a.Email_Verified
    FROM Email_Verification ev
    JOIN Account a ON ev.Account_ID = a.Account_ID
    WHERE ev.Verification_Token = $1`,
-  [token]
+    [token]
 );
 
 if (verificationResult.rowCount === 0) {
-  sendError(response, 400, 'Invalid verification token');
-  return;
+    sendError(response, 400, 'Invalid verification token');
+    return;
 }
 
 // Step 3: Check if already verified
 if (email_verified) {
-  sendError(response, 400, 'Email is already verified');
-  return;
+    sendError(response, 400, 'Email is already verified');
+    return;
 }
 
 // Step 4: Check token expiration (48 hours)
 if (new Date() > new Date(token_expires)) {
-  sendError(response, 400, 'Verification token has expired');
-  return;
+    sendError(response, 400, 'Verification token has expired');
+    return;
 }
 
 // Step 5: Transaction - Update account and delete token
 await executeTransactionWithResponse(
-  async (client) => {
-    // Mark email as verified
-    await client.query(
-      `UPDATE Account
+    async (client) => {
+        // Mark email as verified
+        await client.query(
+            `UPDATE Account
        SET Email_Verified = TRUE, Updated_At = NOW()
        WHERE Account_ID = $1`,
-      [account_id]
-    );
+            [account_id]
+        );
 
-    // Delete verification token (single-use)
-    await client.query(
-      'DELETE FROM Email_Verification WHERE Account_ID = $1',
-      [account_id]
-    );
+        // Delete verification token (single-use)
+        await client.query(
+            'DELETE FROM Email_Verification WHERE Account_ID = $1',
+            [account_id]
+        );
 
-    return null;
-  },
-  response,
-  'Email verified successfully',
-  'Failed to verify email'
+        return null;
+    },
+    response,
+    'Email verified successfully',
+    'Failed to verify email'
 );
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account table
 UPDATE Account
@@ -499,36 +517,35 @@ const { carrier } = request.body;
 
 // Step 2: Get user information
 const userResult = await pool.query(
-  'SELECT FirstName, Phone, Phone_Verified FROM Account WHERE Account_ID = $1',
-  [userId]
+    'SELECT FirstName, Phone, Phone_Verified FROM Account WHERE Account_ID = $1',
+    [userId]
 );
 
 // Step 3: Check if already verified
 if (phone_verified) {
-  sendError(response, 400, 'Phone is already verified');
-  return;
+    sendError(response, 400, 'Phone is already verified');
+    return;
 }
 
 // Step 4: Rate limiting (1 request per minute)
 const recentVerification = await pool.query(
-  `SELECT COUNT(*) as count
+    `SELECT COUNT(*) as count
    FROM Phone_Verification
    WHERE Account_ID = $1
    AND Code_Expires > NOW()
    AND Created_At > NOW() - INTERVAL '1 minute'`,
-  [userId]
+    [userId]
 );
 
 if (count > 0) {
-  sendError(response, 429, 'Please wait before requesting another SMS code');
-  return;
+    sendError(response, 429, 'Please wait before requesting another SMS code');
+    return;
 }
 
 // Step 5: Delete old verification codes
-await pool.query(
-  'DELETE FROM Phone_Verification WHERE Account_ID = $1',
-  [userId]
-);
+await pool.query('DELETE FROM Phone_Verification WHERE Account_ID = $1', [
+    userId,
+]);
 
 // Step 6: Generate 6-digit code
 const verificationCode = generateVerificationCode(); // Random 6 digits
@@ -536,10 +553,10 @@ const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
 // Step 7: Store code in database
 await pool.query(
-  `INSERT INTO Phone_Verification
+    `INSERT INTO Phone_Verification
    (Account_ID, Phone, Verification_Code, Code_Expires, Attempts)
    VALUES ($1, $2, $3, $4, 0)`,
-  [userId, phone, verificationCode, expiresAt]
+    [userId, phone, verificationCode, expiresAt]
 );
 
 // Step 8: Send SMS via email-to-SMS gateway
@@ -547,13 +564,18 @@ const message = `Auth² Code: ${verificationCode}\nExpires in 15 min\nDo not sha
 const smsSent = await sendSMSViaEmail(phone, message, carrier);
 
 // Step 9: Return success response
-sendSuccess(response, {
-  expiresIn: '15 minutes',
-  verificationCode: isDevelopment() ? verificationCode : undefined
-}, 'SMS verification code sent successfully');
+sendSuccess(
+    response,
+    {
+        expiresIn: '15 minutes',
+        verificationCode: isDevelopment() ? verificationCode : undefined,
+    },
+    'SMS verification code sent successfully'
+);
 ```
 
 **Database Changes:**
+
 ```sql
 -- Phone_Verification table
 INSERT INTO Phone_Verification (
@@ -594,76 +616,80 @@ const { code } = request.body;
 
 // Step 2: Find verification record
 const verificationResult = await pool.query(
-  `SELECT pv.*, a.Phone_Verified
+    `SELECT pv.*, a.Phone_Verified
    FROM Phone_Verification pv
    JOIN Account a ON pv.Account_ID = a.Account_ID
    WHERE pv.Account_ID = $1`,
-  [userId]
+    [userId]
 );
 
 if (verificationResult.rowCount === 0) {
-  sendError(response, 400, 'No verification code found');
-  return;
+    sendError(response, 400, 'No verification code found');
+    return;
 }
 
 // Step 3: Check if already verified
 if (phone_verified) {
-  sendError(response, 400, 'Phone is already verified');
-  return;
+    sendError(response, 400, 'Phone is already verified');
+    return;
 }
 
 // Step 4: Check code expiration (15 minutes)
 if (new Date() > new Date(code_expires)) {
-  sendError(response, 400, 'Verification code has expired');
-  return;
+    sendError(response, 400, 'Verification code has expired');
+    return;
 }
 
 // Step 5: Check attempt limit (max 3 attempts)
 if (attempts >= 3) {
-  sendError(response, 400, 'Too many failed attempts');
-  return;
+    sendError(response, 400, 'Too many failed attempts');
+    return;
 }
 
 // Step 6: Verify code
 if (verification_code !== code) {
-  // Increment attempt count
-  await pool.query(
-    'UPDATE Phone_Verification SET Attempts = Attempts + 1 WHERE Account_ID = $1',
-    [userId]
-  );
+    // Increment attempt count
+    await pool.query(
+        'UPDATE Phone_Verification SET Attempts = Attempts + 1 WHERE Account_ID = $1',
+        [userId]
+    );
 
-  const remainingAttempts = 3 - (attempts + 1);
-  sendError(response, 400,
-    `Invalid code. ${remainingAttempts} attempts remaining`);
-  return;
+    const remainingAttempts = 3 - (attempts + 1);
+    sendError(
+        response,
+        400,
+        `Invalid code. ${remainingAttempts} attempts remaining`
+    );
+    return;
 }
 
 // Step 7: Transaction - Update account and delete code
 await executeTransactionWithResponse(
-  async (client) => {
-    // Mark phone as verified
-    await client.query(
-      `UPDATE Account
+    async (client) => {
+        // Mark phone as verified
+        await client.query(
+            `UPDATE Account
        SET Phone_Verified = TRUE, Updated_At = NOW()
        WHERE Account_ID = $1`,
-      [userId]
-    );
+            [userId]
+        );
 
-    // Delete verification code (single-use)
-    await client.query(
-      'DELETE FROM Phone_Verification WHERE Account_ID = $1',
-      [userId]
-    );
+        // Delete verification code (single-use)
+        await client.query(
+            'DELETE FROM Phone_Verification WHERE Account_ID = $1',
+            [userId]
+        );
 
-    return null;
-  },
-  response,
-  'Phone verified successfully',
-  'Failed to verify SMS code'
+        return null;
+    },
+    response,
+    'Phone verified successfully',
+    'Failed to verify SMS code'
 );
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account table
 UPDATE Account
@@ -678,25 +704,25 @@ DELETE FROM Phone_Verification WHERE Account_ID = 123;
 ### Verification Security Features
 
 1. **Rate Limiting**:
-   - Email: 1 request per 5 minutes
-   - SMS: 1 request per 1 minute
-   - Prevents spam and abuse
+    - Email: 1 request per 5 minutes
+    - SMS: 1 request per 1 minute
+    - Prevents spam and abuse
 
 2. **Expiration Times**:
-   - Email token: 48 hours (longer for convenience)
-   - SMS code: 15 minutes (shorter for security)
+    - Email token: 48 hours (longer for convenience)
+    - SMS code: 15 minutes (shorter for security)
 
 3. **Attempt Limiting**:
-   - SMS codes: Maximum 3 attempts
-   - Prevents brute-force attacks on 6-digit codes
+    - SMS codes: Maximum 3 attempts
+    - Prevents brute-force attacks on 6-digit codes
 
 4. **Single-Use Tokens**:
-   - Tokens/codes deleted after successful verification
-   - Cannot be reused even if intercepted
+    - Tokens/codes deleted after successful verification
+    - Cannot be reused even if intercepted
 
 5. **Token Cleanup**:
-   - Old tokens deleted before issuing new ones
-   - Prevents database clutter and confusion
+    - Old tokens deleted before issuing new ones
+    - Prevents database clutter and confusion
 
 ---
 
@@ -732,7 +758,7 @@ const { email, password } = request.body;
 
 // Step 2: Find account with credentials (JOIN query)
 const accountResult = await pool.query(
-  `SELECT
+    `SELECT
     a.Account_ID, a.FirstName, a.LastName, a.Username,
     a.Email, a.Account_Role, a.Email_Verified,
     a.Phone_Verified, a.Account_Status,
@@ -740,43 +766,46 @@ const accountResult = await pool.query(
   FROM Account a
   LEFT JOIN Account_Credential ac ON a.Account_ID = ac.Account_ID
   WHERE a.Email = $1`,
-  [email]
+    [email]
 );
 
 if (accountResult.rowCount === 0) {
-  sendError(response, 401, 'Invalid credentials');
-  return;
+    sendError(response, 401, 'Invalid credentials');
+    return;
 }
 
 const account = accountResult.rows[0];
 
 // Step 3: Check account status (prevent locked/suspended login)
 if (account.account_status === 'suspended') {
-  sendError(response, 403, 'Account is suspended. Contact support.');
-  return;
+    sendError(response, 403, 'Account is suspended. Contact support.');
+    return;
 }
 
 if (account.account_status === 'locked') {
-  sendError(response, 403, 'Account is locked. Contact support.');
-  return;
+    sendError(response, 403, 'Account is locked. Contact support.');
+    return;
 }
 
 // Step 4: Verify password using bcrypt
-if (!account.salted_hash || !verifyPassword(password, account.salt, account.salted_hash)) {
-  sendError(response, 401, 'Invalid credentials');
-  return;
+if (
+    !account.salted_hash ||
+    !verifyPassword(password, account.salt, account.salted_hash)
+) {
+    sendError(response, 401, 'Invalid credentials');
+    return;
 }
 
 // Step 5: Generate JWT access token (14-day expiry)
 const jwtSecret = getEnvVar('JWT_SECRET');
 const token = jwt.sign(
-  {
-    id: account.account_id,
-    email: account.email,
-    role: account.account_role
-  },
-  jwtSecret,
-  { expiresIn: '14d' }
+    {
+        id: account.account_id,
+        email: account.email,
+        role: account.account_role,
+    },
+    jwtSecret,
+    { expiresIn: '14d' }
 );
 
 // Step 6: Map role number to role name
@@ -784,41 +813,46 @@ const roleNames = ['', 'User', 'Moderator', 'Admin', 'SuperAdmin', 'Owner'];
 const roleName = roleNames[account.account_role] || 'User';
 
 // Step 7: Return success response with token and user info
-sendSuccess(response, {
-  accessToken: token,
-  user: {
-    id: account.account_id,
-    email: account.email,
-    name: account.firstname,
-    lastname: account.lastname,
-    username: account.username,
-    role: roleName,
-    emailVerified: account.email_verified,
-    phoneVerified: account.phone_verified,
-    accountStatus: account.account_status
-  }
-}, 'Login successful');
+sendSuccess(
+    response,
+    {
+        accessToken: token,
+        user: {
+            id: account.account_id,
+            email: account.email,
+            name: account.firstname,
+            lastname: account.lastname,
+            username: account.username,
+            role: roleName,
+            emailVerified: account.email_verified,
+            phoneVerified: account.phone_verified,
+            accountStatus: account.account_status,
+        },
+    },
+    'Login successful'
+);
 ```
 
 **Login Response:**
+
 ```json
 {
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": 123,
-      "email": "jane.doe@example.com",
-      "name": "Jane",
-      "lastname": "Doe",
-      "username": "janedoe",
-      "role": "User",
-      "emailVerified": true,
-      "phoneVerified": false,
-      "accountStatus": "pending"
+    "success": true,
+    "message": "Login successful",
+    "data": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        "user": {
+            "id": 123,
+            "email": "jane.doe@example.com",
+            "name": "Jane",
+            "lastname": "Doe",
+            "username": "janedoe",
+            "role": "User",
+            "emailVerified": true,
+            "phoneVerified": false,
+            "accountStatus": "pending"
+        }
     }
-  }
 }
 ```
 
@@ -852,59 +886,60 @@ const userId = request.claims.id; // From JWT token
 
 // Step 2: Get current credentials
 const credentialsResult = await pool.query(
-  'SELECT Salted_Hash, Salt FROM Account_Credential WHERE Account_ID = $1',
-  [userId]
+    'SELECT Salted_Hash, Salt FROM Account_Credential WHERE Account_ID = $1',
+    [userId]
 );
 
 if (credentialsResult.rowCount === 0) {
-  sendError(response, 404, 'User credentials not found');
-  return;
+    sendError(response, 404, 'User credentials not found');
+    return;
 }
 
 const { salted_hash, salt } = credentialsResult.rows[0];
 
 // Step 3: Verify old password
 if (!verifyPassword(oldPassword, salt, salted_hash)) {
-  sendError(response, 400, 'Current password is incorrect');
-  return;
+    sendError(response, 400, 'Current password is incorrect');
+    return;
 }
 
 // Step 4: Ensure new password is different
 if (verifyPassword(newPassword, salt, salted_hash)) {
-  sendError(response, 400, 'New password must be different');
-  return;
+    sendError(response, 400, 'New password must be different');
+    return;
 }
 
 // Step 5: Transaction - Update credentials
 await executeTransactionWithResponse(
-  async (client) => {
-    // Generate new salt and hash
-    const newSalt = generateSalt();
-    const newSaltedHash = generateHash(newPassword, newSalt);
+    async (client) => {
+        // Generate new salt and hash
+        const newSalt = generateSalt();
+        const newSaltedHash = generateHash(newPassword, newSalt);
 
-    // Update password
-    await client.query(
-      `UPDATE Account_Credential
+        // Update password
+        await client.query(
+            `UPDATE Account_Credential
        SET Salted_Hash = $1, Salt = $2
        WHERE Account_ID = $3`,
-      [newSaltedHash, newSalt, userId]
-    );
+            [newSaltedHash, newSalt, userId]
+        );
 
-    // Update account timestamp (for audit trail)
-    await client.query(
-      'UPDATE Account SET Updated_At = NOW() WHERE Account_ID = $1',
-      [userId]
-    );
+        // Update account timestamp (for audit trail)
+        await client.query(
+            'UPDATE Account SET Updated_At = NOW() WHERE Account_ID = $1',
+            [userId]
+        );
 
-    return null;
-  },
-  response,
-  'Password changed successfully',
-  'Failed to change password'
+        return null;
+    },
+    response,
+    'Password changed successfully',
+    'Failed to change password'
 );
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account_Credential table
 UPDATE Account_Credential
@@ -919,6 +954,7 @@ WHERE Account_ID = 123;
 ```
 
 **Security Features:**
+
 1. Requires old password (prevents unauthorized changes if JWT is stolen)
 2. New password must be different (prevents immediate reuse)
 3. New salt generated (even same password would have different hash)
@@ -954,13 +990,13 @@ Users start with role=1 (User). Admins can promote users to higher roles for add
                1: User
 ```
 
-| Role Level | Role Name | Capabilities |
-|------------|-----------|--------------|
-| 5 | Owner | Full system access, can manage all users |
-| 4 | SuperAdmin | Extensive admin capabilities |
-| 3 | Admin | User management, role changes (up to Admin) |
-| 2 | Moderator | Content moderation, limited admin |
-| 1 | User | Basic user operations |
+| Role Level | Role Name  | Capabilities                                |
+| ---------- | ---------- | ------------------------------------------- |
+| 5          | Owner      | Full system access, can manage all users    |
+| 4          | SuperAdmin | Extensive admin capabilities                |
+| 3          | Admin      | User management, role changes (up to Admin) |
+| 2          | Moderator  | Content moderation, limited admin           |
+| 1          | User       | Basic user operations                       |
 
 ### 4.1: Admin Changes User Role
 
@@ -993,13 +1029,13 @@ const newRole = parseInt(role);
 
 // Step 2: Get current user details
 const currentUserQuery = await pool.query(
-  'SELECT * FROM Account WHERE Account_ID = $1',
-  [userId]
+    'SELECT * FROM Account WHERE Account_ID = $1',
+    [userId]
 );
 
 if (currentUserQuery.rowCount === 0) {
-  sendError(response, 404, 'User not found');
-  return;
+    sendError(response, 404, 'User not found');
+    return;
 }
 
 const currentUser = currentUserQuery.rows[0];
@@ -1007,30 +1043,35 @@ const oldRole = currentUser.account_role;
 
 // Step 3: Update user role
 const updateResult = await pool.query(
-  `UPDATE Account
+    `UPDATE Account
    SET Account_Role = $1, Updated_At = NOW()
    WHERE Account_ID = $2
    RETURNING *`,
-  [newRole, userId]
+    [newRole, userId]
 );
 
 // Step 4: Return success with before/after comparison
-sendSuccess(response, {
-  user: {
-    id: userId,
-    email: updatedUser.email,
-    role: RoleName[newRole],
-    roleLevel: newRole,
-    updatedAt: updatedUser.updated_at
-  },
-  previousRole: {
-    role: RoleName[oldRole],
-    roleLevel: oldRole
-  }
-}, `User role changed from ${RoleName[oldRole]} to ${RoleName[newRole]}`);
+sendSuccess(
+    response,
+    {
+        user: {
+            id: userId,
+            email: updatedUser.email,
+            role: RoleName[newRole],
+            roleLevel: newRole,
+            updatedAt: updatedUser.updated_at,
+        },
+        previousRole: {
+            role: RoleName[oldRole],
+            roleLevel: oldRole,
+        },
+    },
+    `User role changed from ${RoleName[oldRole]} to ${RoleName[newRole]}`
+);
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account table
 UPDATE Account
@@ -1040,23 +1081,24 @@ WHERE Account_ID = 123;
 ```
 
 **Role Change Response:**
+
 ```json
 {
-  "success": true,
-  "message": "User role changed from User to Moderator",
-  "data": {
-    "user": {
-      "id": 123,
-      "email": "jane.doe@example.com",
-      "role": "Moderator",
-      "roleLevel": 2,
-      "updatedAt": "2025-10-14T19:30:00.000Z"
-    },
-    "previousRole": {
-      "role": "User",
-      "roleLevel": 1
+    "success": true,
+    "message": "User role changed from User to Moderator",
+    "data": {
+        "user": {
+            "id": 123,
+            "email": "jane.doe@example.com",
+            "role": "Moderator",
+            "roleLevel": 2,
+            "updatedAt": "2025-10-14T19:30:00.000Z"
+        },
+        "previousRole": {
+            "role": "User",
+            "roleLevel": 1
+        }
     }
-  }
 }
 ```
 
@@ -1085,12 +1127,14 @@ Content-Type: application/json
 ```
 
 **Key Differences from User Registration:**
+
 - Role can be specified (not hardcoded to 1)
 - Account_Status set to 'active' (not 'pending')
 - Still requires uniqueness checks
 - Still uses transaction for atomicity
 
 **Database Changes:**
+
 ```sql
 -- Account table
 INSERT INTO Account (
@@ -1149,23 +1193,23 @@ const values = [];
 let paramCount = 1;
 
 if (accountStatus !== undefined) {
-  updates.push(`Account_Status = $${paramCount++}`);
-  values.push(accountStatus);
+    updates.push(`Account_Status = $${paramCount++}`);
+    values.push(accountStatus);
 }
 
 if (emailVerified !== undefined) {
-  updates.push(`Email_Verified = $${paramCount++}`);
-  values.push(emailVerified);
+    updates.push(`Email_Verified = $${paramCount++}`);
+    values.push(emailVerified);
 }
 
 if (phoneVerified !== undefined) {
-  updates.push(`Phone_Verified = $${paramCount++}`);
-  values.push(phoneVerified);
+    updates.push(`Phone_Verified = $${paramCount++}`);
+    values.push(phoneVerified);
 }
 
 if (updates.length === 0) {
-  sendError(response, 400, 'No valid updates provided');
-  return;
+    sendError(response, 400, 'No valid updates provided');
+    return;
 }
 
 // Step 3: Add automatic timestamp and user ID
@@ -1183,18 +1227,23 @@ const updateQuery = `
 const result = await pool.query(updateQuery, values);
 
 // Step 5: Return updated user info
-sendSuccess(response, {
-  user: {
-    id: result.rows[0].account_id,
-    accountStatus: result.rows[0].account_status,
-    emailVerified: result.rows[0].email_verified,
-    phoneVerified: result.rows[0].phone_verified,
-    updatedAt: result.rows[0].updated_at
-  }
-}, 'User updated successfully');
+sendSuccess(
+    response,
+    {
+        user: {
+            id: result.rows[0].account_id,
+            accountStatus: result.rows[0].account_status,
+            emailVerified: result.rows[0].email_verified,
+            phoneVerified: result.rows[0].phone_verified,
+            updatedAt: result.rows[0].updated_at,
+        },
+    },
+    'User updated successfully'
+);
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account table (dynamic update based on request)
 UPDATE Account
@@ -1287,16 +1336,19 @@ const { email } = request.body;
 
 // Step 2: Find account with verified email
 const accountResult = await pool.query(
-  'SELECT Account_ID, FirstName, Email_Verified FROM Account WHERE Email = $1',
-  [email]
+    'SELECT Account_ID, FirstName, Email_Verified FROM Account WHERE Email = $1',
+    [email]
 );
 
 // Step 3: Security: Always return success (prevent email enumeration)
 // Don't reveal whether email exists or is verified
 if (accountResult.rowCount === 0 || !accountResult.rows[0].email_verified) {
-  sendSuccess(response, null,
-    'If the email exists and is verified, a reset link will be sent.');
-  return;
+    sendSuccess(
+        response,
+        null,
+        'If the email exists and is verified, a reset link will be sent.'
+    );
+    return;
 }
 
 const { account_id, firstname } = accountResult.rows[0];
@@ -1316,17 +1368,21 @@ const resetUrl = `${baseUrl}/auth/password/reset?token=${resetToken}`;
 const emailSent = await sendPasswordResetEmail(email, firstname, resetUrl);
 
 if (!emailSent && !isDevelopment()) {
-  sendError(response, 500, 'Failed to send reset email');
-  return;
+    sendError(response, 500, 'Failed to send reset email');
+    return;
 }
 
 // Step 7: Return success (with URL in development mode)
 const responseData = isDevelopment() ? { resetUrl } : null;
-sendSuccess(response, responseData,
-  'If the email exists and is verified, a reset link will be sent.');
+sendSuccess(
+    response,
+    responseData,
+    'If the email exists and is verified, a reset link will be sent.'
+);
 ```
 
 **Security Features:**
+
 1. **Email Enumeration Prevention**: Always returns success message
 2. **Verified Email Required**: Only works with verified email addresses
 3. **Short Token Expiry**: 1 hour (compared to 48 hours for verification)
@@ -1361,71 +1417,72 @@ const { token, password } = request.body;
 // Step 2: Verify and decode JWT reset token
 let decoded: any;
 try {
-  decoded = jwt.verify(token, getEnvVar('JWT_SECRET'));
+    decoded = jwt.verify(token, getEnvVar('JWT_SECRET'));
 } catch (error) {
-  sendError(response, 400, 'Invalid or expired reset token');
-  return;
+    sendError(response, 400, 'Invalid or expired reset token');
+    return;
 }
 
 // Step 3: Validate token type
 if (decoded.type !== 'password_reset') {
-  sendError(response, 400, 'Invalid reset token');
-  return;
+    sendError(response, 400, 'Invalid reset token');
+    return;
 }
 
 const userId = decoded.id;
 
 // Step 4: Verify account still exists
 const accountCheck = await pool.query(
-  'SELECT Account_ID FROM Account WHERE Account_ID = $1',
-  [userId]
+    'SELECT Account_ID FROM Account WHERE Account_ID = $1',
+    [userId]
 );
 
 if (accountCheck.rowCount === 0) {
-  sendError(response, 404, 'Account not found');
-  return;
+    sendError(response, 404, 'Account not found');
+    return;
 }
 
 // Step 5: Transaction - Update password
 await executeTransactionWithResponse(
-  async (client) => {
-    // Generate new salt and hash
-    const salt = generateSalt();
-    const saltedHash = generateHash(password, salt);
+    async (client) => {
+        // Generate new salt and hash
+        const salt = generateSalt();
+        const saltedHash = generateHash(password, salt);
 
-    // Update password (or create if doesn't exist)
-    const updateResult = await client.query(
-      `UPDATE Account_Credential
+        // Update password (or create if doesn't exist)
+        const updateResult = await client.query(
+            `UPDATE Account_Credential
        SET Salted_Hash = $1, Salt = $2
        WHERE Account_ID = $3`,
-      [saltedHash, salt, userId]
-    );
+            [saltedHash, salt, userId]
+        );
 
-    if (updateResult.rowCount === 0) {
-      // If no credentials exist, create them
-      await client.query(
-        `INSERT INTO Account_Credential
+        if (updateResult.rowCount === 0) {
+            // If no credentials exist, create them
+            await client.query(
+                `INSERT INTO Account_Credential
          (Account_ID, Salted_Hash, Salt)
          VALUES ($1, $2, $3)`,
-        [userId, saltedHash, salt]
-      );
-    }
+                [userId, saltedHash, salt]
+            );
+        }
 
-    // Update account timestamp
-    await client.query(
-      'UPDATE Account SET Updated_At = NOW() WHERE Account_ID = $1',
-      [userId]
-    );
+        // Update account timestamp
+        await client.query(
+            'UPDATE Account SET Updated_At = NOW() WHERE Account_ID = $1',
+            [userId]
+        );
 
-    return null;
-  },
-  response,
-  'Password reset successful',
-  'Failed to reset password'
+        return null;
+    },
+    response,
+    'Password reset successful',
+    'Failed to reset password'
 );
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account_Credential table
 UPDATE Account_Credential
@@ -1462,6 +1519,7 @@ Content-Type: application/json
 ```
 
 **Key Differences from User Reset:**
+
 - No token required (admin privilege)
 - No old password verification
 - Admin can reset any user's password
@@ -1481,8 +1539,8 @@ Accounts can be soft-deleted (status set to 'deleted') by admins. Soft deletion 
 
 ```typescript
 // Admin soft-deletes user account
-DELETE /admin/users/123
-Authorization: Bearer <admin_jwt_token>
+DELETE / admin / users / 123;
+Authorization: Bearer<admin_jwt_token>;
 
 // Controller: AdminController.deleteUser()
 // Lines 399-423 in adminController.ts
@@ -1496,17 +1554,17 @@ const userId = parseInt(request.params.id);
 
 // Step 2: Soft delete by updating status
 const result = await pool.query(
-  `UPDATE Account
+    `UPDATE Account
    SET Account_Status = 'deleted', Updated_At = NOW()
    WHERE Account_ID = $1 AND Account_Status != 'deleted'
    RETURNING Account_ID`,
-  [userId]
+    [userId]
 );
 
 // Step 3: Check if user was found and deleted
 if (result.rowCount === 0) {
-  sendError(response, 404, 'User not found or already deleted');
-  return;
+    sendError(response, 404, 'User not found or already deleted');
+    return;
 }
 
 // Step 4: Return success
@@ -1514,6 +1572,7 @@ sendSuccess(response, null, 'User deleted successfully');
 ```
 
 **Database Changes:**
+
 ```sql
 -- Account table (soft delete)
 UPDATE Account
@@ -1526,6 +1585,7 @@ WHERE Account_ID = 123
 **What Happens After Soft Delete:**
 
 ✅ **Preserved:**
+
 - Account record remains in database
 - Account credentials remain intact
 - Verification records remain (if any)
@@ -1533,6 +1593,7 @@ WHERE Account_ID = 123
 - Audit trail is maintained
 
 ❌ **Prevented:**
+
 - User cannot login (status check during login)
 - User cannot request password reset
 - User cannot be found in active user lists (typically filtered)
@@ -1540,33 +1601,34 @@ WHERE Account_ID = 123
 
 ### Account Suspension vs Deletion
 
-| Operation | Status | Reversible | Data Preserved | Login Blocked |
-|-----------|--------|------------|----------------|---------------|
-| **Suspend** | 'suspended' | Yes (admin updates status) | Yes | Yes |
-| **Lock** | 'locked' | Yes (admin updates status) | Yes | Yes |
-| **Soft Delete** | 'deleted' | Yes (admin updates status) | Yes | Yes |
-| **Hard Delete** | (removed) | No | No | N/A |
+| Operation       | Status      | Reversible                 | Data Preserved | Login Blocked |
+| --------------- | ----------- | -------------------------- | -------------- | ------------- |
+| **Suspend**     | 'suspended' | Yes (admin updates status) | Yes            | Yes           |
+| **Lock**        | 'locked'    | Yes (admin updates status) | Yes            | Yes           |
+| **Soft Delete** | 'deleted'   | Yes (admin updates status) | Yes            | Yes           |
+| **Hard Delete** | (removed)   | No                         | No             | N/A           |
 
 ### Hard Delete Considerations
 
 Hard deletion (actual database removal) is not implemented by default because:
 
 1. **Cascade Constraints**: ON DELETE CASCADE removes related records
-   - Account_Credential records deleted automatically
-   - Email_Verification records deleted automatically
-   - Phone_Verification records deleted automatically
+    - Account_Credential records deleted automatically
+    - Email_Verification records deleted automatically
+    - Phone_Verification records deleted automatically
 
 2. **Foreign Key Issues**: If other tables reference Account_ID
-   - Messages, posts, comments might reference user
-   - Hard delete would cascade and remove content
-   - OR hard delete would fail due to foreign key constraints
+    - Messages, posts, comments might reference user
+    - Hard delete would cascade and remove content
+    - OR hard delete would fail due to foreign key constraints
 
 3. **Audit Requirements**: Many systems require retention
-   - Legal requirements for data retention
-   - Audit trails for security investigations
-   - Compliance with regulations (GDPR allows deletion but requires records)
+    - Legal requirements for data retention
+    - Audit trails for security investigations
+    - Compliance with regulations (GDPR allows deletion but requires records)
 
 **Hard Delete Implementation (if needed):**
+
 ```sql
 -- This will CASCADE delete all related records
 DELETE FROM Account WHERE Account_ID = 123;
@@ -1642,19 +1704,19 @@ LEGEND:
 
 ### State Transition Table
 
-| From State | To State | Trigger | Who Can Perform |
-|------------|----------|---------|-----------------|
-| (none) | pending | User registration | Anyone |
-| pending | active | Email/SMS verification complete | User (via verification) |
-| pending | active | Admin activation | Admin |
-| active | suspended | Admin suspends account | Admin |
-| active | locked | Security event (e.g., too many failed logins) | System/Admin |
-| active | deleted | Admin deletes account | Admin |
-| suspended | active | Admin reactivates | Admin |
-| suspended | deleted | Admin deletes suspended account | Admin |
-| locked | active | Admin unlocks | Admin |
-| locked | deleted | Admin deletes locked account | Admin |
-| deleted | active | Admin reactivates (restore) | Admin |
+| From State | To State  | Trigger                                       | Who Can Perform         |
+| ---------- | --------- | --------------------------------------------- | ----------------------- |
+| (none)     | pending   | User registration                             | Anyone                  |
+| pending    | active    | Email/SMS verification complete               | User (via verification) |
+| pending    | active    | Admin activation                              | Admin                   |
+| active     | suspended | Admin suspends account                        | Admin                   |
+| active     | locked    | Security event (e.g., too many failed logins) | System/Admin            |
+| active     | deleted   | Admin deletes account                         | Admin                   |
+| suspended  | active    | Admin reactivates                             | Admin                   |
+| suspended  | deleted   | Admin deletes suspended account               | Admin                   |
+| locked     | active    | Admin unlocks                                 | Admin                   |
+| locked     | deleted   | Admin deletes locked account                  | Admin                   |
+| deleted    | active    | Admin reactivates (restore)                   | Admin                   |
 
 ---
 
@@ -1737,55 +1799,60 @@ LEGEND:
 ### Table Details
 
 #### Account Table
+
 **Primary table for user accounts**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| Account_ID | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| FirstName | VARCHAR(255) | NOT NULL | User's first name |
-| LastName | VARCHAR(255) | NOT NULL | User's last name |
-| Username | VARCHAR(255) | UNIQUE, NOT NULL | Unique username |
-| Email | VARCHAR(255) | UNIQUE, NOT NULL | Unique email address |
-| Email_Verified | BOOLEAN | DEFAULT FALSE | Email verification status |
-| Phone | VARCHAR(15) | UNIQUE, NOT NULL | Unique phone number |
-| Phone_Verified | BOOLEAN | DEFAULT FALSE | Phone verification status |
-| Account_Role | INT | NOT NULL | Role level (1-5) |
-| Account_Status | VARCHAR(20) | DEFAULT 'pending' | Account status |
-| Created_At | TIMESTAMP | DEFAULT NOW() | Creation timestamp |
-| Updated_At | TIMESTAMP | DEFAULT NOW() | Last update timestamp |
+| Column         | Type         | Constraints       | Description               |
+| -------------- | ------------ | ----------------- | ------------------------- |
+| Account_ID     | SERIAL       | PRIMARY KEY       | Auto-incrementing ID      |
+| FirstName      | VARCHAR(255) | NOT NULL          | User's first name         |
+| LastName       | VARCHAR(255) | NOT NULL          | User's last name          |
+| Username       | VARCHAR(255) | UNIQUE, NOT NULL  | Unique username           |
+| Email          | VARCHAR(255) | UNIQUE, NOT NULL  | Unique email address      |
+| Email_Verified | BOOLEAN      | DEFAULT FALSE     | Email verification status |
+| Phone          | VARCHAR(15)  | UNIQUE, NOT NULL  | Unique phone number       |
+| Phone_Verified | BOOLEAN      | DEFAULT FALSE     | Phone verification status |
+| Account_Role   | INT          | NOT NULL          | Role level (1-5)          |
+| Account_Status | VARCHAR(20)  | DEFAULT 'pending' | Account status            |
+| Created_At     | TIMESTAMP    | DEFAULT NOW()     | Creation timestamp        |
+| Updated_At     | TIMESTAMP    | DEFAULT NOW()     | Last update timestamp     |
 
 **Indexes:**
+
 - `idx_account_email` ON (Email)
 - `idx_account_phone` ON (Phone)
 - `idx_account_username` ON (Username)
 - `idx_account_status` ON (Account_Status)
 
 #### Account_Credential Table
+
 **Stores password hashes**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| Credential_ID | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| Account_ID | INT | FK → Account, NOT NULL | Account reference |
-| Salted_Hash | VARCHAR(255) | NOT NULL | bcrypt password hash |
-| Salt | VARCHAR(255) | - | Salt used for hashing |
+| Column        | Type         | Constraints            | Description           |
+| ------------- | ------------ | ---------------------- | --------------------- |
+| Credential_ID | SERIAL       | PRIMARY KEY            | Auto-incrementing ID  |
+| Account_ID    | INT          | FK → Account, NOT NULL | Account reference     |
+| Salted_Hash   | VARCHAR(255) | NOT NULL               | bcrypt password hash  |
+| Salt          | VARCHAR(255) | -                      | Salt used for hashing |
 
 **Foreign Key:** ON DELETE CASCADE (credential deleted when account deleted)
 
 #### Email_Verification Table
+
 **Stores email verification tokens**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| Verification_ID | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| Account_ID | INT | FK → Account, NOT NULL | Account reference |
-| Email | VARCHAR(255) | NOT NULL | Email to verify |
-| Verification_Token | VARCHAR(64) | UNIQUE, NOT NULL | Random token for URL |
-| Token_Expires | TIMESTAMPTZ | NOT NULL | Expiration (48 hours) |
-| Verified | BOOLEAN | DEFAULT FALSE | Verification status |
-| Created_At | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
+| Column             | Type         | Constraints            | Description           |
+| ------------------ | ------------ | ---------------------- | --------------------- |
+| Verification_ID    | SERIAL       | PRIMARY KEY            | Auto-incrementing ID  |
+| Account_ID         | INT          | FK → Account, NOT NULL | Account reference     |
+| Email              | VARCHAR(255) | NOT NULL               | Email to verify       |
+| Verification_Token | VARCHAR(64)  | UNIQUE, NOT NULL       | Random token for URL  |
+| Token_Expires      | TIMESTAMPTZ  | NOT NULL               | Expiration (48 hours) |
+| Verified           | BOOLEAN      | DEFAULT FALSE          | Verification status   |
+| Created_At         | TIMESTAMPTZ  | DEFAULT NOW()          | Creation timestamp    |
 
 **Indexes:**
+
 - `idx_email_verification_account` ON (Account_ID)
 - `idx_email_verification_token` ON (Verification_Token)
 - `idx_email_verification_expires` ON (Token_Expires)
@@ -1793,20 +1860,22 @@ LEGEND:
 **Foreign Key:** ON DELETE CASCADE
 
 #### Phone_Verification Table
+
 **Stores SMS verification codes**
 
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| Verification_ID | SERIAL | PRIMARY KEY | Auto-incrementing ID |
-| Account_ID | INT | FK → Account, NOT NULL | Account reference |
-| Phone | VARCHAR(15) | NOT NULL | Phone to verify |
-| Verification_Code | VARCHAR(6) | NOT NULL | 6-digit code |
-| Code_Expires | TIMESTAMPTZ | NOT NULL | Expiration (15 minutes) |
-| Attempts | INT | DEFAULT 0 | Failed attempt counter |
-| Verified | BOOLEAN | DEFAULT FALSE | Verification status |
-| Created_At | TIMESTAMPTZ | DEFAULT NOW() | Creation timestamp |
+| Column            | Type        | Constraints            | Description             |
+| ----------------- | ----------- | ---------------------- | ----------------------- |
+| Verification_ID   | SERIAL      | PRIMARY KEY            | Auto-incrementing ID    |
+| Account_ID        | INT         | FK → Account, NOT NULL | Account reference       |
+| Phone             | VARCHAR(15) | NOT NULL               | Phone to verify         |
+| Verification_Code | VARCHAR(6)  | NOT NULL               | 6-digit code            |
+| Code_Expires      | TIMESTAMPTZ | NOT NULL               | Expiration (15 minutes) |
+| Attempts          | INT         | DEFAULT 0              | Failed attempt counter  |
+| Verified          | BOOLEAN     | DEFAULT FALSE          | Verification status     |
+| Created_At        | TIMESTAMPTZ | DEFAULT NOW()          | Creation timestamp      |
 
 **Indexes:**
+
 - `idx_phone_verification_account` ON (Account_ID)
 - `idx_phone_verification_code` ON (Verification_Code)
 - `idx_phone_verification_expires` ON (Code_Expires)
@@ -1997,6 +2066,7 @@ Day 400 - Admin Reactivates:
 ### 1. Registration Phase Security
 
 **Threats:**
+
 - Automated bot registrations
 - Mass account creation
 - Email/username enumeration
@@ -2010,6 +2080,7 @@ Day 400 - Admin Reactivates:
 ✅ Initial role hardcoded to 1 (prevents privilege escalation)
 
 **Best Practices:**
+
 ```typescript
 // Always validate before insertion
 const userExists = await validateUserUniqueness({ email, username, phone });
@@ -2020,13 +2091,14 @@ const saltedHash = generateHash(password, salt);
 
 // Always use transactions for multi-table operations
 await executeTransactionWithResponse(async (client) => {
-  // Create account and credentials atomically
+    // Create account and credentials atomically
 });
 ```
 
 ### 2. Verification Phase Security
 
 **Threats:**
+
 - Token/code guessing attacks
 - Token reuse after verification
 - Expired token acceptance
@@ -2040,11 +2112,12 @@ await executeTransactionWithResponse(async (client) => {
 ✅ Rate limiting (5 min email, 1 min SMS)
 
 **Best Practices:**
+
 ```typescript
 // Always check expiration
 if (new Date() > new Date(token_expires)) {
-  sendError(response, 400, 'Token expired');
-  return;
+    sendError(response, 400, 'Token expired');
+    return;
 }
 
 // Always delete after use (single-use)
@@ -2052,14 +2125,15 @@ await client.query('DELETE FROM Email_Verification WHERE Account_ID = $1');
 
 // Always enforce attempt limits
 if (attempts >= 3) {
-  sendError(response, 400, 'Too many attempts');
-  return;
+    sendError(response, 400, 'Too many attempts');
+    return;
 }
 ```
 
 ### 3. Login Phase Security
 
 **Threats:**
+
 - Credential stuffing attacks
 - Brute force password guessing
 - Session hijacking
@@ -2072,17 +2146,18 @@ if (attempts >= 3) {
 ✅ JWT with 14-day expiry (limits stolen token usefulness)
 
 **Best Practices:**
+
 ```typescript
 // Always check account status BEFORE password verification
 if (account.account_status === 'suspended') {
-  sendError(response, 403, 'Account suspended');
-  return;
+    sendError(response, 403, 'Account suspended');
+    return;
 }
 
 // Always use generic error messages
 if (!verifyPassword(password, salt, hash)) {
-  sendError(response, 401, 'Invalid credentials'); // Don't say "wrong password"
-  return;
+    sendError(response, 401, 'Invalid credentials'); // Don't say "wrong password"
+    return;
 }
 
 // Always set reasonable token expiry
@@ -2092,6 +2167,7 @@ const token = jwt.sign(payload, secret, { expiresIn: '14d' });
 ### 4. Password Change/Reset Security
 
 **Threats:**
+
 - Unauthorized password changes (stolen JWT)
 - Password reset token theft
 - Email enumeration via reset
@@ -2105,17 +2181,21 @@ const token = jwt.sign(payload, secret, { expiresIn: '14d' });
 ✅ New password must differ from old password
 
 **Best Practices:**
+
 ```typescript
 // Change password: Always verify old password
 if (!verifyPassword(oldPassword, salt, saltedHash)) {
-  sendError(response, 400, 'Current password incorrect');
-  return;
+    sendError(response, 400, 'Current password incorrect');
+    return;
 }
 
 // Password reset: Always return same message
 // (Don't reveal if email exists or is verified)
-sendSuccess(response, null,
-  'If the email exists and is verified, a reset link will be sent.');
+sendSuccess(
+    response,
+    null,
+    'If the email exists and is verified, a reset link will be sent.'
+);
 
 // Always enforce short expiry for reset tokens
 const resetToken = jwt.sign(payload, secret, { expiresIn: '1h' });
@@ -2124,6 +2204,7 @@ const resetToken = jwt.sign(payload, secret, { expiresIn: '1h' });
 ### 5. Admin Operations Security
 
 **Threats:**
+
 - Unauthorized admin access
 - Privilege escalation
 - Mass account manipulation
@@ -2136,22 +2217,23 @@ const resetToken = jwt.sign(payload, secret, { expiresIn: '1h' });
 ✅ Soft delete preserves audit trail
 
 **Best Practices:**
+
 ```typescript
 // Always verify admin role in middleware
 if (request.claims.role < UserRole.ADMIN) {
-  sendError(response, 403, 'Admin access required');
-  return;
+    sendError(response, 403, 'Admin access required');
+    return;
 }
 
 // Always enforce role hierarchy
 if (newRole >= request.claims.role) {
-  sendError(response, 403, 'Cannot promote to equal/higher role');
-  return;
+    sendError(response, 403, 'Cannot promote to equal/higher role');
+    return;
 }
 
 // Always update timestamps for audit
 await client.query(
-  'UPDATE Account SET ... , Updated_At = NOW() WHERE Account_ID = $1'
+    'UPDATE Account SET ... , Updated_At = NOW() WHERE Account_ID = $1'
 );
 ```
 
@@ -2197,17 +2279,17 @@ Role 1: User
 
 ### Admin Endpoints Reference
 
-| Endpoint | Method | Permission | Description |
-|----------|--------|------------|-------------|
-| `/admin/users` | POST | Admin (3+) | Create user with any role (up to own level) |
-| `/admin/users` | GET | Moderator (2+) | Get all users (paginated, filtered) |
-| `/admin/users/search` | GET | Moderator (2+) | Search users by name/email/username |
-| `/admin/users/:id` | GET | Moderator (2+) | Get specific user details |
-| `/admin/users/:id` | PUT | Admin (3+) | Update user (status, verification flags) |
-| `/admin/users/:id` | DELETE | Admin (3+) | Soft delete user |
-| `/admin/users/:id/role` | PUT | Admin (3+) | Change user role (hierarchy enforced) |
-| `/admin/users/:id/password` | PUT | Admin (3+) | Reset user password |
-| `/admin/dashboard/stats` | GET | Admin (3+) | Get dashboard statistics |
+| Endpoint                    | Method | Permission     | Description                                 |
+| --------------------------- | ------ | -------------- | ------------------------------------------- |
+| `/admin/users`              | POST   | Admin (3+)     | Create user with any role (up to own level) |
+| `/admin/users`              | GET    | Moderator (2+) | Get all users (paginated, filtered)         |
+| `/admin/users/search`       | GET    | Moderator (2+) | Search users by name/email/username         |
+| `/admin/users/:id`          | GET    | Moderator (2+) | Get specific user details                   |
+| `/admin/users/:id`          | PUT    | Admin (3+)     | Update user (status, verification flags)    |
+| `/admin/users/:id`          | DELETE | Admin (3+)     | Soft delete user                            |
+| `/admin/users/:id/role`     | PUT    | Admin (3+)     | Change user role (hierarchy enforced)       |
+| `/admin/users/:id/password` | PUT    | Admin (3+)     | Reset user password                         |
+| `/admin/dashboard/stats`    | GET    | Admin (3+)     | Get dashboard statistics                    |
 
 ### Admin Operation Examples
 
@@ -2384,24 +2466,24 @@ RESULT:
 **Advantages of Soft Delete (Account_Status='deleted'):**
 
 1. **Data Preservation**: All records remain in database
-   - Audit trail intact for investigations
-   - Historical data available for analytics
-   - Can restore account if user changes mind
+    - Audit trail intact for investigations
+    - Historical data available for analytics
+    - Can restore account if user changes mind
 
 2. **Foreign Key Safety**: No cascade concerns
-   - If other systems reference Account_ID, they still work
-   - Messages/posts/comments don't need cascade logic
-   - External systems remain consistent
+    - If other systems reference Account_ID, they still work
+    - Messages/posts/comments don't need cascade logic
+    - External systems remain consistent
 
 3. **Compliance**: Easier to meet regulatory requirements
-   - GDPR allows soft delete with anonymization
-   - Financial regulations often require data retention
-   - Legal holds preserved
+    - GDPR allows soft delete with anonymization
+    - Financial regulations often require data retention
+    - Legal holds preserved
 
 4. **Recovery**: Reactivation is simple
-   ```sql
-   UPDATE Account SET Account_Status = 'active' WHERE Account_ID = 123;
-   ```
+    ```sql
+    UPDATE Account SET Account_Status = 'active' WHERE Account_ID = 123;
+    ```
 
 **When Hard Delete Makes Sense:**
 
@@ -2411,6 +2493,7 @@ RESULT:
 - User explicitly requests complete removal
 
 **Hard Delete Implementation:**
+
 ```sql
 -- This removes everything via CASCADE
 DELETE FROM Account WHERE Account_ID = 123;
@@ -2428,57 +2511,58 @@ DELETE FROM Account WHERE Account_ID = 123;
 
 ### Phase Summary Table
 
-| Phase | Entry Point | Exit Point | Database Changes | Security Focus |
-|-------|-------------|------------|------------------|----------------|
-| **Registration** | POST /auth/register | Account created | Account + Account_Credential | Password hashing, role hardcoding |
-| **Verification** | POST /verify/email/send or /phone/send | Email/Phone verified | Verification tables, Account flags | Token security, rate limiting |
-| **Active Use** | POST /auth/login | Ongoing usage | None (read-only login) | Status checks, JWT expiry |
-| **Role Elevation** | PUT /admin/users/:id/role | Role changed | Account.Account_Role | Role hierarchy, admin permissions |
-| **Account Updates** | PUT /admin/users/:id | Status/flags updated | Account fields | Admin authorization |
-| **Password Reset** | POST /auth/password/reset-request | Password changed | Account_Credential | Token expiry, email enumeration |
-| **Account Deletion** | DELETE /admin/users/:id | Account soft-deleted | Account.Account_Status | Soft vs hard delete, data preservation |
+| Phase                | Entry Point                            | Exit Point           | Database Changes                   | Security Focus                         |
+| -------------------- | -------------------------------------- | -------------------- | ---------------------------------- | -------------------------------------- |
+| **Registration**     | POST /auth/register                    | Account created      | Account + Account_Credential       | Password hashing, role hardcoding      |
+| **Verification**     | POST /verify/email/send or /phone/send | Email/Phone verified | Verification tables, Account flags | Token security, rate limiting          |
+| **Active Use**       | POST /auth/login                       | Ongoing usage        | None (read-only login)             | Status checks, JWT expiry              |
+| **Role Elevation**   | PUT /admin/users/:id/role              | Role changed         | Account.Account_Role               | Role hierarchy, admin permissions      |
+| **Account Updates**  | PUT /admin/users/:id                   | Status/flags updated | Account fields                     | Admin authorization                    |
+| **Password Reset**   | POST /auth/password/reset-request      | Password changed     | Account_Credential                 | Token expiry, email enumeration        |
+| **Account Deletion** | DELETE /admin/users/:id                | Account soft-deleted | Account.Account_Status             | Soft vs hard delete, data preservation |
 
 ### Key Takeaways for Students
 
 1. **Transactions are Critical**: Multi-table operations must be atomic
-   - Registration creates Account + Account_Credential
-   - Verification updates Account + deletes verification record
-   - Always use `executeTransactionWithResponse()` or `withTransaction()`
+    - Registration creates Account + Account_Credential
+    - Verification updates Account + deletes verification record
+    - Always use `executeTransactionWithResponse()` or `withTransaction()`
 
 2. **Security Layered**: Multiple defenses at each phase
-   - Validation middleware before controller logic
-   - Status checks during login
-   - Role hierarchy in admin operations
-   - Rate limiting for verification
+    - Validation middleware before controller logic
+    - Status checks during login
+    - Role hierarchy in admin operations
+    - Rate limiting for verification
 
 3. **State Management**: Account status drives behavior
-   - 'pending' → Can login, should verify
-   - 'active' → Fully operational
-   - 'suspended'/'locked' → Cannot login
-   - 'deleted' → Soft deleted, data preserved
+    - 'pending' → Can login, should verify
+    - 'active' → Fully operational
+    - 'suspended'/'locked' → Cannot login
+    - 'deleted' → Soft deleted, data preserved
 
 4. **Verification is Optional but Recommended**: Users can login before verification
-   - Email_Verified and Phone_Verified are flags, not gates
-   - Some features may require verification (implementation-specific)
-   - Password reset requires verified email (security measure)
+    - Email_Verified and Phone_Verified are flags, not gates
+    - Some features may require verification (implementation-specific)
+    - Password reset requires verified email (security measure)
 
 5. **Soft Delete Preferred**: Preserve data, maintain integrity
-   - Easier to recover from mistakes
-   - Maintains audit trail
-   - Prevents cascade deletion issues
-   - Hard delete only when legally required
+    - Easier to recover from mistakes
+    - Maintains audit trail
+    - Prevents cascade deletion issues
+    - Hard delete only when legally required
 
 6. **Admin Operations are Powerful**: Require careful authorization
-   - Role hierarchy prevents privilege escalation
-   - All changes update timestamps (audit trail)
-   - Admins can override most user operations
-   - Dashboard provides oversight
+    - Role hierarchy prevents privilege escalation
+    - All changes update timestamps (audit trail)
+    - Admins can override most user operations
+    - Dashboard provides oversight
 
 ---
 
 ## Further Reading
 
 ### Related Documentation
+
 - **Node.js Architecture**: `/docs-2.0/node-express-architecture.md` - MVC pattern, middleware, routing
 - **Database Fundamentals**: `/docs-2.0/database-fundamentals.md` - Transactions, pooling, ACID
 - **Authentication Guide**: `/docs-2.0/authentication-guide.md` - JWT, bcrypt, security patterns
@@ -2486,6 +2570,7 @@ DELETE FROM Account WHERE Account_ID = 123;
 - **API Documentation**: `/docs-2.0/API_DOCUMENTATION.md` - Complete endpoint reference
 
 ### Source Code References
+
 - **AuthController**: `/src/controllers/authController.ts` - Registration, login, password operations
 - **VerificationController**: `/src/controllers/verificationController.ts` - Email/SMS verification
 - **AdminController**: `/src/controllers/adminController.ts` - User management, role changes

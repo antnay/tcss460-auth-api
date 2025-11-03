@@ -15,6 +15,7 @@ By studying this guide, you'll understand:
 ## 🧭 Learning Path
 
 **📚 Study Path:**
+
 1. [HTTP Fundamentals](/docs/http-fundamentals.md) - Foundation concepts
 2. [HTTP Methods](/docs/http-methods.md) - Request types and semantics
 3. **HTTP Status Codes** (this document) - Response meanings
@@ -22,11 +23,13 @@ By studying this guide, you'll understand:
 5. [Error Handling Patterns](/docs/error-handling-patterns.md) - Robust error management
 
 **🔧 Practice:**
+
 - Test status codes at [Swagger UI](http://localhost:8000/api-docs)
 - Examine our error responses in different scenarios
 - Try invalid requests to see error status codes
 
 **✋ Hands-On:**
+
 - Review `/src/core/middleware/errorHandler.ts` for status code implementation
 - Test `/src/controllers/authController.ts` to see successful status codes
 - Examine `/src/core/utilities/responseUtils.ts` for response patterns
@@ -72,11 +75,11 @@ HTTP status codes are organized into **five categories** based on their first di
 
 **When to Use:** Rarely needed in typical REST APIs, mainly for HTTP/1.1 protocol features.
 
-| Code | Name | Meaning | Example Use Case |
-|------|------|---------|------------------|
-| **100** | Continue | Server received headers, client should continue | Large file uploads |
-| **101** | Switching Protocols | Server is switching to different protocol | WebSocket upgrade |
-| **102** | Processing | Server received request and is processing | Long-running operations |
+| Code    | Name                | Meaning                                         | Example Use Case        |
+| ------- | ------------------- | ----------------------------------------------- | ----------------------- |
+| **100** | Continue            | Server received headers, client should continue | Large file uploads      |
+| **101** | Switching Protocols | Server is switching to different protocol       | WebSocket upgrade       |
+| **102** | Processing          | Server received request and is processing       | Long-running operations |
 
 **🎯 Learning Note:** Our TCSS-460-auth-squared doesn't use 1xx codes as they're uncommon in REST APIs.
 
@@ -86,14 +89,15 @@ HTTP status codes are organized into **five categories** based on their first di
 
 **When to Use:** Every successful API operation should return a 2xx status code.
 
-| Code | Name | Meaning | Example Use Case |
-|------|------|---------|------------------|
-| **200** | OK | Standard successful response | `GET /health` returns data |
-| **201** | Created | Resource successfully created | `POST /auth/register` creates user |
-| **204** | No Content | Success but no content to return | `DELETE /admin/users/:id` removes resource |
-| **206** | Partial Content | Returning partial data | Paginated results or range requests |
+| Code    | Name            | Meaning                          | Example Use Case                           |
+| ------- | --------------- | -------------------------------- | ------------------------------------------ |
+| **200** | OK              | Standard successful response     | `GET /health` returns data                 |
+| **201** | Created         | Resource successfully created    | `POST /auth/register` creates user         |
+| **204** | No Content      | Success but no content to return | `DELETE /admin/users/:id` removes resource |
+| **206** | Partial Content | Returning partial data           | Paginated results or range requests        |
 
 **🔧 Try Our Examples:**
+
 - **200 OK**: `POST /auth/login` - Returns JWT token on successful login
 - **201 Created**: `POST /auth/register` - Creates a new user account
 - **200 OK**: `GET /health` - System status check
@@ -104,12 +108,12 @@ HTTP status codes are organized into **five categories** based on their first di
 
 **When to Use:** When resources have moved or client should access a different URL.
 
-| Code | Name | Meaning | Example Use Case |
-|------|------|---------|------------------|
-| **301** | Moved Permanently | Resource has new permanent URL | Domain changes |
-| **302** | Found | Resource temporarily at different URL | Maintenance redirects |
-| **304** | Not Modified | Resource hasn't changed since last request | Caching optimization |
-| **308** | Permanent Redirect | Like 301 but preserves request method | API versioning |
+| Code    | Name               | Meaning                                    | Example Use Case      |
+| ------- | ------------------ | ------------------------------------------ | --------------------- |
+| **301** | Moved Permanently  | Resource has new permanent URL             | Domain changes        |
+| **302** | Found              | Resource temporarily at different URL      | Maintenance redirects |
+| **304** | Not Modified       | Resource hasn't changed since last request | Caching optimization  |
+| **308** | Permanent Redirect | Like 301 but preserves request method      | API versioning        |
 
 **Real Example:** When `/docs` redirects you to `/docs/` (with trailing slash), that's a 301 redirect.
 
@@ -119,17 +123,18 @@ HTTP status codes are organized into **five categories** based on their first di
 
 **When to Use:** Client sent invalid data, lacks permissions, or requested non-existent resources.
 
-| Code | Name | Meaning | Example Use Case |
-|------|------|---------|------------------|
-| **400** | Bad Request | Invalid request syntax or parameters | Malformed JSON body |
-| **401** | Unauthorized | Authentication required or invalid | Missing/invalid API key |
-| **403** | Forbidden | Server understood but refuses to authorize | Insufficient permissions |
-| **404** | Not Found | Requested resource doesn't exist | `/nonexistent-endpoint` |
-| **405** | Method Not Allowed | HTTP method not supported for resource | `PUT /health` (only GET allowed) |
+| Code    | Name                 | Meaning                                        | Example Use Case                       |
+| ------- | -------------------- | ---------------------------------------------- | -------------------------------------- |
+| **400** | Bad Request          | Invalid request syntax or parameters           | Malformed JSON body                    |
+| **401** | Unauthorized         | Authentication required or invalid             | Missing/invalid API key                |
+| **403** | Forbidden            | Server understood but refuses to authorize     | Insufficient permissions               |
+| **404** | Not Found            | Requested resource doesn't exist               | `/nonexistent-endpoint`                |
+| **405** | Method Not Allowed   | HTTP method not supported for resource         | `PUT /health` (only GET allowed)       |
 | **422** | Unprocessable Entity | Request well-formed but semantically incorrect | Valid JSON but business rule violation |
-| **429** | Too Many Requests | Rate limiting in effect | Exceeded API call limits |
+| **429** | Too Many Requests    | Rate limiting in effect                        | Exceeded API call limits               |
 
 **🔧 Try Our Error Examples:**
+
 - **404 Not Found**: `GET /nonexistent` - Tests our 404 handler
 - **405 Method Not Allowed**: `PUT /health` - Health endpoint only supports GET
 - **400 Bad Request**: `POST /auth/login` with invalid JSON
@@ -140,12 +145,12 @@ HTTP status codes are organized into **five categories** based on their first di
 
 **When to Use:** Server encounters unexpected errors, database issues, or service failures.
 
-| Code | Name | Meaning | Example Use Case |
-|------|------|---------|------------------|
-| **500** | Internal Server Error | Generic server error | Unhandled exceptions |
-| **502** | Bad Gateway | Invalid response from upstream server | Proxy/gateway issues |
-| **503** | Service Unavailable | Server temporarily overloaded or down | Maintenance mode |
-| **504** | Gateway Timeout | Upstream server didn't respond in time | Database connection timeout |
+| Code    | Name                  | Meaning                                | Example Use Case            |
+| ------- | --------------------- | -------------------------------------- | --------------------------- |
+| **500** | Internal Server Error | Generic server error                   | Unhandled exceptions        |
+| **502** | Bad Gateway           | Invalid response from upstream server  | Proxy/gateway issues        |
+| **503** | Service Unavailable   | Server temporarily overloaded or down  | Maintenance mode            |
+| **504** | Gateway Timeout       | Upstream server didn't respond in time | Database connection timeout |
 
 **🎯 Key Difference:** 4xx = Client's fault, 5xx = Server's fault
 
@@ -158,17 +163,20 @@ HTTP status codes are organized into **five categories** based on their first di
 **When to Use:** Most successful GET, PUT, PATCH operations.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/controllers/authController.ts
-export const login = asyncHandler(async (request: Request, response: Response): Promise<void> => {
-    const { email, password } = request.body;
-    const user = await User.findOne({ where: { email } });
+export const login = asyncHandler(
+    async (request: Request, response: Response): Promise<void> => {
+        const { email, password } = request.body;
+        const user = await User.findOne({ where: { email } });
 
-    // Validate credentials and generate JWT token
-    const token = generateToken(user);
-    sendSuccess(response, { token, user }, 'Login successful');
-    // This sends a 200 OK by default
-});
+        // Validate credentials and generate JWT token
+        const token = generateToken(user);
+        sendSuccess(response, { token, user }, 'Login successful');
+        // This sends a 200 OK by default
+    }
+);
 ```
 
 **🔧 Test It:** `POST /auth/login` - See our consistent 200 response format
@@ -178,14 +186,17 @@ export const login = asyncHandler(async (request: Request, response: Response): 
 **When to Use:** Successful POST operations that create new resources.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/controllers/authController.ts
-export const register = asyncHandler(async (request: Request, response: Response): Promise<void> => {
-    const { email, password, name } = request.body;
-    const newUser = await User.create({ email, password, name });
-    sendSuccess(response, newUser, 'User registered successfully', 201);
-    // Explicitly sets 201 status code
-});
+export const register = asyncHandler(
+    async (request: Request, response: Response): Promise<void> => {
+        const { email, password, name } = request.body;
+        const newUser = await User.create({ email, password, name });
+        sendSuccess(response, newUser, 'User registered successfully', 201);
+        // Explicitly sets 201 status code
+    }
+);
 ```
 
 **🔧 Test It:** `POST /auth/register` - Notice the 201 status code for creation
@@ -195,6 +206,7 @@ export const register = asyncHandler(async (request: Request, response: Response
 **When to Use:** Client sends malformed requests, invalid parameters, or bad JSON.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/core/middleware/errorHandler.ts
 else if (error instanceof SyntaxError && 'body' in error) {
@@ -213,6 +225,7 @@ else if (error instanceof SyntaxError && 'body' in error) {
 **When to Use:** Client must authenticate before accessing the resource.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/core/middleware/errorHandler.ts
 else if (error.name === 'JsonWebTokenError') {
@@ -229,9 +242,14 @@ else if (error.name === 'JsonWebTokenError') {
 **When to Use:** Requested resource cannot be found.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/core/middleware/errorHandler.ts
-export const notFoundHandler = (request: Request, response: Response, next: NextFunction): void => {
+export const notFoundHandler = (
+    request: Request,
+    response: Response,
+    next: NextFunction
+): void => {
     const error = new AppError(
         `Route ${request.method} ${request.url} not found`,
         404,
@@ -248,9 +266,15 @@ export const notFoundHandler = (request: Request, response: Response, next: Next
 **When to Use:** Unexpected server errors, unhandled exceptions.
 
 **Our Implementation:**
+
 ```typescript
 // From /src/core/middleware/errorHandler.ts
-export const errorHandler = (error: Error | AppError, request: Request, response: Response, next: NextFunction): void => {
+export const errorHandler = (
+    error: Error | AppError,
+    request: Request,
+    response: Response,
+    next: NextFunction
+): void => {
     let statusCode = 500; // Default to 500 for unexpected errors
     let errorCode = ErrorCodes.INTERNAL_ERROR;
     let message = 'Internal Server Error';
@@ -263,6 +287,7 @@ export const errorHandler = (error: Error | AppError, request: Request, response
 **Educational Note:** Our robust error handler ensures all unhandled errors become proper 500 responses.
 
 **📚 Learn More:**
+
 - [Web Security Guide](/docs/web-security-guide.md) - Security best practices
 - [Database Fundamentals](/docs/database-fundamentals.md) - Database error handling
 
@@ -273,6 +298,7 @@ export const errorHandler = (error: Error | AppError, request: Request, response
 ### Successful Operations
 
 **POST Requests - 200 OK:**
+
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
@@ -284,6 +310,7 @@ curl http://localhost:8000/health
 ```
 
 **POST Requests - 201 Created:**
+
 ```bash
 curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
@@ -294,12 +321,14 @@ curl -X POST http://localhost:8000/auth/register \
 ### Client Errors (4xx)
 
 **404 Not Found:**
+
 ```bash
 curl http://localhost:8000/admin/users/99999
 # Response: 404 Not Found - User with ID not found
 ```
 
 **401 Unauthorized:**
+
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
@@ -308,6 +337,7 @@ curl -X POST http://localhost:8000/auth/login \
 ```
 
 **400 Bad Request:**
+
 ```bash
 curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
@@ -321,9 +351,9 @@ All error responses follow this structure:
 
 ```json
 {
-  "success": false,
-  "message": "Human-readable error description",
-  "errorCode": "MACHINE_READABLE_ERROR_CODE"
+    "success": false,
+    "message": "Human-readable error description",
+    "errorCode": "MACHINE_READABLE_ERROR_CODE"
 }
 ```
 
@@ -338,22 +368,23 @@ All error responses follow this structure:
 **🎯 Learning Objective:** Understand the reasoning behind HTTP status code design
 
 1. **Precise Communication:** Each code conveys specific meaning
-   - 200 = "I have your data"
-   - 404 = "That doesn't exist"
-   - 500 = "I have a problem"
+    - 200 = "I have your data"
+    - 404 = "That doesn't exist"
+    - 500 = "I have a problem"
 
 2. **Client Decision Making:** Status codes enable smart client behavior
-   - 404 → Show "Page Not Found" message
-   - 503 → Retry request later
-   - 401 → Redirect to login page
+    - 404 → Show "Page Not Found" message
+    - 503 → Retry request later
+    - 401 → Redirect to login page
 
 3. **Debugging Efficiency:** Developers can quickly identify issue types
-   - 4xx → Check client code/input
-   - 5xx → Check server logs/infrastructure
+    - 4xx → Check client code/input
+    - 5xx → Check server logs/infrastructure
 
 ### How Clients Should Handle Different Codes
 
 **Success Codes (2xx):**
+
 ```javascript
 if (response.status >= 200 && response.status < 300) {
     // Process successful response
@@ -362,6 +393,7 @@ if (response.status >= 200 && response.status < 300) {
 ```
 
 **Client Errors (4xx):**
+
 ```javascript
 if (response.status >= 400 && response.status < 500) {
     // Handle client-side issues
@@ -376,10 +408,11 @@ if (response.status >= 400 && response.status < 500) {
 ```
 
 **Server Errors (5xx):**
+
 ```javascript
 if (response.status >= 500) {
     // Handle server-side issues
-    showErrorMessage("Server error. Please try again later.");
+    showErrorMessage('Server error. Please try again later.');
     // Optionally implement retry logic
 }
 ```
@@ -389,22 +422,22 @@ if (response.status >= 500) {
 **🎯 Learning Objective:** Learn how to choose appropriate status codes
 
 1. **Be Specific:** Use precise codes rather than generic ones
-   - ✅ 422 for validation errors (not generic 400)
-   - ✅ 409 for conflicts (not generic 400)
+    - ✅ 422 for validation errors (not generic 400)
+    - ✅ 409 for conflicts (not generic 400)
 
 2. **Be Consistent:** Same operations should return same codes
-   - All successful GET requests → 200
-   - All successful POST requests → 201
-   - All validation errors → 422
+    - All successful GET requests → 200
+    - All successful POST requests → 201
+    - All validation errors → 422
 
 3. **Provide Context:** Include helpful error messages
-   ```json
-   {
-     "success": false,
-     "message": "Invalid email format",
-     "errorCode": "VALIDATION_ERROR"
-   }
-   ```
+    ```json
+    {
+        "success": false,
+        "message": "Invalid email format",
+        "errorCode": "VALIDATION_ERROR"
+    }
+    ```
 
 ---
 
@@ -487,7 +520,12 @@ Use this flowchart approach when determining status codes:
 Our global error handler (`/src/core/middleware/errorHandler.ts`) demonstrates proper status code usage:
 
 ```typescript
-export const errorHandler = (error: Error | AppError, request: Request, response: Response, next: NextFunction): void => {
+export const errorHandler = (
+    error: Error | AppError,
+    request: Request,
+    response: Response,
+    next: NextFunction
+): void => {
     let statusCode = 500; // Default to server error
     let errorCode = ErrorCodes.INTERNAL_ERROR;
     let message = 'Internal Server Error';
@@ -510,7 +548,7 @@ export const errorHandler = (error: Error | AppError, request: Request, response
     const errorResponse: ErrorResponse = {
         success: false,
         message,
-        errorCode
+        errorCode,
     };
 
     response.status(statusCode).json(errorResponse);
@@ -527,17 +565,26 @@ export const ErrorResponses = {
         sendError(response, 400, message, ErrorCodes.BAD_REQUEST);
     },
 
-    unauthorized: (response: Response, message: string = 'Unauthorized'): void => {
+    unauthorized: (
+        response: Response,
+        message: string = 'Unauthorized'
+    ): void => {
         sendError(response, 401, message, ErrorCodes.UNAUTHORIZED);
     },
 
-    notFound: (response: Response, message: string = 'Resource not found'): void => {
+    notFound: (
+        response: Response,
+        message: string = 'Resource not found'
+    ): void => {
         sendError(response, 404, message, ErrorCodes.NOT_FOUND);
     },
 
-    internalError: (response: Response, message: string = 'Internal Server Error'): void => {
+    internalError: (
+        response: Response,
+        message: string = 'Internal Server Error'
+    ): void => {
         sendError(response, 500, message, ErrorCodes.INTERNAL_ERROR);
-    }
+    },
 };
 ```
 
@@ -551,15 +598,16 @@ export const ErrorResponses = {
 
 1. **Open [Swagger UI](http://localhost:8000/api-docs)**
 2. **Try different endpoints:**
-   - `POST /auth/login` → Expect 200 OK (with valid credentials)
-   - `POST /auth/register` → Expect 201 Created
-   - `GET /admin/users/99999` → Expect 404 Not Found
+    - `POST /auth/login` → Expect 200 OK (with valid credentials)
+    - `POST /auth/register` → Expect 201 Created
+    - `GET /admin/users/99999` → Expect 404 Not Found
 
 3. **Check response codes** in the Swagger interface
 
 ### Using curl Commands
 
 **Test successful requests:**
+
 ```bash
 curl -i -X POST http://localhost:8000/auth/login -H "Content-Type: application/json" -d '{"email":"user@example.com","password":"password123"}'
 # Look for "HTTP/1.1 200 OK" in response headers
@@ -569,6 +617,7 @@ curl -i -X POST http://localhost:8000/auth/register -H "Content-Type: applicatio
 ```
 
 **Test error conditions:**
+
 ```bash
 curl -i http://localhost:8000/admin/users/99999
 # Look for "HTTP/1.1 404 Not Found"
@@ -590,11 +639,13 @@ Now that you understand HTTP status codes, continue with:
 3. **[Node.js & Express Architecture](/docs/node-express-architecture.md)** - Server implementation patterns
 
 **🔧 Immediate Practice:**
+
 - Test all endpoints in [our API documentation](http://localhost:8000/api-docs)
 - Pay attention to status codes returned by each endpoint
 - Try invalid requests to see different error codes
 
 **✋ Hands-On Exploration:**
+
 - Study `/src/core/middleware/errorHandler.ts` for error status code mapping
 - Review `/src/controllers/authController.ts` for success status codes
 - Examine `/src/core/utilities/responseUtils.ts` for response patterns
@@ -611,6 +662,7 @@ HTTP status codes are **essential for reliable web communication** because they:
 - **Support automation** by providing machine-readable response indicators
 
 **🎯 Key Takeaways:**
+
 - **2xx codes** = Success (200 OK, 201 Created)
 - **4xx codes** = Client errors (400 Bad Request, 404 Not Found)
 - **5xx codes** = Server errors (500 Internal Error, 503 Service Unavailable)
@@ -621,4 +673,4 @@ Understanding and properly implementing status codes is crucial for building rel
 
 ---
 
-*Continue your learning with [Request-Response Model](/docs/request-response-model.md) to understand the complete HTTP communication cycle.*
+_Continue your learning with [Request-Response Model](/docs/request-response-model.md) to understand the complete HTTP communication cycle._

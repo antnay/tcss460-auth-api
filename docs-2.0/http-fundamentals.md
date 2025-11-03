@@ -14,6 +14,7 @@ By studying this guide, you'll understand:
 ## 🧭 Learning Path
 
 **📚 Study Path:**
+
 1. **Start Here** - HTTP Fundamentals (this document)
 2. [HTTP History & Evolution](/docs/http-history-evolution.md) - How HTTP developed over time
 3. [Client-Server Architecture](/docs/client-server-architecture.md) - Understanding the web's structure
@@ -22,10 +23,12 @@ By studying this guide, you'll understand:
 6. [HTTP Status Codes](/docs/http-status-codes.md) - Understanding response codes
 
 **🔧 Practice:**
+
 - Test our API endpoints at [Swagger UI](http://localhost:8000/api-docs)
 - Try examples from each section in your browser or Postman
 
 **✋ Hands-On:**
+
 - Examine our implementation in `/src/routes/` folders
 - See HTTP concepts in action through our codebase
 
@@ -92,15 +95,15 @@ Each HTTP request is **independent** - the server doesn't remember previous requ
 Every HTTP interaction follows this pattern:
 
 1. **Client sends a request** with:
-   - What it wants (method like GET, POST)
-   - Where to find it (URL)
-   - How to handle it (headers)
-   - Optional data (body)
+    - What it wants (method like GET, POST)
+    - Where to find it (URL)
+    - How to handle it (headers)
+    - Optional data (body)
 
 2. **Server sends a response** with:
-   - Success or failure status
-   - Response headers
-   - Optional content (body)
+    - Success or failure status
+    - Response headers
+    - Optional content (body)
 
 **🔧 Try It:** Test `GET /jwt_test` in our API - notice the request you send and response you receive.
 
@@ -129,17 +132,20 @@ Content-Type: application/json
 Our TCSS-460-auth-squared demonstrates these HTTP fundamentals:
 
 ### Basic Communication
+
 - **`GET /jwt_test`** - Simple test endpoint for request-response
 - **`POST /auth/login`** - User authentication
 - **`POST /auth/register`** - User registration
 
 ### Different Request Types
+
 - **Query Parameters**: `GET /auth/verify/email/confirm?token=abc123`
 - **Path Parameters**: `GET /admin/users/:id`
 - **Request Body**: `POST /auth/register` with user data
 - **Headers**: All authenticated endpoints require `Authorization` header with JWT token
 
 ### Response Patterns
+
 - **Success responses** with data
 - **Error responses** with helpful messages
 - **Consistent structure** across all endpoints
@@ -150,29 +156,31 @@ Our TCSS-460-auth-squared demonstrates these HTTP fundamentals:
 
 ## Key Terminology
 
-| Term | Definition | Example |
-|------|------------|---------|
-| **Protocol** | Rules for communication | HTTP, HTTPS, FTP |
-| **Client** | Requests resources | Browser, mobile app, Postman |
-| **Server** | Provides resources | Web server, API server |
-| **Request** | Client's message to server | "GET /auth/login" |
-| **Response** | Server's reply to client | "200 OK" with data |
-| **URL** | Resource address | `http://localhost:8000/auth/login` |
-| **Method** | Type of request | GET, POST, PUT, DELETE |
-| **Status Code** | Response result | 200 (success), 404 (not found) |
-| **Headers** | Request/response metadata | Content-Type, Authorization |
-| **Body** | Optional message content | JSON data, form data |
+| Term            | Definition                 | Example                            |
+| --------------- | -------------------------- | ---------------------------------- |
+| **Protocol**    | Rules for communication    | HTTP, HTTPS, FTP                   |
+| **Client**      | Requests resources         | Browser, mobile app, Postman       |
+| **Server**      | Provides resources         | Web server, API server             |
+| **Request**     | Client's message to server | "GET /auth/login"                  |
+| **Response**    | Server's reply to client   | "200 OK" with data                 |
+| **URL**         | Resource address           | `http://localhost:8000/auth/login` |
+| **Method**      | Type of request            | GET, POST, PUT, DELETE             |
+| **Status Code** | Response result            | 200 (success), 404 (not found)     |
+| **Headers**     | Request/response metadata  | Content-Type, Authorization        |
+| **Body**        | Optional message content   | JSON data, form data               |
 
 ---
 
 ## HTTP vs HTTPS
 
 ### HTTP (HyperText Transfer Protocol)
+
 - **Port 80** by default
 - **Unencrypted** communication
 - **Suitable for** development and non-sensitive data
 
 ### HTTPS (HTTP Secure)
+
 - **Port 443** by default
 - **Encrypted** with TLS/SSL
 - **Required for** production applications with user data
@@ -187,21 +195,27 @@ Our development API uses HTTP for simplicity, but production APIs should use HTT
 ## Real-World Applications
 
 ### Web Browsing
+
 Every time you visit a website, your browser uses HTTP to:
+
 1. Request the HTML page
 2. Request CSS stylesheets
 3. Request JavaScript files
 4. Request images and other resources
 
 ### API Integration
+
 Modern applications use HTTP APIs to:
+
 - Fetch user data from databases
 - Process payments
 - Send notifications
 - Integrate with third-party services
 
 ### Mobile Applications
+
 Mobile apps use HTTP to:
+
 - Sync data with cloud servers
 - Download content updates
 - Submit user-generated content
@@ -256,10 +270,10 @@ Consistent resource identification and manipulation using standard HTTP methods.
 
 ```typescript
 // ✅ RESTful: Uniform interface for user resources
-GET    /users/123     // Retrieve user
-POST   /users         // Create new user
-PUT    /users/123     // Update entire user
-DELETE /users/123     // Remove user
+GET / users / 123; // Retrieve user
+POST / users; // Create new user
+PUT / users / 123; // Update entire user
+DELETE / users / 123; // Remove user
 ```
 
 **5. Layered System**
@@ -270,6 +284,7 @@ Architecture can have multiple layers (load balancers, caches, proxy servers, et
 Our TCSS-460-auth-squared demonstrates RESTful principles:
 
 **Stateless Operations:**
+
 ```typescript
 // Each request is independent - authentication via JWT token
 // From /src/routes/open/index.ts
@@ -281,17 +296,27 @@ openRoutes.post('/auth/register', validateRegister, AuthController.register);
 ```
 
 **Uniform Interface:**
+
 ```typescript
 // Consistent HTTP method usage for user resource
 // From /src/routes/admin/index.ts
-adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers);        // List
-adminRoutes.post('/users/create', validateAdminCreateUser, AdminController.createUser); // Create
-adminRoutes.get('/users/:id', AdminController.getUserById);                            // Retrieve
-adminRoutes.put('/users/:id', checkRoleHierarchy, AdminController.updateUser);         // Update
-adminRoutes.delete('/users/:id', checkRoleHierarchy, AdminController.deleteUser);      // Delete
+adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers); // List
+adminRoutes.post(
+    '/users/create',
+    validateAdminCreateUser,
+    AdminController.createUser
+); // Create
+adminRoutes.get('/users/:id', AdminController.getUserById); // Retrieve
+adminRoutes.put('/users/:id', checkRoleHierarchy, AdminController.updateUser); // Update
+adminRoutes.delete(
+    '/users/:id',
+    checkRoleHierarchy,
+    AdminController.deleteUser
+); // Delete
 ```
 
 **Meaningful Status Codes:**
+
 ```typescript
 // Appropriate HTTP status codes in our API
 // 200 OK - Successful authentication
@@ -307,6 +332,7 @@ adminRoutes.delete('/users/:id', checkRoleHierarchy, AdminController.deleteUser)
 ### REST vs Non-REST Examples
 
 **RESTful API Design:**
+
 ```
 GET    /api/v1/users          // List all users
 GET    /api/v1/users/123      // Get specific user
@@ -317,6 +343,7 @@ DELETE /api/v1/users/123      // Delete user
 ```
 
 **Non-RESTful API Design:**
+
 ```
 GET  /api/v1/getUsers         // RPC-style naming
 POST /api/v1/createUser       // Action in URL
@@ -327,16 +354,19 @@ GET  /api/v1/deleteUser/123   // Dangerous: GET with side effects
 ### Benefits of RESTful Design
 
 **For Developers:**
+
 - **Predictable patterns** - Similar operations work similarly
 - **Self-documenting** - URLs and methods indicate functionality
 - **Tool support** - HTTP tools work seamlessly
 
 **For Applications:**
+
 - **Cacheable responses** improve performance
 - **Stateless design** enables scaling
 - **Standard HTTP** leverages existing infrastructure
 
 **For Users:**
+
 - **Consistent behavior** across different APIs
 - **Better error messages** through standard status codes
 - **Reliable interactions** due to proven patterns
@@ -347,7 +377,7 @@ GET  /api/v1/deleteUser/123   // Dangerous: GET with side effects
 REST is format-agnostic. Our API uses JSON, but REST APIs can serve XML, HTML, or other formats.
 
 **❌ "REST forbids all state"**
-REST forbids *server-side session state*. Database storage and client-side state are fine.
+REST forbids _server-side session state_. Database storage and client-side state are fine.
 
 **❌ "REST requires exact HTTP semantics"**
 REST is pragmatic. Perfect HTTP semantics matter less than consistent, useful patterns.
@@ -365,11 +395,13 @@ Now that you understand HTTP fundamentals, continue with:
 3. **[Request-Response Model](/docs/request-response-model.md)** - Understand the communication details
 
 **🔧 Immediate Practice:**
+
 - Open [our API documentation](http://localhost:8000/api-docs)
 - Try the authentication endpoints (login, register)
 - Notice how each request follows HTTP fundamentals
 
 **✋ Hands-On Exploration:**
+
 - Look at `/src/routes/open/index.ts` to see open authentication endpoints
 - Examine `/src/routes/admin/index.ts` to see RESTful user management patterns
 
@@ -390,7 +422,7 @@ Understanding HTTP is essential for any web developer because it underlies every
 
 ---
 
-*Continue your learning with [HTTP History & Evolution](/docs/http-history-evolution.md) to understand how these concepts developed over time.*
+_Continue your learning with [HTTP History & Evolution](/docs/http-history-evolution.md) to understand how these concepts developed over time._
 
 ## Next Steps in Your Learning Journey
 

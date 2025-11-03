@@ -37,8 +37,8 @@ marked.use({
                 }
             }
             return `<pre><code class="hljs">${hljs.highlightAuto(code).value}</code></pre>`;
-        }
-    }
+        },
+    },
 });
 
 /**
@@ -48,7 +48,10 @@ marked.use({
  * @param title Optional title for the HTML page
  * @returns Complete HTML page with CSS styling
  */
-export const markdownToHtml = (markdownContent: string, title: string = 'Documentation'): string => {
+export const markdownToHtml = (
+    markdownContent: string,
+    title: string = 'Documentation'
+): string => {
     const htmlContent = marked(markdownContent);
 
     return `
@@ -271,7 +274,9 @@ export const readMarkdownFile = (filePath: string): string | null => {
 
         const markdownContent = fs.readFileSync(filePath, 'utf8');
         const filename = path.basename(filePath, '.md');
-        const title = filename.replace(/[-_]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+        const title = filename
+            .replace(/[-_]/g, ' ')
+            .replace(/\b\w/g, (l) => l.toUpperCase());
 
         return markdownToHtml(markdownContent, title);
     } catch (error) {
@@ -326,7 +331,10 @@ export const generateDocsIndex = (docsPath: string): string => {
     if (fs.existsSync(readmePath)) {
         // Use README.md as the main landing page content
         const readmeContent = fs.readFileSync(readmePath, 'utf8');
-        return markdownToHtml(readmeContent, 'TCSS-460-auth-squared Documentation');
+        return markdownToHtml(
+            readmeContent,
+            'TCSS-460-auth-squared Documentation'
+        );
     }
 
     // Fallback to generated index if README.md doesn't exist

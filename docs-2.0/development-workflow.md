@@ -5,6 +5,7 @@ A comprehensive guide to understanding the TypeScript compilation process, devel
 > **💡 Related Code**: See implementations in [`package.json`](../package.json), [`tsconfig.json`](../tsconfig.json), [`.eslintrc.js`](../.eslintrc.js), and [`/src/index.ts`](../src/index.ts)
 
 ## Quick Navigation
+
 - 🏗️ **TypeScript Config**: [`tsconfig.json`](../tsconfig.json) - Compilation settings
 - 📦 **Build Scripts**: [`package.json`](../package.json) - npm command definitions
 - 🔍 **Linting Config**: [`.eslintrc.js`](../.eslintrc.js) - Code quality rules
@@ -41,6 +42,7 @@ A comprehensive guide to understanding the TypeScript compilation process, devel
 - 🌐 **Accesses registry** with millions of open-source packages
 
 **Think of npm as:**
+
 - **App Store for code** - Browse and install packages
 - **Project manager** - Handles dependencies automatically
 - **Task runner** - Executes commands defined in `package.json`
@@ -51,36 +53,39 @@ A comprehensive guide to understanding the TypeScript compilation process, devel
 
 ```json
 {
-  "name": "TCSS-460-auth-squared",
-  "version": "1.0.0",
-  "description": "TCSS-460-auth-squared - Educational Authentication API",
-  "scripts": {
-    "dev": "ts-node-dev --respawn...",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
-  },
-  "devDependencies": {
-    "typescript": "^5.1.6",
-    "@types/express": "^4.17.17"
-  }
+    "name": "TCSS-460-auth-squared",
+    "version": "1.0.0",
+    "description": "TCSS-460-auth-squared - Educational Authentication API",
+    "scripts": {
+        "dev": "ts-node-dev --respawn...",
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "cors": "^2.8.5"
+    },
+    "devDependencies": {
+        "typescript": "^5.1.6",
+        "@types/express": "^4.17.17"
+    }
 }
 ```
 
 **Key sections explained:**
 
 **1. Project Metadata**
+
 ```json
 "name": "TCSS-460-auth-squared",
 "version": "1.0.0",
 "description": "TCSS-460-auth-squared - Educational Authentication API"
 ```
+
 Identifies your project.
 
 **2. Scripts (Your Commands)**
+
 ```json
 "scripts": {
   "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -93,11 +98,13 @@ Identifies your project.
 ```
 
 Each script is a command shortcut:
+
 - `npm run dev` → Runs the "dev" script
 - `npm run build` → Runs the "build" script
 - `npm start` → Special case, runs "start" script (no "run" needed)
 
 **3. Dependencies (Production)**
+
 ```json
 "dependencies": {
   "express": "^4.18.2",
@@ -107,10 +114,12 @@ Each script is a command shortcut:
 ```
 
 Packages **required to run** the application:
+
 - Installed in production
 - Needed for `npm start` to work
 
 **4. DevDependencies (Development Only)**
+
 ```json
 "devDependencies": {
   "typescript": "^5.1.6",
@@ -122,6 +131,7 @@ Packages **required to run** the application:
 ```
 
 Packages **only needed during development**:
+
 - Not installed in production (`npm ci --only=production`)
 - Used for building, testing, linting
 
@@ -138,6 +148,7 @@ Packages **only needed during development**:
 ```
 
 **Symbols:**
+
 - `^4.18.2` - Allow updates to 4.x.x (not 5.0.0)
 - `~4.18.2` - Allow updates to 4.18.x only
 - `4.18.2` - Exact version only
@@ -155,6 +166,7 @@ node_modules/
 ```
 
 **Key facts:**
+
 - ⚠️ **Very large** - Can be 100,000+ files, 100+ MB
 - ⚠️ **Don't commit to Git** - In `.gitignore`
 - ✅ **Regenerate anytime** - Run `npm install`
@@ -163,6 +175,7 @@ node_modules/
 ### npm Commands You'll Use
 
 **Installation:**
+
 ```bash
 # Install all dependencies from package.json
 npm install
@@ -181,6 +194,7 @@ npm ci --only=production
 ```
 
 **Running Scripts:**
+
 ```bash
 # Run custom scripts (defined in package.json)
 npm run dev
@@ -194,6 +208,7 @@ npm test
 ```
 
 **Information:**
+
 ```bash
 # List installed packages
 npm list
@@ -206,6 +221,7 @@ npm info express
 ```
 
 **Updates:**
+
 ```bash
 # Update all packages (within version constraints)
 npm update
@@ -233,11 +249,13 @@ npm update express
 ```
 
 **First time (no package-lock.json):**
+
 - Resolves versions based on `package.json`
 - Creates `package-lock.json` with exact versions
 - Takes longer
 
 **Subsequent times (with package-lock.json):**
+
 - Uses exact versions from lock file
 - Faster and more consistent
 - Ensures everyone has same versions
@@ -245,22 +263,23 @@ npm update express
 ### package-lock.json
 
 **What it does:**
+
 - **Locks exact versions** of all packages
 - **Ensures consistency** across team/environments
 - **Speeds up installs** (no version resolution)
 
 ```json
 {
-  "name": "TCSS-460-auth-squared",
-  "version": "1.0.0",
-  "lockfileVersion": 3,
-  "packages": {
-    "node_modules/express": {
-      "version": "4.18.2",
-      "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz",
-      "integrity": "sha512-..."
+    "name": "TCSS-460-auth-squared",
+    "version": "1.0.0",
+    "lockfileVersion": 3,
+    "packages": {
+        "node_modules/express": {
+            "version": "4.18.2",
+            "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz",
+            "integrity": "sha512-..."
+        }
     }
-  }
 }
 ```
 
@@ -269,18 +288,21 @@ npm update express
 ### Common npm Issues
 
 **Issue: "Cannot find module 'express'"**
+
 ```bash
 # Solution: Install dependencies
 npm install
 ```
 
 **Issue: Different versions on teammate's machine**
+
 ```bash
 # Solution: Use package-lock.json
 npm ci  # Uses locked versions
 ```
 
 **Issue: npm install fails**
+
 ```bash
 # Solution: Clear cache and retry
 npm cache clean --force
@@ -289,6 +311,7 @@ npm install
 ```
 
 **Issue: Package version conflicts**
+
 ```bash
 # Solution: Check for compatible versions
 npm outdated
@@ -374,32 +397,34 @@ tsc --watch
 ```
 
 **In our project:**
+
 ```json
 // package.json
 {
-  "scripts": {
-    "build": "tsc",                    // Full compilation
-    "build:watch": "tsc --watch",      // Watch mode
-    "type-check": "tsc --noEmit"       // Type check only
-  }
+    "scripts": {
+        "build": "tsc", // Full compilation
+        "build:watch": "tsc --watch", // Watch mode
+        "type-check": "tsc --noEmit" // Type check only
+    }
 }
 ```
 
 ### Why TypeScript?
 
 **Type safety at compile time:**
+
 ```typescript
 // TypeScript catches this error BEFORE running
 interface UserRegistration {
-  username: string;
-  email: string;
-  roleId: number;
+    username: string;
+    email: string;
+    roleId: number;
 }
 
 const request: UserRegistration = {
-  username: "john_doe",
-  email: "john@example.com",
-  roleId: "admin"  // ❌ TypeScript Error: Type 'string' is not assignable to type 'number'
+    username: 'john_doe',
+    email: 'john@example.com',
+    roleId: 'admin', // ❌ TypeScript Error: Type 'string' is not assignable to type 'number'
 };
 
 // JavaScript would let this fail at runtime!
@@ -412,6 +437,7 @@ const request: UserRegistration = {
 ### Command: `npm run dev`
 
 **What it does:**
+
 ```bash
 ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/index.ts
 ```
@@ -446,7 +472,7 @@ Edit src/app.ts → ts-node-dev detects change → Recompile → Restart server
 
 ```typescript
 // This will run with --transpile-only even though it has type errors
-const age: number = "25";  // ❌ Type error, but dev server still runs
+const age: number = '25'; // ❌ Type error, but dev server still runs
 
 // To catch it:
 // npm run type-check
@@ -510,6 +536,7 @@ During npm run dev:
 ### When to Use Development Mode
 
 ✅ **Use `npm run dev` when:**
+
 - Actively writing and testing code
 - Need fast feedback on changes
 - Experimenting with new features
@@ -517,6 +544,7 @@ During npm run dev:
 - Don't need production-level optimization
 
 ❌ **Don't use `npm run dev` when:**
+
 - Deploying to production servers
 - Testing production builds
 - Running performance benchmarks
@@ -529,6 +557,7 @@ During npm run dev:
 ### Command: `npm run type-check`
 
 **What it does:**
+
 ```bash
 tsc --noEmit
 ```
@@ -562,28 +591,30 @@ Read tsconfig.json  →  Find all .ts files  →  Parse & analyze  →  Report e
 ### Common Type Errors and Fixes
 
 #### **1. Implicit Any**
+
 ```typescript
 // ❌ Error: Parameter 'name' implicitly has an 'any' type
 function greet(name) {
-  return `Hello, ${name}`;
+    return `Hello, ${name}`;
 }
 
 // ✅ Fix: Add type annotation
 function greet(name: string): string {
-  return `Hello, ${name}`;
+    return `Hello, ${name}`;
 }
 ```
 
 #### **2. Null/Undefined Issues**
+
 ```typescript
 // ❌ Error: Object is possibly 'undefined'
-const user = users.find(u => u.id === 1);
-console.log(user.name);  // user might be undefined!
+const user = users.find((u) => u.id === 1);
+console.log(user.name); // user might be undefined!
 
 // ✅ Fix: Handle undefined case
-const user = users.find(u => u.id === 1);
+const user = users.find((u) => u.id === 1);
 if (user) {
-  console.log(user.name);
+    console.log(user.name);
 }
 
 // Or use optional chaining
@@ -591,53 +622,57 @@ console.log(user?.name);
 ```
 
 #### **3. Type Mismatch**
+
 ```typescript
 // ❌ Error: Type 'string' is not assignable to type 'number'
 interface User {
-  roleId: number;
+    roleId: number;
 }
 
 const user: User = {
-  roleId: "admin"  // Wrong type!
+    roleId: 'admin', // Wrong type!
 };
 
 // ✅ Fix: Use correct type
 const user: User = {
-  roleId: 1  // Correct
+    roleId: 1, // Correct
 };
 ```
 
 #### **4. Missing Properties**
+
 ```typescript
 // ❌ Error: Property 'email' is missing in type
 interface UserRegistration {
-  username: string;
-  email: string;
-  roleId: number;
+    username: string;
+    email: string;
+    roleId: number;
 }
 
 const request: UserRegistration = {
-  username: "john_doe",
-  roleId: 1
-  // Missing 'email' property
+    username: 'john_doe',
+    roleId: 1,
+    // Missing 'email' property
 };
 
 // ✅ Fix: Include all required properties
 const request: UserRegistration = {
-  username: "john_doe",
-  email: "john@example.com",
-  roleId: 1
+    username: 'john_doe',
+    email: 'john@example.com',
+    roleId: 1,
 };
 ```
 
 ### Type Checking in Your Workflow
 
 **Before committing code:**
+
 ```bash
 npm run type-check
 ```
 
 **If errors found:**
+
 ```bash
 npm run type-check | grep error  # Show only errors
 
@@ -647,6 +682,7 @@ npm run type-check
 ```
 
 **Continuous type checking (watch mode):**
+
 ```bash
 npm run build:watch
 # Runs tsc --watch - recheck types on every save
@@ -659,6 +695,7 @@ npm run build:watch
 ### Command: `npm run build`
 
 **What it does:**
+
 ```bash
 tsc
 ```
@@ -715,34 +752,39 @@ Step 7: Report Results
 ### File Transformation Example
 
 **Before Build (src/):**
+
 ```typescript
 // src/controllers/healthController.ts
 import { Request, Response } from 'express';
 import { sendSuccess } from '@utilities/responseUtils';
 import { HealthResponse } from '@/types';
 
-export const getHealth = async (request: Request, response: Response): Promise<void> => {
-  const healthData: HealthResponse = {
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  };
+export const getHealth = async (
+    request: Request,
+    response: Response
+): Promise<void> => {
+    const healthData: HealthResponse = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+    };
 
-  sendSuccess(response, healthData, 'API is healthy');
+    sendSuccess(response, healthData, 'API is healthy');
 };
 ```
 
 **After Build (dist/):**
+
 ```javascript
 // dist/controllers/healthController.js
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+'use strict';
+Object.defineProperty(exports, '__esModule', { value: true });
 exports.getHealth = void 0;
-const responseUtils_1 = require("../core/utilities/responseUtils");
+const responseUtils_1 = require('../core/utilities/responseUtils');
 
 const getHealth = async (request, response) => {
     const healthData = {
         status: 'OK',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
     (0, responseUtils_1.sendSuccess)(response, healthData, 'API is healthy');
 };
@@ -751,6 +793,7 @@ exports.getHealth = getHealth;
 ```
 
 **Changes made by TypeScript compiler:**
+
 1. Type annotations removed (`Request`, `Response`, `HealthResponse`, `Promise<void>`)
 2. Path aliases resolved (`@utilities/` → `../core/utilities/`)
 3. ES6 imports converted to CommonJS (`require`)
@@ -792,7 +835,7 @@ dist/                           # Compiled JavaScript output
 
 ### Source Maps Explained
 
-**Source map files (*.map)** allow debugging compiled JavaScript as if it were TypeScript.
+**Source map files (\*.map)** allow debugging compiled JavaScript as if it were TypeScript.
 
 ```
 Runtime Error in:           Source Map Maps Back To:
@@ -803,13 +846,14 @@ Error: undefined variable   Your actual TypeScript code!
 ```
 
 **How it works:**
+
 ```json
 // healthController.js.map
 {
-  "version": 3,
-  "sources": ["../src/controllers/healthController.ts"],
-  "mappings": ";;;AAAA,MAAM,EAAE,GAAG,EAAE...",
-  "sourcesContent": ["import { Request, Response } from 'express'..."]
+    "version": 3,
+    "sources": ["../src/controllers/healthController.ts"],
+    "mappings": ";;;AAAA,MAAM,EAAE,GAAG,EAAE...",
+    "sourcesContent": ["import { Request, Response } from 'express'..."]
 }
 ```
 
@@ -817,13 +861,14 @@ Error: undefined variable   Your actual TypeScript code!
 
 After `npm run build`, you have **three sets of outputs**:
 
-1. **JavaScript files (*.js)** - Executable code for Node.js
-2. **Source maps (*.map)** - Debugging information
-3. **Type declarations (*.d.ts)** - Type information for other TypeScript projects
+1. **JavaScript files (\*.js)** - Executable code for Node.js
+2. **Source maps (\*.map)** - Debugging information
+3. **Type declarations (\*.d.ts)** - Type information for other TypeScript projects
 
 ### When to Build
 
 ✅ **Run `npm run build` when:**
+
 - Preparing for production deployment
 - Testing the production build locally
 - Creating deployment artifacts
@@ -831,6 +876,7 @@ After `npm run build`, you have **three sets of outputs**:
 - Running automated tests against compiled code
 
 ❌ **Don't run `npm run build` when:**
+
 - Actively developing (use `npm run dev`)
 - Only checking types (use `npm run type-check`)
 - Just starting work (unnecessary)
@@ -855,6 +901,7 @@ When working with database operations:
 ### Command: `npm start`
 
 **What it does:**
+
 ```bash
 node dist/index.js
 ```
@@ -877,6 +924,7 @@ npm start        # Run compiled JavaScript
 ### Production vs Development Execution
 
 **Development Mode:**
+
 ```bash
 npm run dev
 
@@ -885,6 +933,7 @@ ts-node-dev → Compile TS in memory → Execute JS in memory → Run server
 ```
 
 **Production Mode:**
+
 ```bash
 npm run build → npm start
 
@@ -999,6 +1048,7 @@ Our project uses **three layers** of code quality assurance:
 #### What is ESLint?
 
 **ESLint** is a static analysis tool that:
+
 - Identifies problematic patterns in JavaScript/TypeScript
 - Enforces coding standards and best practices
 - Catches bugs before they reach production
@@ -1007,6 +1057,7 @@ Our project uses **three layers** of code quality assurance:
 #### Command: `npm run lint`
 
 **What it does:**
+
 ```bash
 eslint src/**/*.ts
 ```
@@ -1019,23 +1070,23 @@ Analyzes all TypeScript files in `src/` for issues.
 
 ```javascript
 module.exports = {
-  parser: '@typescript-eslint/parser',      // Parse TypeScript syntax
-  extends: [
-    'eslint:recommended',                   // ESLint's recommended rules
-    'plugin:@typescript-eslint/recommended' // TypeScript-specific rules
-  ],
-  parserOptions: {
-    ecmaVersion: 2022,                      // Modern JavaScript features
-    sourceType: 'module',                   // ES6 modules
-    project: './tsconfig.json'              // TypeScript project config
-  },
-  rules: {
-    // Custom rule overrides
-    '@typescript-eslint/explicit-function-return-type': 'warn',
-    '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'no-console': 'off'                    // Allow console.log in Node.js
-  }
+    parser: '@typescript-eslint/parser', // Parse TypeScript syntax
+    extends: [
+        'eslint:recommended', // ESLint's recommended rules
+        'plugin:@typescript-eslint/recommended', // TypeScript-specific rules
+    ],
+    parserOptions: {
+        ecmaVersion: 2022, // Modern JavaScript features
+        sourceType: 'module', // ES6 modules
+        project: './tsconfig.json', // TypeScript project config
+    },
+    rules: {
+        // Custom rule overrides
+        '@typescript-eslint/explicit-function-return-type': 'warn',
+        '@typescript-eslint/no-unused-vars': 'error',
+        '@typescript-eslint/no-explicit-any': 'warn',
+        'no-console': 'off', // Allow console.log in Node.js
+    },
 };
 ```
 
@@ -1047,12 +1098,12 @@ Catches variables that are declared but never used.
 
 ```typescript
 // ❌ ESLint Error: 'unusedVariable' is defined but never used
-const unusedVariable = "This is never used";
-const name = "John";
+const unusedVariable = 'This is never used';
+const name = 'John';
 console.log(name);
 
 // ✅ Fix: Remove unused variable
-const name = "John";
+const name = 'John';
 console.log(name);
 ```
 
@@ -1065,12 +1116,15 @@ Requires explicit return types on functions.
 ```typescript
 // ❌ ESLint Warning: Missing return type
 export const getHealth = async (request, response) => {
-  // Function implementation
+    // Function implementation
 };
 
 // ✅ Fix: Add return type
-export const getHealth = async (request: Request, response: Response): Promise<void> => {
-  // Function implementation
+export const getHealth = async (
+    request: Request,
+    response: Response
+): Promise<void> => {
+    // Function implementation
 };
 ```
 
@@ -1083,16 +1137,16 @@ Discourages use of `any` type.
 ```typescript
 // ❌ ESLint Warning: Unexpected any. Specify a different type
 const processData = (data: any) => {
-  return data.value;
+    return data.value;
 };
 
 // ✅ Fix: Use specific type
 interface Data {
-  value: string;
+    value: string;
 }
 
 const processData = (data: Data): string => {
-  return data.value;
+    return data.value;
 };
 ```
 
@@ -1104,14 +1158,14 @@ Warns about console.log usage (off in our project).
 
 ```typescript
 // ⚠️ ESLint Warning in production code: Unexpected console statement
-console.log("Debug message");
+console.log('Debug message');
 
 // ✅ Better: Use proper logger
-logger.info("Debug message");
+logger.info('Debug message');
 
 // Or suppress for specific lines
 // eslint-disable-next-line no-console
-console.log("Allowed console.log");
+console.log('Allowed console.log');
 ```
 
 **Why it matters:** Console statements should be removed or replaced with proper logging in production.
@@ -1122,11 +1176,11 @@ Suggests using `const` for variables that are never reassigned.
 
 ```typescript
 // ❌ ESLint Warning: 'name' is never reassigned. Use 'const' instead
-let name = "John";
+let name = 'John';
 console.log(name);
 
 // ✅ Fix: Use const
-const name = "John";
+const name = 'John';
 console.log(name);
 ```
 
@@ -1141,7 +1195,7 @@ Discourages explicit types when TypeScript can infer them.
 const age: number = 25;
 
 // ✅ Fix: Let TypeScript infer
-const age = 25;  // TypeScript knows this is a number
+const age = 25; // TypeScript knows this is a number
 ```
 
 **Why it matters:** Reduces noise and improves code readability.
@@ -1152,13 +1206,13 @@ Requires strict equality (===) instead of loose equality (==).
 
 ```typescript
 // ❌ ESLint Error: Expected '===' and instead saw '=='
-if (value == "5") {
-  // Loose equality can cause bugs
+if (value == '5') {
+    // Loose equality can cause bugs
 }
 
 // ✅ Fix: Use strict equality
-if (value === "5") {
-  // Strict comparison
+if (value === '5') {
+    // Strict comparison
 }
 ```
 
@@ -1181,6 +1235,7 @@ rules: {
 #### Command: `npm run lint:fix`
 
 **What it does:**
+
 ```bash
 eslint src/**/*.ts --fix
 ```
@@ -1201,6 +1256,7 @@ Automatically fixes **auto-fixable** issues.
 ❌ Architectural problems
 
 **Workflow:**
+
 ```bash
 # Run auto-fix first
 npm run lint:fix
@@ -1218,24 +1274,26 @@ npm run lint
 #### Disabling ESLint Rules
 
 **For specific lines:**
+
 ```typescript
 // Disable next line
 // eslint-disable-next-line no-console
-console.log("Debug output");
+console.log('Debug output');
 
 // Disable rule for multiple lines
 /* eslint-disable no-console */
-console.log("Debug 1");
-console.log("Debug 2");
+console.log('Debug 1');
+console.log('Debug 2');
 /* eslint-enable no-console */
 ```
 
 **For entire files:**
+
 ```typescript
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Entire file allows 'any' type
 export const legacyFunction = (data: any) => {
-  // Implementation
+    // Implementation
 };
 ```
 
@@ -1246,6 +1304,7 @@ export const legacyFunction = (data: any) => {
 #### What is Prettier?
 
 **Prettier** is an opinionated code formatter that:
+
 - Enforces consistent code style
 - Removes debates about formatting
 - Formats code automatically
@@ -1254,6 +1313,7 @@ export const legacyFunction = (data: any) => {
 #### Command: `npm run format`
 
 **What it does:**
+
 ```bash
 prettier --write src/**/*.ts
 ```
@@ -1266,47 +1326,51 @@ Automatically formats all TypeScript files.
 
 ```json
 {
-  "semi": true,              // Add semicolons
-  "singleQuote": true,       // Use single quotes
-  "tabWidth": 2,             // 2 spaces per tab
-  "trailingComma": "es5",    // Trailing commas where valid in ES5
-  "printWidth": 100,         // Line wrap at 100 characters
-  "arrowParens": "always"    // Parentheses around arrow function args
+    "semi": true, // Add semicolons
+    "singleQuote": true, // Use single quotes
+    "tabWidth": 2, // 2 spaces per tab
+    "trailingComma": "es5", // Trailing commas where valid in ES5
+    "printWidth": 100, // Line wrap at 100 characters
+    "arrowParens": "always" // Parentheses around arrow function args
 }
 ```
 
 #### Formatting Examples
 
 **Before Prettier:**
-```typescript
-const user={username:"john_doe",email:"john@example.com",roleId:1}
 
-function validateUser(user:UserRegistration)
-{
-if(user.roleId>3){return false}
-    return true
+```typescript
+const user = { username: 'john_doe', email: 'john@example.com', roleId: 1 };
+
+function validateUser(user: UserRegistration) {
+    if (user.roleId > 3) {
+        return false;
+    }
+    return true;
 }
 ```
 
 **After Prettier:**
+
 ```typescript
 const user = {
-  username: 'john_doe',
-  email: 'john@example.com',
-  roleId: 1,
+    username: 'john_doe',
+    email: 'john@example.com',
+    roleId: 1,
 };
 
 function validateUser(user: UserRegistration) {
-  if (user.roleId > 3) {
-    return false;
-  }
-  return true;
+    if (user.roleId > 3) {
+        return false;
+    }
+    return true;
 }
 ```
 
 #### Command: `npm run format:check`
 
 **What it does:**
+
 ```bash
 prettier --check src/**/*.ts
 ```
@@ -1327,12 +1391,14 @@ npm run format:check
 Our project integrates both tools:
 
 **ESLint** handles:
+
 - Code quality rules
 - Best practice enforcement
 - Bug detection
 - TypeScript-specific patterns
 
 **Prettier** handles:
+
 - Code formatting
 - Indentation
 - Line length
@@ -1340,6 +1406,7 @@ Our project integrates both tools:
 - Semicolons
 
 **They work together:**
+
 ```bash
 # Format code
 npm run format
@@ -1380,6 +1447,7 @@ git commit -m "feat: add new feature"
 ```
 
 **Quick combined check:**
+
 ```bash
 npm run format && npm run type-check && npm run lint && npm run build
 ```
@@ -1391,11 +1459,13 @@ Both VS Code and WebStorm have excellent TypeScript support with built-in ESLint
 #### VS Code Setup
 
 **Install extensions:**
+
 1. **ESLint** (dbaeumer.vscode-eslint) - Real-time linting
 2. **Prettier - Code formatter** (esbenp.prettier-vscode) - Auto-format on save
 3. **TypeScript Importer** (pmneo.tsimporter) - Auto-import suggestions
 
 **Install all at once:**
+
 ```bash
 code --install-extension dbaeumer.vscode-eslint
 code --install-extension esbenp.prettier-vscode
@@ -1403,19 +1473,21 @@ code --install-extension pmneo.tsimporter
 ```
 
 **Settings (.vscode/settings.json):**
+
 ```json
 {
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.preferences.importModuleSpecifier": "non-relative"
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.preferences.importModuleSpecifier": "non-relative"
 }
 ```
 
 **Benefits:**
+
 - ✅ Automatic formatting on save
 - ✅ Real-time lint errors highlighted
 - ✅ Quick fixes available (Cmd+. or Ctrl+.)
@@ -1425,6 +1497,7 @@ code --install-extension pmneo.tsimporter
 #### WebStorm Setup
 
 **Built-in features (no plugins needed):**
+
 - ✅ ESLint integration (automatically detects `.eslintrc.js`)
 - ✅ Prettier integration (automatically detects config)
 - ✅ TypeScript support (native)
@@ -1432,23 +1505,27 @@ code --install-extension pmneo.tsimporter
 - ✅ npm script runner (right-click package.json)
 
 **Enable ESLint:**
+
 1. Go to **Settings/Preferences** → **Languages & Frameworks** → **JavaScript** → **Code Quality Tools** → **ESLint**
 2. Check **Automatic ESLint configuration**
 3. Check **Run eslint --fix on save**
 
 **Enable Prettier:**
+
 1. Go to **Settings/Preferences** → **Languages & Frameworks** → **JavaScript** → **Prettier**
 2. Set **Prettier package:** `{project_root}/node_modules/prettier`
 3. Check **On 'Reformat Code' action**
 4. Check **On save**
 
 **Configure TypeScript:**
+
 1. Go to **Settings/Preferences** → **Languages & Frameworks** → **TypeScript**
 2. Select **TypeScript version:** `{project_root}/node_modules/typescript`
 3. Check **Recompile on changes**
 4. Enable **TypeScript Language Service**
 
 **Keyboard Shortcuts:**
+
 - **Format file:** `Ctrl+Alt+L` (Windows/Linux) or `Cmd+Option+L` (Mac)
 - **Show ESLint errors:** `Alt+Enter` on highlighted code
 - **Auto-import:** `Alt+Enter` on unresolved symbol
@@ -1456,12 +1533,14 @@ code --install-extension pmneo.tsimporter
 
 **npm Script Runner:**
 WebStorm shows npm scripts in the UI:
+
 1. Open `package.json`
 2. See green play buttons next to scripts
 3. Click to run (or right-click for options)
 4. View output in Run window
 
 **Debugging in WebStorm:**
+
 1. Click the dropdown next to Run button
 2. Select **Edit Configurations**
 3. Click **+** → **npm**
@@ -1470,6 +1549,7 @@ WebStorm shows npm scripts in the UI:
 6. Click **OK** and run with debugger
 
 **Benefits:**
+
 - ✅ Everything works out-of-the-box
 - ✅ Integrated npm runner
 - ✅ Powerful debugger
@@ -1680,33 +1760,34 @@ ls -la dist/
 
 ### Side-by-Side Comparison
 
-| **Aspect** | **Development Mode** (`npm run dev`) | **Production Mode** (`npm run build` + `npm start`) |
-|------------|-------------------------------------|-----------------------------------------------------|
-| **Command** | `ts-node-dev` | `node` |
-| **Source Files** | TypeScript (`.ts`) | JavaScript (`.js`) |
-| **Compilation** | In-memory, on-the-fly | Pre-compiled to `dist/` |
-| **Type Checking** | Skipped (`--transpile-only`) | Full check during build |
-| **Startup Speed** | Slower (compile on start) | Fast (pre-compiled) |
-| **Hot Reload** | ✅ Yes (auto-restart) | ❌ No (manual restart required) |
-| **File Output** | None (memory only) | `dist/` directory created |
-| **Source Maps** | Generated in memory | Written to disk (`.map` files) |
-| **Error Detail** | Verbose with full stacks | Minimal, production-safe |
-| **Performance** | Development-optimized | Production-optimized |
-| **Debugging** | TypeScript source | JavaScript source (with maps) |
-| **Environment** | `NODE_ENV=development` | `NODE_ENV=production` |
-| **Logging** | Detailed, all levels | Minimal, errors only |
-| **CORS** | Permissive (localhost) | Restrictive (configured origins) |
-| **Path Aliases** | Resolved at runtime | Resolved at compile time |
-| **Optimization** | None | Minification, tree-shaking |
-| **Use Case** | Active development | Deployment, production serving |
-| **File Watching** | ✅ Monitors changes | ❌ No file watching |
-| **Restart Time** | ~1-2 seconds | Instant (no compilation) |
-| **Memory Usage** | Higher (compilation in RAM) | Lower (runs compiled code) |
-| **Suitable For** | Learning, experimenting, coding | Serving real users, benchmarks |
+| **Aspect**        | **Development Mode** (`npm run dev`) | **Production Mode** (`npm run build` + `npm start`) |
+| ----------------- | ------------------------------------ | --------------------------------------------------- |
+| **Command**       | `ts-node-dev`                        | `node`                                              |
+| **Source Files**  | TypeScript (`.ts`)                   | JavaScript (`.js`)                                  |
+| **Compilation**   | In-memory, on-the-fly                | Pre-compiled to `dist/`                             |
+| **Type Checking** | Skipped (`--transpile-only`)         | Full check during build                             |
+| **Startup Speed** | Slower (compile on start)            | Fast (pre-compiled)                                 |
+| **Hot Reload**    | ✅ Yes (auto-restart)                | ❌ No (manual restart required)                     |
+| **File Output**   | None (memory only)                   | `dist/` directory created                           |
+| **Source Maps**   | Generated in memory                  | Written to disk (`.map` files)                      |
+| **Error Detail**  | Verbose with full stacks             | Minimal, production-safe                            |
+| **Performance**   | Development-optimized                | Production-optimized                                |
+| **Debugging**     | TypeScript source                    | JavaScript source (with maps)                       |
+| **Environment**   | `NODE_ENV=development`               | `NODE_ENV=production`                               |
+| **Logging**       | Detailed, all levels                 | Minimal, errors only                                |
+| **CORS**          | Permissive (localhost)               | Restrictive (configured origins)                    |
+| **Path Aliases**  | Resolved at runtime                  | Resolved at compile time                            |
+| **Optimization**  | None                                 | Minification, tree-shaking                          |
+| **Use Case**      | Active development                   | Deployment, production serving                      |
+| **File Watching** | ✅ Monitors changes                  | ❌ No file watching                                 |
+| **Restart Time**  | ~1-2 seconds                         | Instant (no compilation)                            |
+| **Memory Usage**  | Higher (compilation in RAM)          | Lower (runs compiled code)                          |
+| **Suitable For**  | Learning, experimenting, coding      | Serving real users, benchmarks                      |
 
 ### Visual Workflow Comparison
 
 **Development Mode:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                  DEVELOPMENT MODE CYCLE                     │
@@ -1729,6 +1810,7 @@ Watch files → Detect change → Recompile → Restart
 ```
 
 **Production Mode:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                  PRODUCTION MODE WORKFLOW                   │
@@ -1780,6 +1862,7 @@ Server running (no auto-restart)
 ✅ Need maximum runtime performance
 
 **Use Both:**
+
 ```bash
 # During active development
 npm run dev
@@ -1804,12 +1887,14 @@ npm start  # Test locally
 #### 1. "Changes Aren't Showing Up"
 
 **Symptoms:**
+
 - Modified code but behavior unchanged
 - Old version still running
 
 **Possible Causes & Solutions:**
 
 **Cause A: Running production mode instead of dev**
+
 ```bash
 # Check what's running
 ps aux | grep node
@@ -1823,6 +1908,7 @@ npm run dev             # Start dev mode
 ```
 
 **Cause B: Cached require/imports**
+
 ```bash
 # Solution: Restart development server
 # Ctrl+C to stop
@@ -1830,6 +1916,7 @@ npm run dev
 ```
 
 **Cause C: Browser caching (if testing via browser)**
+
 ```bash
 # Solution: Hard refresh
 # Chrome/Firefox: Cmd+Shift+R (Mac) or Ctrl+Shift+R (Windows)
@@ -1839,12 +1926,14 @@ npm run dev
 #### 2. "npm run build Fails"
 
 **Symptoms:**
+
 ```
 error TS2322: Type 'string' is not assignable to type 'number'.
 Build failed with 5 errors.
 ```
 
 **Solution:**
+
 ```bash
 # Step 1: Run type check to see all errors
 npm run type-check
@@ -1862,25 +1951,28 @@ npm run build
 **Common type errors:**
 
 **Missing types:**
+
 ```typescript
 // ❌ Error
-function greet(name) {  // Implicit 'any' type
-  return `Hello, ${name}`;
+function greet(name) {
+    // Implicit 'any' type
+    return `Hello, ${name}`;
 }
 
 // ✅ Fix
 function greet(name: string): string {
-  return `Hello, ${name}`;
+    return `Hello, ${name}`;
 }
 ```
 
 **Wrong types:**
+
 ```typescript
 // ❌ Error
 interface User {
-  roleId: number;
+    roleId: number;
 }
-const user: User = { roleId: "admin" };
+const user: User = { roleId: 'admin' };
 
 // ✅ Fix
 const user: User = { roleId: 1 };
@@ -1889,6 +1981,7 @@ const user: User = { roleId: 1 };
 #### 3. "Port Already in Use"
 
 **Symptoms:**
+
 ```
 Error: listen EADDRINUSE: address already in use :::8000
 ```
@@ -1896,6 +1989,7 @@ Error: listen EADDRINUSE: address already in use :::8000
 **Solutions:**
 
 **Option A: Kill the process using the port**
+
 ```bash
 # macOS/Linux
 lsof -ti :8000 | xargs kill -9
@@ -1906,6 +2000,7 @@ taskkill /PID <PID> /F
 ```
 
 **Option B: Use a different port**
+
 ```bash
 # Edit .env file
 PORT=9000
@@ -1917,6 +2012,7 @@ PORT=9000 npm run dev
 #### 4. "Module Not Found" Errors
 
 **Symptoms:**
+
 ```
 Error: Cannot find module '@utilities/responseUtils'
 ```
@@ -1924,6 +2020,7 @@ Error: Cannot find module '@utilities/responseUtils'
 **Solutions:**
 
 **Cause A: Missing path alias registration**
+
 ```bash
 # Check ts-node-dev command includes:
 # -r tsconfig-paths/register
@@ -1933,20 +2030,22 @@ Error: Cannot find module '@utilities/responseUtils'
 ```
 
 **Cause B: Path alias not in tsconfig.json**
+
 ```json
 // tsconfig.json
 {
-  "compilerOptions": {
-    "baseUrl": "./src",
-    "paths": {
-      "@utilities/*": ["core/utilities/*"],  // Must match import
-      "@controllers/*": ["controllers/*"]
+    "compilerOptions": {
+        "baseUrl": "./src",
+        "paths": {
+            "@utilities/*": ["core/utilities/*"], // Must match import
+            "@controllers/*": ["controllers/*"]
+        }
     }
-  }
 }
 ```
 
 **Cause C: Missing node_modules**
+
 ```bash
 # Solution: Install dependencies
 npm install
@@ -1955,10 +2054,12 @@ npm install
 #### 5. "TypeScript Errors in Dev Mode"
 
 **Symptoms:**
+
 - Code runs in `npm run dev`
 - But has type errors when running `npm run type-check`
 
 **Explanation:**
+
 ```bash
 # Development mode skips type checking
 npm run dev  # Uses --transpile-only flag
@@ -1968,6 +2069,7 @@ npm run type-check  # Finds type errors
 ```
 
 **Solution:**
+
 ```bash
 # Always run type-check before committing
 npm run type-check
@@ -1980,6 +2082,7 @@ npm run type-check  # Should show no errors
 #### 6. "Linting Errors"
 
 **Symptoms:**
+
 ```
 error  'unusedVariable' is assigned a value but never used  @typescript-eslint/no-unused-vars
 ```
@@ -1987,37 +2090,43 @@ error  'unusedVariable' is assigned a value but never used  @typescript-eslint/n
 **Solutions:**
 
 **Option A: Auto-fix**
+
 ```bash
 npm run lint:fix
 ```
 
 **Option B: Manual fix**
+
 ```typescript
 // Remove unused variable
 // const unusedVariable = "test";  ← Delete this line
 ```
 
 **Option C: Disable rule (rarely)**
+
 ```typescript
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const debugVariable = "For debugging only";
+const debugVariable = 'For debugging only';
 ```
 
 #### 7. "Production Build Works but Dev Doesn't"
 
 **Symptoms:**
+
 - `npm run build && npm start` works
 - `npm run dev` fails
 
 **Possible Causes:**
 
 **Cause A: Missing ts-node-dev**
+
 ```bash
 # Solution: Install dev dependencies
 npm install --save-dev ts-node-dev
 ```
 
 **Cause B: Outdated dependencies**
+
 ```bash
 # Solution: Clean install
 rm -rf node_modules package-lock.json
@@ -2027,17 +2136,19 @@ npm install
 #### 8. "Source Maps Not Working"
 
 **Symptoms:**
+
 - Debugger shows compiled JavaScript instead of TypeScript
 - Stack traces reference dist/ files
 
 **Solution:**
+
 ```json
 // Ensure tsconfig.json has:
 {
-  "compilerOptions": {
-    "sourceMap": true,
-    "inlineSourceMap": false
-  }
+    "compilerOptions": {
+        "sourceMap": true,
+        "inlineSourceMap": false
+    }
 }
 ```
 
@@ -2052,6 +2163,7 @@ ls dist/*.map
 #### 9. "Environment Variables Not Loading"
 
 **Symptoms:**
+
 ```
 Error: Missing required environment variable: DB_HOST
 ```
@@ -2059,6 +2171,7 @@ Error: Missing required environment variable: DB_HOST
 **Solutions:**
 
 **Check .env file exists:**
+
 ```bash
 ls -la .env
 # If not found:
@@ -2066,6 +2179,7 @@ cp .env.example .env
 ```
 
 **Verify dotenv is loaded:**
+
 ```typescript
 // At top of index.ts
 import dotenv from 'dotenv';
@@ -2073,6 +2187,7 @@ dotenv.config();
 ```
 
 **Check NODE_ENV:**
+
 ```bash
 echo $NODE_ENV
 # Should match your .env file
@@ -2081,18 +2196,21 @@ echo $NODE_ENV
 #### 10. "Build Succeeds but Runtime Errors"
 
 **Symptoms:**
+
 - `npm run build` completes without errors
 - `npm start` has runtime errors
 
 **Common Causes:**
 
 **Missing runtime dependencies:**
+
 ```bash
 # Ensure all dependencies installed
 npm ci --only=production
 ```
 
 **Environment mismatch:**
+
 ```bash
 # Set correct environment
 export NODE_ENV=production
@@ -2102,6 +2220,7 @@ node -e "console.log(process.env.NODE_ENV)"
 ```
 
 **Path alias issues in build:**
+
 ```bash
 # Check compiled output
 cat dist/controllers/healthController.js
@@ -2128,6 +2247,7 @@ npm run dev  # Already includes watch mode
 ```
 
 **Build watch mode workflow:**
+
 ```bash
 # Terminal 1: Watch compilation
 npm run build:watch
@@ -2145,14 +2265,15 @@ TypeScript supports incremental compilation for faster builds:
 ```json
 // tsconfig.json
 {
-  "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
-  }
+    "compilerOptions": {
+        "incremental": true,
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    }
 }
 ```
 
 **Benefits:**
+
 - Faster subsequent builds
 - Only recompiles changed files
 - Stores build state in `.tsbuildinfo`
@@ -2164,27 +2285,27 @@ TypeScript supports incremental compilation for faster builds:
 ```json
 // .vscode/launch.json
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Dev Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "console": "integratedTerminal",
-      "sourceMaps": true
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Production Build",
-      "program": "${workspaceFolder}/dist/index.js",
-      "preLaunchTask": "npm: build",
-      "sourceMaps": true,
-      "smartStep": true
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Dev Server",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "dev"],
+            "console": "integratedTerminal",
+            "sourceMaps": true
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Production Build",
+            "program": "${workspaceFolder}/dist/index.js",
+            "preLaunchTask": "npm: build",
+            "sourceMaps": true,
+            "smartStep": true
+        }
+    ]
 }
 ```
 
@@ -2227,40 +2348,40 @@ name: Build and Test
 on: [push, pull_request]
 
 jobs:
-  quality-checks:
-    runs-on: ubuntu-latest
+    quality-checks:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v3
+        steps:
+            - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '18'
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Type check
-        run: npm run type-check
+            - name: Type check
+              run: npm run type-check
 
-      - name: Lint
-        run: npm run lint
+            - name: Lint
+              run: npm run lint
 
-      - name: Format check
-        run: npm run format:check
+            - name: Format check
+              run: npm run format:check
 
-      - name: Build
-        run: npm run build
+            - name: Build
+              run: npm run build
 
-      - name: Test
-        run: npm test
+            - name: Test
+              run: npm test
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v3
+              with:
+                  name: dist
+                  path: dist/
 ```
 
 ---
@@ -2268,18 +2389,22 @@ jobs:
 ## Further Reading
 
 **TypeScript:**
+
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html) - Official TypeScript documentation
 - [TypeScript Deep Dive](https://basarat.gitbook.io/typescript/) - Comprehensive guide
 
 **Build Tools:**
+
 - [ts-node Documentation](https://typestrong.org/ts-node/) - TypeScript execution
 - [ts-node-dev Documentation](https://github.com/wclr/ts-node-dev) - Development server
 
 **Code Quality:**
+
 - [ESLint Documentation](https://eslint.org/docs/latest/) - Linting rules and configuration
 - [Prettier Documentation](https://prettier.io/docs/en/) - Code formatting
 
 **Related Guides:**
+
 - [Node.js & Express Architecture](./node-express-architecture.md) - Application structure
 - [TypeScript Patterns](./typescript-patterns.md) - Type system usage
 - [Environment Configuration](./environment-configuration.md) - Configuration management
@@ -2287,4 +2412,4 @@ jobs:
 
 ---
 
-*Understanding the development workflow and build process is fundamental to working effectively with modern TypeScript projects. These patterns and practices ensure code quality, type safety, and smooth deployment.*
+_Understanding the development workflow and build process is fundamental to working effectively with modern TypeScript projects. These patterns and practices ensure code quality, type safety, and smooth deployment._

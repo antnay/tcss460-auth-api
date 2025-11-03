@@ -11,7 +11,7 @@ import {
     validateUserSearch,
     validateAdminPasswordReset,
     validateAdminRoleChange,
-    validateAdminUsersList
+    validateAdminUsersList,
 } from '@middleware';
 
 const adminRoutes = Router();
@@ -44,7 +44,11 @@ adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers);
  * Search users by name, email, or username
  * GET /admin/users/search?q=searchTerm&fields=email,username&page=1&limit=20
  */
-adminRoutes.get('/users/search', validateUserSearch, AdminController.searchUsers);
+adminRoutes.get(
+    '/users/search',
+    validateUserSearch,
+    AdminController.searchUsers
+);
 
 /**
  * Get dashboard statistics
@@ -64,11 +68,7 @@ adminRoutes.get('/users/:id', AdminController.getUserById);
  * PUT /admin/users/:id
  * Middleware ensures you can only modify users with lower roles
  */
-adminRoutes.put(
-    '/users/:id',
-    checkRoleHierarchy,
-    AdminController.updateUser
-);
+adminRoutes.put('/users/:id', checkRoleHierarchy, AdminController.updateUser);
 
 /**
  * Soft delete user (set status to 'deleted')

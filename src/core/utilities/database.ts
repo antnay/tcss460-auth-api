@@ -75,7 +75,9 @@ export const disconnectFromDatabase = async (): Promise<void> => {
  */
 export const getPool = (): Pool => {
     if (!pool) {
-        throw new Error('Database not connected. Call connectToDatabase() first.');
+        throw new Error(
+            'Database not connected. Call connectToDatabase() first.'
+        );
     }
     return pool;
 };

@@ -17,17 +17,21 @@ export const checkToken = (
             token = token.slice(7, token.length);
         }
 
-        jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
-            if (error) {
-                response.status(403).json({
-                    success: false,
-                    message: 'Token is not valid',
-                });
-            } else {
-                request.claims = decoded as IJwtClaims;
-                next();
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET,
+            (error, decoded: JwtPayload) => {
+                if (error) {
+                    response.status(403).json({
+                        success: false,
+                        message: 'Token is not valid',
+                    });
+                } else {
+                    request.claims = decoded as IJwtClaims;
+                    next();
+                }
             }
-        });
+        );
     } else {
         response.status(401).json({
             success: false,

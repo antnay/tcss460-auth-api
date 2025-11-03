@@ -5,6 +5,7 @@ A comprehensive guide to organizing API routes by access level, implementing mid
 > **💡 Related Code**: See implementations in [`/src/routes/index.ts`](../src/routes/index.ts), [`/src/routes/open/index.ts`](../src/routes/open/index.ts), [`/src/routes/closed/index.ts`](../src/routes/closed/index.ts), and [`/src/routes/admin/index.ts`](../src/routes/admin/index.ts)
 
 ## Quick Navigation
+
 - 🌐 **Main Router**: [`routes/index.ts`](../src/routes/index.ts) - Route composition and mounting
 - 🔓 **Open Routes**: [`routes/open/index.ts`](../src/routes/open/index.ts) - Public authentication endpoints
 - 🔒 **Closed Routes**: [`routes/closed/index.ts`](../src/routes/closed/index.ts) - JWT-protected user endpoints
@@ -45,6 +46,7 @@ Many beginners organize routes by resource type:
 ```
 
 **Problems with this approach:**
+
 - Security vulnerabilities (easy to forget middleware)
 - Inconsistent authentication patterns
 - Difficult to audit access controls
@@ -65,6 +67,7 @@ Organize routes by **who can access them**, not just **what they do**:
 ```
 
 **Benefits of this approach:**
+
 - **Clear security boundaries** - Easy to see what's protected
 - **Consistent middleware** - Apply authentication at router level
 - **Audit-friendly** - Security review is straightforward
@@ -81,8 +84,8 @@ router.post('/admin/users', validateUser, adminController.createUser);
 // Oops! Forgot checkToken and requireAdmin - ANYONE can create users!
 
 // ✅ SAFE: Middleware applied at router level
-adminRoutes.use(checkToken);      // All admin routes require auth
-adminRoutes.use(requireAdmin);    // All admin routes require role
+adminRoutes.use(checkToken); // All admin routes require auth
+adminRoutes.use(requireAdmin); // All admin routes require role
 adminRoutes.post('/users', validateUser, adminController.createUser);
 // Now properly protected - can't forget!
 ```
@@ -122,11 +125,11 @@ REQUEST → Main Router → Route Tier Selection → Middleware Stack → Contro
 
 ### Security Layers
 
-| Tier | Middleware | Who Can Access | Use Cases |
-|------|-----------|----------------|-----------|
-| **Open** | None | Anyone | Login, register, password reset |
-| **Closed** | `checkToken` | Authenticated users | Change password, profile updates |
-| **Admin** | `checkToken` + `requireAdmin` | Role ≥ 3 (Admin+) | User management, system operations |
+| Tier       | Middleware                    | Who Can Access      | Use Cases                          |
+| ---------- | ----------------------------- | ------------------- | ---------------------------------- |
+| **Open**   | None                          | Anyone              | Login, register, password reset    |
+| **Closed** | `checkToken`                  | Authenticated users | Change password, profile updates   |
+| **Admin**  | `checkToken` + `requireAdmin` | Role ≥ 3 (Admin+)   | User management, system operations |
 
 ---
 
@@ -141,12 +144,14 @@ REQUEST → Main Router → Route Tier Selection → Middleware Stack → Contro
 ### What Belongs in Open Routes?
 
 ✅ **Authentication flows:**
+
 - User registration
 - Login/logout
 - Password reset request
 - Password reset completion
 
 ✅ **Public information:**
+
 - API health checks
 - Public documentation
 - Email/phone verification confirmations
@@ -166,7 +171,7 @@ import {
     validateLogin,
     validateRegister,
     validatePasswordReset,
-    validatePasswordResetRequest
+    validatePasswordResetRequest,
 } from '@middleware';
 
 const openRoutes: Router = express.Router();
@@ -238,6 +243,7 @@ export { openRoutes };
 ### Key Characteristics
 
 **No middleware applied at router level:**
+
 ```typescript
 // Notice: NO router.use(checkToken) here!
 const openRoutes: Router = express.Router();
@@ -289,9 +295,9 @@ Since open routes are publicly accessible, they require special attention:
 // Example: Strict validation on open routes
 openRoutes.post(
     '/auth/register',
-    validateRegister,        // Validate format
-    checkEmailAvailability,  // Check duplicates
-    enforcePasswordPolicy,   // Password strength
+    validateRegister, // Validate format
+    checkEmailAvailability, // Check duplicates
+    enforcePasswordPolicy, // Password strength
     // rateLimit,            // Production: Limit attempts
     AuthController.register
 );
@@ -310,16 +316,19 @@ openRoutes.post(
 ### What Belongs in Closed Routes?
 
 ✅ **User account management:**
+
 - Change password (requires current password)
 - Update profile information
 - View own account details
 
 ✅ **Verification operations:**
+
 - Send email verification
 - Send SMS verification
 - Verify SMS code
 
 ✅ **User-specific actions:**
+
 - Access own resources
 - Perform actions on behalf of self
 
@@ -335,7 +344,7 @@ import {
     checkToken,
     validatePasswordChange,
     validatePhoneSend,
-    validatePhoneVerify
+    validatePhoneVerify,
 } from '@middleware';
 
 const closedRoutes: Router = express.Router();
@@ -392,12 +401,13 @@ export { closedRoutes };
 ### Key Characteristics
 
 **Authentication applied at router level:**
+
 ```typescript
 // CRITICAL: This line protects ALL routes in this file
 closedRoutes.use(checkToken);
 
 // Now every route is automatically protected
-closedRoutes.post('/auth/user/password/change', /* ... */);
+closedRoutes.post('/auth/user/password/change' /* ... */);
 ```
 
 **Request Flow Diagram:**
@@ -455,18 +465,22 @@ export const checkToken = (
             token = token.slice(7, token.length);
         }
 
-        jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
-            if (error) {
-                response.status(403).json({
-                    success: false,
-                    message: 'Token is not valid',
-                });
-            } else {
-                // Store user information in request for controller use
-                request.claims = decoded as IJwtClaims;
-                next();
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET,
+            (error, decoded: JwtPayload) => {
+                if (error) {
+                    response.status(403).json({
+                        success: false,
+                        message: 'Token is not valid',
+                    });
+                } else {
+                    // Store user information in request for controller use
+                    request.claims = decoded as IJwtClaims;
+                    next();
+                }
             }
-        });
+        );
     } else {
         response.status(401).json({
             success: false,
@@ -481,13 +495,13 @@ export const checkToken = (
 ```typescript
 // After checkToken runs, controllers have access to:
 request.claims = {
-    id: 123,              // User ID
-    username: "alice",    // Username
-    email: "alice@...",   // Email
-    role: 1,              // Role level (1=User, 3=Admin, etc.)
-    iat: 1234567890,      // Issued at timestamp
-    exp: 1234571490       // Expiration timestamp
-}
+    id: 123, // User ID
+    username: 'alice', // Username
+    email: 'alice@...', // Email
+    role: 1, // Role level (1=User, 3=Admin, etc.)
+    iat: 1234567890, // Issued at timestamp
+    exp: 1234571490, // Expiration timestamp
+};
 ```
 
 ---
@@ -503,6 +517,7 @@ request.claims = {
 ### What Belongs in Admin Routes?
 
 ✅ **User management:**
+
 - Create users with specific roles
 - View all users (with pagination)
 - Update user details
@@ -511,11 +526,13 @@ request.claims = {
 - Change user roles
 
 ✅ **System operations:**
+
 - Dashboard statistics
 - System configuration
 - Audit logs
 
 ✅ **Administrative actions:**
+
 - Role hierarchy enforcement
 - Bulk operations
 - Reporting and analytics
@@ -538,7 +555,7 @@ import {
     validateUserSearch,
     validateAdminPasswordReset,
     validateAdminRoleChange,
-    validateAdminUsersList
+    validateAdminUsersList,
 } from '@middleware';
 
 const adminRoutes = Router();
@@ -546,8 +563,8 @@ const adminRoutes = Router();
 // ========================================
 // CRITICAL: All admin routes require authentication AND admin role
 // ========================================
-adminRoutes.use(checkToken);      // Step 1: Validate JWT
-adminRoutes.use(requireAdmin);    // Step 2: Check role >= Admin (3)
+adminRoutes.use(checkToken); // Step 1: Validate JWT
+adminRoutes.use(requireAdmin); // Step 2: Check role >= Admin (3)
 
 // ===== USER MANAGEMENT ROUTES =====
 
@@ -573,7 +590,11 @@ adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers);
  * Search users by name, email, or username
  * GET /admin/users/search?q=searchTerm&fields=email,username&page=1&limit=20
  */
-adminRoutes.get('/users/search', validateUserSearch, AdminController.searchUsers);
+adminRoutes.get(
+    '/users/search',
+    validateUserSearch,
+    AdminController.searchUsers
+);
 
 /**
  * Get dashboard statistics
@@ -593,11 +614,7 @@ adminRoutes.get('/users/:id', AdminController.getUserById);
  * PUT /admin/users/:id
  * Middleware ensures you can only modify users with lower roles
  */
-adminRoutes.put(
-    '/users/:id',
-    checkRoleHierarchy,
-    AdminController.updateUser
-);
+adminRoutes.put('/users/:id', checkRoleHierarchy, AdminController.updateUser);
 
 /**
  * Soft delete user (set status to 'deleted')
@@ -640,6 +657,7 @@ export { adminRoutes };
 ### Key Characteristics
 
 **Two-layer protection:**
+
 ```typescript
 // LAYER 1: Authentication (same as closed routes)
 adminRoutes.use(checkToken);
@@ -648,7 +666,7 @@ adminRoutes.use(checkToken);
 adminRoutes.use(requireAdmin);
 
 // Now all routes require BOTH valid token AND admin role
-adminRoutes.post('/users/create', /* ... */);
+adminRoutes.post('/users/create' /* ... */);
 ```
 
 **Request Flow Diagram:**
@@ -708,11 +726,11 @@ Client Request (with JWT token)
 ```typescript
 // Role definitions (in @models)
 export enum UserRole {
-    USER = 1,          // Basic user
-    MEMBER = 2,        // Verified member
-    ADMIN = 3,         // Administrator
-    SUPER_ADMIN = 4,   // Super administrator
-    OWNER = 5          // System owner
+    USER = 1, // Basic user
+    MEMBER = 2, // Verified member
+    ADMIN = 3, // Administrator
+    SUPER_ADMIN = 4, // Super administrator
+    OWNER = 5, // System owner
 }
 ```
 
@@ -766,13 +784,23 @@ export const checkRoleHierarchy = async (
     const adminId = request.claims.id;
 
     if (isNaN(targetUserId)) {
-        sendError(response, 400, 'Invalid user ID', ErrorCodes.VALD_MISSING_FIELDS);
+        sendError(
+            response,
+            400,
+            'Invalid user ID',
+            ErrorCodes.VALD_MISSING_FIELDS
+        );
         return;
     }
 
     // Prevent self-modification for delete operations
     if (request.method === 'DELETE' && targetUserId === adminId) {
-        sendError(response, 400, 'Cannot delete your own account', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            400,
+            'Cannot delete your own account',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -784,7 +812,12 @@ export const checkRoleHierarchy = async (
         );
 
         if (targetUserQuery.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -807,7 +840,12 @@ export const checkRoleHierarchy = async (
         next();
     } catch (error) {
         console.error('Error checking role hierarchy:', error);
-        sendError(response, 500, 'Server error', ErrorCodes.SRVR_DATABASE_ERROR);
+        sendError(
+            response,
+            500,
+            'Server error',
+            ErrorCodes.SRVR_DATABASE_ERROR
+        );
     }
 };
 ```
@@ -922,6 +960,7 @@ import { adminRoutes } from '@routes/admin';
 ```
 
 **Benefits:**
+
 - Clean imports (no `./open/index.ts` needed)
 - Easy to add more route files in subdirectories
 - Follows Node.js conventions
@@ -994,13 +1033,13 @@ closedRoutes.post('/auth/verify/email/send', ...);     // Has checkToken
 // Applied ONLY to this specific route
 openRoutes.post(
     '/auth/login',
-    validateLogin,          // Only this route
+    validateLogin, // Only this route
     AuthController.login
 );
 
 openRoutes.post(
     '/auth/register',
-    validateRegister,       // Only this route (different validator)
+    validateRegister, // Only this route (different validator)
     AuthController.register
 );
 ```
@@ -1051,7 +1090,11 @@ Response with token
 closedRoutes.use(checkToken);
 
 // Route-level
-closedRoutes.post('/auth/user/password/change', validatePasswordChange, AuthController.changePassword);
+closedRoutes.post(
+    '/auth/user/password/change',
+    validatePasswordChange,
+    AuthController.changePassword
+);
 ```
 
 ```
@@ -1074,7 +1117,11 @@ adminRoutes.use(checkToken);
 adminRoutes.use(requireAdmin);
 
 // Route-level
-adminRoutes.delete('/users/:id', checkRoleHierarchy, AdminController.deleteUser);
+adminRoutes.delete(
+    '/users/:id',
+    checkRoleHierarchy,
+    AdminController.deleteUser
+);
 ```
 
 ```
@@ -1100,19 +1147,19 @@ export const checkToken = (request, response, next) => {
     if (!token) {
         // Early return - chain stops here
         response.status(401).json({ message: 'No token' });
-        return;  // Don't call next()!
+        return; // Don't call next()!
     }
 
     jwt.verify(token, secret, (error, decoded) => {
         if (error) {
             // Early return - chain stops here
             response.status(403).json({ message: 'Invalid token' });
-            return;  // Don't call next()!
+            return; // Don't call next()!
         }
 
         // Success - continue to next middleware
         request.claims = decoded;
-        next();  // Continue the chain
+        next(); // Continue the chain
     });
 };
 ```
@@ -1135,7 +1182,11 @@ adminRoutes.use(checkToken);
 adminRoutes.use(requireAdmin);
 
 // 4. Route-specific middleware (in route definition)
-adminRoutes.delete('/users/:id', checkRoleHierarchy, AdminController.deleteUser);
+adminRoutes.delete(
+    '/users/:id',
+    checkRoleHierarchy,
+    AdminController.deleteUser
+);
 
 // Final order for DELETE /admin/users/123:
 // cors → json → urlencoded → checkToken → requireAdmin → checkRoleHierarchy → deleteUser
@@ -1184,11 +1235,11 @@ A **security boundary** is a point in your application where authentication or a
 
 Each boundary is enforced by middleware:
 
-| Boundary | Middleware | What It Checks | Status Code on Failure |
-|----------|-----------|----------------|------------------------|
-| **Boundary 1** | `checkToken` | Valid JWT token | 401 Unauthorized |
-| **Boundary 2** | `requireAdmin` | Role >= Admin (3) | 403 Forbidden |
-| **Boundary 3** | `checkRoleHierarchy` | Admin role > target role | 403 Forbidden |
+| Boundary       | Middleware           | What It Checks           | Status Code on Failure |
+| -------------- | -------------------- | ------------------------ | ---------------------- |
+| **Boundary 1** | `checkToken`         | Valid JWT token          | 401 Unauthorized       |
+| **Boundary 2** | `requireAdmin`       | Role >= Admin (3)        | 403 Forbidden          |
+| **Boundary 3** | `checkRoleHierarchy` | Admin role > target role | 403 Forbidden          |
 
 ### Why Boundaries Matter
 
@@ -1223,13 +1274,13 @@ Sometimes you need to access resources across boundaries:
 
 ```typescript
 // User accessing their own profile (closed routes)
-GET /auth/user/profile  // User ID from JWT claims
+GET / auth / user / profile; // User ID from JWT claims
 
 // Admin viewing user details (admin routes)
-GET /admin/users/123    // Admin can view lower-role users
+GET / admin / users / 123; // Admin can view lower-role users
 
 // Admin resetting user password (admin routes)
-PUT /admin/users/123/password  // Admin can reset lower-role passwords
+PUT / admin / users / 123 / password; // Admin can reset lower-role passwords
 ```
 
 **❌ Forbidden patterns:**
@@ -1265,7 +1316,7 @@ PUT /admin/users/999  // ❌ If user 999 is Super Admin
  */
 openRoutes.post(
     '/auth/username/remind',
-    validateEmailReminder,        // Validate email format
+    validateEmailReminder, // Validate email format
     AuthController.sendUsernameReminder
 );
 ```
@@ -1278,7 +1329,7 @@ export const validateEmailReminder = [
         .isEmail()
         .withMessage('Valid email is required')
         .normalizeEmail(),
-    handleValidationErrors
+    handleValidationErrors,
 ];
 ```
 
@@ -1296,7 +1347,12 @@ export const sendUsernameReminder = asyncHandler(
         );
 
         if (result.rowCount === 0) {
-            sendError(response, 404, 'Email not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'Email not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -1343,7 +1399,12 @@ export const getVerificationStatus = asyncHandler(
         );
 
         if (result.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -1353,6 +1414,7 @@ export const getVerificationStatus = asyncHandler(
 ```
 
 **Key points:**
+
 - No need to add `checkToken` - it's already applied at router level!
 - Access user ID via `request.claims.id` (populated by checkToken)
 - User can only see their own status (security by design)
@@ -1389,7 +1451,7 @@ export const validateExportRequest = [
         .optional()
         .isInt({ min: 1, max: 5 })
         .withMessage('Role must be between 1 and 5'),
-    handleValidationErrors
+    handleValidationErrors,
 ];
 ```
 
@@ -1399,13 +1461,16 @@ export const validateExportRequest = [
 export const exportUsers = asyncHandler(
     async (request: IJwtRequest, response: Response): Promise<void> => {
         const format = request.query.format || 'csv';
-        const role = request.query.role ? parseInt(request.query.role as string) : null;
+        const role = request.query.role
+            ? parseInt(request.query.role as string)
+            : null;
 
         // Admin info from JWT claims (added by checkToken)
         const adminRole = request.claims.role;
 
         // Build query based on role filter
-        let query = 'SELECT Account_ID, username, email, Account_Role, status FROM Account';
+        let query =
+            'SELECT Account_ID, username, email, Account_Role, status FROM Account';
         const params: any[] = [];
 
         if (role) {
@@ -1429,7 +1494,10 @@ export const exportUsers = asyncHandler(
         if (format === 'csv') {
             const csv = convertToCSV(result.rows);
             response.setHeader('Content-Type', 'text/csv');
-            response.setHeader('Content-Disposition', 'attachment; filename=users.csv');
+            response.setHeader(
+                'Content-Disposition',
+                'attachment; filename=users.csv'
+            );
             response.send(csv);
         } else {
             sendSuccess(response, result.rows, 'Users exported');
@@ -1439,6 +1507,7 @@ export const exportUsers = asyncHandler(
 ```
 
 **Key points:**
+
 - Both `checkToken` and `requireAdmin` are already applied at router level!
 - Access admin role via `request.claims.role`
 - Respect role hierarchy even in exports
@@ -1460,7 +1529,7 @@ export const exportUsers = asyncHandler(
  */
 adminRoutes.patch(
     '/users/:id/suspend',
-    checkRoleHierarchy,                    // Verify admin can modify target
+    checkRoleHierarchy, // Verify admin can modify target
     AdminController.suspendUser
 );
 ```
@@ -1488,6 +1557,7 @@ export const suspendUser = asyncHandler(
 ```
 
 **Key points:**
+
 - Use `checkRoleHierarchy` for operations that modify users
 - Middleware handles all hierarchy checks - controller can focus on business logic
 - Path parameter `:id` is validated by middleware
@@ -1518,6 +1588,7 @@ Does it require authentication?
 ### 1. Apply Authentication at Router Level
 
 **✅ Do:**
+
 ```typescript
 // Apply once to entire router
 closedRoutes.use(checkToken);
@@ -1527,6 +1598,7 @@ closedRoutes.post('/auth/verify/phone/send', ...);
 ```
 
 **❌ Don't:**
+
 ```typescript
 // Manually adding to each route (easy to forget!)
 closedRoutes.post('/auth/user/password/change', checkToken, ...);
@@ -1537,6 +1609,7 @@ closedRoutes.post('/auth/verify/email/send', ...); // Oops, forgot checkToken!
 ### 2. Order Routes from Specific to General
 
 **✅ Do:**
+
 ```typescript
 // Specific route first (exact match)
 adminRoutes.get('/users/stats/dashboard', getDashboardStats);
@@ -1546,12 +1619,13 @@ adminRoutes.get('/users/:id', getUserById);
 ```
 
 **❌ Don't:**
+
 ```typescript
 // General route first - WILL MATCH /users/stats too!
-adminRoutes.get('/users/:id', getUserById);  // :id = "stats"
+adminRoutes.get('/users/:id', getUserById); // :id = "stats"
 
 // Specific route never reached
-adminRoutes.get('/users/stats/dashboard', getDashboardStats);  // Dead code!
+adminRoutes.get('/users/stats/dashboard', getDashboardStats); // Dead code!
 ```
 
 **Why?** Express matches routes in definition order. `/users/:id` will match `/users/stats` with `id = "stats"`.
@@ -1559,6 +1633,7 @@ adminRoutes.get('/users/stats/dashboard', getDashboardStats);  // Dead code!
 ### 3. Use Descriptive Route Comments
 
 **✅ Do:**
+
 ```typescript
 /**
  * Reset user password (admin only)
@@ -1574,24 +1649,32 @@ adminRoutes.put(
 ```
 
 **❌ Don't:**
+
 ```typescript
 // Reset password
-adminRoutes.put('/users/:id/password', validateAdminPasswordReset, checkRoleHierarchy, AdminController.resetUserPassword);
+adminRoutes.put(
+    '/users/:id/password',
+    validateAdminPasswordReset,
+    checkRoleHierarchy,
+    AdminController.resetUserPassword
+);
 ```
 
 ### 4. Validate at Route Level, Not in Controllers
 
 **✅ Do:**
+
 ```typescript
 // Validation middleware at route level
 openRoutes.post(
     '/auth/register',
-    validateRegister,              // Handles all validation
-    AuthController.register        // Only business logic
+    validateRegister, // Handles all validation
+    AuthController.register // Only business logic
 );
 ```
 
 **❌ Don't:**
+
 ```typescript
 // Controller doing validation
 export const register = async (request, response) => {
@@ -1610,6 +1693,7 @@ export const register = async (request, response) => {
 ### 5. Respect Role Hierarchy in All Operations
 
 **✅ Do:**
+
 ```typescript
 // Check hierarchy before modifications
 adminRoutes.put('/users/:id', checkRoleHierarchy, updateUser);
@@ -1618,6 +1702,7 @@ adminRoutes.put('/users/:id/role', checkRoleChangeHierarchy, changeRole);
 ```
 
 **❌ Don't:**
+
 ```typescript
 // No hierarchy check - admin could delete their boss!
 adminRoutes.delete('/users/:id', deleteUser);
@@ -1626,6 +1711,7 @@ adminRoutes.delete('/users/:id', deleteUser);
 ### 6. Use Barrel Exports for Clean Imports
 
 **✅ Do:**
+
 ```typescript
 // In /routes/open/index.ts
 export { openRoutes };
@@ -1635,6 +1721,7 @@ import { openRoutes } from './open';
 ```
 
 **❌ Don't:**
+
 ```typescript
 // Verbose imports
 import { openRoutes } from './open/index.ts';
@@ -1644,6 +1731,7 @@ import { closedRoutes } from './closed/index.ts';
 ### 7. Document Middleware Order in Comments
 
 **✅ Do:**
+
 ```typescript
 const adminRoutes = Router();
 
@@ -1660,6 +1748,7 @@ adminRoutes.delete('/users/:id', checkRoleHierarchy, deleteUser);
 ### 8. Return Appropriate Status Codes
 
 **✅ Do:**
+
 ```typescript
 // 401 Unauthorized - No token or invalid token
 if (!token) {
@@ -1673,10 +1762,11 @@ if (userRole < UserRole.ADMIN) {
 ```
 
 **❌ Don't:**
+
 ```typescript
 // Using 401 for everything
 if (userRole < UserRole.ADMIN) {
-    return response.status(401).json({ message: 'Unauthorized' });  // Wrong code!
+    return response.status(401).json({ message: 'Unauthorized' }); // Wrong code!
 }
 ```
 
@@ -1687,6 +1777,7 @@ if (userRole < UserRole.ADMIN) {
 ### 1. Forgetting Authentication Middleware
 
 **❌ Problem:**
+
 ```typescript
 // Added new admin route, forgot it already has checkToken + requireAdmin
 adminRoutes.get('/users/reports', AdminController.getReports);
@@ -1694,6 +1785,7 @@ adminRoutes.get('/users/reports', AdminController.getReports);
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Comment clarifies that router-level middleware applies
 /**
@@ -1707,6 +1799,7 @@ adminRoutes.get('/users/reports', AdminController.getReports);
 ### 2. Mixing Access Levels in Same File
 
 **❌ Problem:**
+
 ```typescript
 // In /routes/closed/index.ts
 closedRoutes.use(checkToken);
@@ -1716,6 +1809,7 @@ closedRoutes.post('/auth/login', ...);                 // ❌ Should be open!
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Login belongs in /routes/open/index.ts
 openRoutes.post('/auth/login', validateLogin, AuthController.login);
@@ -1727,14 +1821,16 @@ closedRoutes.post('/auth/user/password/change', ...);
 ### 3. Route Order Causing Collisions
 
 **❌ Problem:**
+
 ```typescript
 // General route first - matches everything!
 adminRoutes.get('/users/:id', getUserById);
-adminRoutes.get('/users/search', searchUsers);     // Never reached!
-adminRoutes.get('/users/stats', getStats);         // Never reached!
+adminRoutes.get('/users/search', searchUsers); // Never reached!
+adminRoutes.get('/users/stats', getStats); // Never reached!
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Specific routes first
 adminRoutes.get('/users/search', searchUsers);
@@ -1746,44 +1842,49 @@ adminRoutes.get('/users/:id', getUserById);
 ### 4. Inconsistent URL Patterns
 
 **❌ Problem:**
+
 ```typescript
 // Inconsistent patterns
 adminRoutes.get('/users', getAllUsers);
-adminRoutes.get('/user/:id', getUserById);         // Missing 's'
-adminRoutes.post('/createUser', createUser);       // Wrong style
+adminRoutes.get('/user/:id', getUserById); // Missing 's'
+adminRoutes.post('/createUser', createUser); // Wrong style
 adminRoutes.delete('/users/delete/:id', deleteUser); // Redundant
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Consistent RESTful patterns
-adminRoutes.get('/users', getAllUsers);            // Collection
-adminRoutes.get('/users/:id', getUserById);        // Single resource
-adminRoutes.post('/users', createUser);            // Create
-adminRoutes.delete('/users/:id', deleteUser);      // Delete
+adminRoutes.get('/users', getAllUsers); // Collection
+adminRoutes.get('/users/:id', getUserById); // Single resource
+adminRoutes.post('/users', createUser); // Create
+adminRoutes.delete('/users/:id', deleteUser); // Delete
 ```
 
 ### 5. Not Using TypeScript Interfaces
 
 **❌ Problem:**
+
 ```typescript
 // Controller doesn't know about request.claims
 export const getProfile = async (request: Request, response: Response) => {
-    const userId = request.claims.id;  // TypeScript error!
+    const userId = request.claims.id; // TypeScript error!
 };
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Use IJwtRequest interface
 export const getProfile = async (request: IJwtRequest, response: Response) => {
-    const userId = request.claims.id;  // ✅ TypeScript knows about claims
+    const userId = request.claims.id; // ✅ TypeScript knows about claims
 };
 ```
 
 ### 6. Validating in Controller Instead of Middleware
 
 **❌ Problem:**
+
 ```typescript
 // Mixing validation with business logic
 export const createUser = async (request, response) => {
@@ -1796,12 +1897,16 @@ export const createUser = async (request, response) => {
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Validation middleware
 export const validateUserCreation = [
     body('email').isEmail().withMessage('Valid email required'),
-    body('username').trim().isLength({ min: 3 }).withMessage('Username too short'),
-    handleValidationErrors
+    body('username')
+        .trim()
+        .isLength({ min: 3 })
+        .withMessage('Username too short'),
+    handleValidationErrors,
 ];
 
 // Clean controller
@@ -1817,6 +1922,7 @@ export const createUser = async (request, response) => {
 ### 7. Ignoring Role Hierarchy
 
 **❌ Problem:**
+
 ```typescript
 // Admin can modify any user - even their boss!
 export const deleteUser = async (request: IJwtRequest, response: Response) => {
@@ -1827,6 +1933,7 @@ export const deleteUser = async (request: IJwtRequest, response: Response) => {
 ```
 
 **✅ Solution:**
+
 ```typescript
 // Use checkRoleHierarchy middleware
 adminRoutes.delete('/users/:id', checkRoleHierarchy, deleteUser);
@@ -1847,24 +1954,28 @@ export const deleteUser = async (request: IJwtRequest, response: Response) => {
 ### Key Takeaways
 
 **🎯 Route Organization:**
+
 - Organize by **access level** (open, closed, admin) not resource type
 - Apply authentication/authorization at **router level**
 - Use **barrel exports** for clean imports
 - Document **middleware order** clearly
 
 **🎯 Security Boundaries:**
+
 - **Open routes** - No authentication (public endpoints)
 - **Closed routes** - JWT required (authenticated users)
 - **Admin routes** - JWT + role required (administrators)
 - **Hierarchy checks** - Prevent privilege escalation
 
 **🎯 Middleware Stacking:**
+
 - **Validation → Authentication → Authorization** flow
 - Router-level for common checks
 - Route-level for specific validation
 - Early returns prevent unnecessary processing
 
 **🎯 Best Practices:**
+
 - Specific routes before general routes
 - Descriptive comments on all endpoints
 - Validate in middleware, not controllers
@@ -1903,18 +2014,21 @@ Main Router (/routes/index.ts)
 ### Next Steps
 
 **📚 Continue Learning:**
+
 1. [HTTP Methods](./http-methods.md) - Understanding REST semantics
 2. [Node.js & Express Architecture](./node-express-architecture.md) - Server patterns
 3. [Web Security Guide](./web-security-guide.md) - Security best practices
 4. [Validation Strategies](./validation-strategies.md) - Input validation patterns
 
 **🔧 Practice:**
+
 - Add new endpoints to each route tier
 - Implement custom middleware
 - Test security boundaries with curl or Postman
 - Review existing routes for security issues
 
 **✋ Explore the Code:**
+
 - Read `/src/routes/index.ts` - Main router composition
 - Study `/src/routes/open/index.ts` - Public endpoints
 - Examine `/src/routes/closed/index.ts` - Authenticated endpoints
@@ -1932,4 +2046,4 @@ Main Router (/routes/index.ts)
 
 ---
 
-*Master route organization to build secure, maintainable, and scalable authentication systems. Clear security boundaries prevent vulnerabilities and make your API easier to audit and extend.*
+_Master route organization to build secure, maintainable, and scalable authentication systems. Clear security boundaries prevent vulnerabilities and make your API easier to audit and extend._

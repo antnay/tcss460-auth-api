@@ -5,6 +5,7 @@ A comprehensive educational guide to understanding and implementing Role-Based A
 > **Related Code**: See implementations in [`/src/core/middleware/adminAuth.ts`](../src/core/middleware/adminAuth.ts), [`/src/controllers/adminController.ts`](../src/controllers/adminController.ts), and [`/src/routes/admin/index.ts`](../src/routes/admin/)
 
 ## Quick Navigation
+
 - 🔐 **Authentication vs Authorization**: [Core Concepts](#authentication-vs-authorization-the-foundation)
 - 🎭 **5-Tier Role Hierarchy**: [Role System](#the-5-tier-role-hierarchy)
 - 🛡️ **Middleware Protection**: [requireRole & checkRoleHierarchy](#middleware-implementation)
@@ -49,6 +50,7 @@ User Login Flow:
 ```
 
 **Example**: When you log in with `email@example.com` and `password123`, the system authenticates you by:
+
 1. Looking up your account in the database
 2. Verifying your password hash matches
 3. Issuing you a JWT token that proves "you are user #42"
@@ -57,9 +59,9 @@ User Login Flow:
 // Authentication happens in authController.ts
 const token = jwt.sign(
     {
-        id: account.account_id,      // WHO you are
+        id: account.account_id, // WHO you are
         email: account.email,
-        role: account.account_role    // WHAT you can do (used for authorization)
+        role: account.account_role, // WHAT you can do (used for authorization)
     },
     jwtSecret,
     { expiresIn: '14d' }
@@ -82,22 +84,33 @@ Authorization Check Flow:
 ```
 
 **Example**: After authenticating, you try to delete a user account. The system authorizes you by:
+
 1. Extracting your role from the JWT (e.g., Admin = role 3)
 2. Checking if Admins can delete users (yes)
-3. Checking if you can delete *this specific* user (hierarchy rules)
+3. Checking if you can delete _this specific_ user (hierarchy rules)
 4. Allowing or denying the action
 
 ```typescript
 // Authorization happens in adminAuth.ts middleware
-export const requireAdmin = (request: IJwtRequest, response: Response, next: NextFunction) => {
-    const userRole = request.claims.role;  // Extract role from JWT
+export const requireAdmin = (
+    request: IJwtRequest,
+    response: Response,
+    next: NextFunction
+) => {
+    const userRole = request.claims.role; // Extract role from JWT
 
-    if (userRole < UserRole.ADMIN) {      // Check if role is sufficient
-        sendError(response, 403, 'Admin access required', ErrorCodes.AUTH_UNAUTHORIZED);
+    if (userRole < UserRole.ADMIN) {
+        // Check if role is sufficient
+        sendError(
+            response,
+            403,
+            'Admin access required',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
-    next();  // User is authorized, proceed to route handler
+    next(); // User is authorized, proceed to route handler
 };
 ```
 
@@ -106,11 +119,13 @@ export const requireAdmin = (request: IJwtRequest, response: Response, next: Nex
 Think of an office building:
 
 **Authentication (Who are you?)**
+
 - 🏢 Badge scan at entrance: "This is John Doe, Employee #1234"
 - The system verifies your identity
 - You get inside the building
 
 **Authorization (What can you do?)**
+
 - 🚪 Access to specific floors: "John can access floors 1-3, but not floor 4 (executive level)"
 - 🖥️ Access to specific systems: "John can view documents but cannot approve budgets"
 - The system checks your permissions for each action
@@ -118,10 +133,12 @@ Think of an office building:
 ### Why Both Matter
 
 You CANNOT have authorization without authentication:
+
 - ❌ "Can user X delete this account?" → First, prove you ARE user X (authentication)
 - ✅ Once authenticated, check if user X has delete permissions (authorization)
 
 **TCSS-460-auth-squared implements both:**
+
 1. **Authentication**: JWT tokens (`checkToken` middleware in `/src/core/middleware/jwt.ts`)
 2. **Authorization**: RBAC with role hierarchy (`requireAdmin`, `checkRoleHierarchy` middleware)
 
@@ -134,6 +151,7 @@ You CANNOT have authorization without authentication:
 **Role-Based Access Control (RBAC)** is an authorization mechanism that restricts system access based on a user's **role** within an organization.
 
 **Key Concepts:**
+
 - **Role**: A named job function (e.g., User, Admin, SuperAdmin)
 - **Permission**: An action the system can perform (e.g., create user, delete account)
 - **Role Assignment**: Each user is assigned one or more roles
@@ -164,6 +182,7 @@ Example:
 ### Why RBAC?
 
 **Without RBAC (Permission-based only):**
+
 ```sql
 -- Every user needs individual permissions assigned
 INSERT INTO User_Permissions (User_ID, Permission) VALUES (1, 'view_users');
@@ -173,6 +192,7 @@ INSERT INTO User_Permissions (User_ID, Permission) VALUES (1, 'delete_user');
 ```
 
 **With RBAC:**
+
 ```sql
 -- Just assign a role
 UPDATE Account SET Account_Role = 3 WHERE Account_ID = 1;
@@ -180,6 +200,7 @@ UPDATE Account SET Account_Role = 3 WHERE Account_ID = 1;
 ```
 
 **Benefits:**
+
 1. **Simplified Management**: Assign roles instead of individual permissions
 2. **Consistency**: All users with the same role have identical permissions
 3. **Scalability**: Add new roles without touching existing users
@@ -201,7 +222,7 @@ export enum UserRole {
     MODERATOR = 2,
     ADMIN = 3,
     SUPER_ADMIN = 4,
-    OWNER = 5
+    OWNER = 5,
 }
 
 export const RoleName = {
@@ -209,7 +230,7 @@ export const RoleName = {
     [UserRole.MODERATOR]: 'Moderator',
     [UserRole.ADMIN]: 'Admin',
     [UserRole.SUPER_ADMIN]: 'SuperAdmin',
-    [UserRole.OWNER]: 'Owner'
+    [UserRole.OWNER]: 'Owner',
 } as const;
 ```
 
@@ -249,6 +270,7 @@ export const RoleName = {
 **Use Case**: Regular end-users of the application
 
 **Permissions:**
+
 - ✓ View own profile
 - ✓ Update own profile
 - ✓ Change own password
@@ -264,7 +286,7 @@ export const RoleName = {
 const insertAccountResult = await client.query(
     `INSERT INTO Account
      (FirstName, LastName, Username, Email, Phone, Account_Role, ...)
-     VALUES ($1, $2, $3, $4, $5, 1, ...)`,  // Account_Role = 1 (User)
+     VALUES ($1, $2, $3, $4, $5, 1, ...)`, // Account_Role = 1 (User)
     [firstname, lastname, username, email, phone]
 );
 ```
@@ -276,6 +298,7 @@ const insertAccountResult = await client.query(
 **Use Case**: Community moderators, content reviewers
 
 **Permissions:**
+
 - ✓ All User permissions
 - ✓ View limited user information
 - ✓ Flag content for review
@@ -292,6 +315,7 @@ const insertAccountResult = await client.query(
 **Use Case**: System administrators, customer support managers
 
 **Permissions:**
+
 - ✓ All Moderator permissions
 - ✓ View all users (`GET /admin/users`)
 - ✓ Create users with role ≤ 3 (User, Moderator, Admin)
@@ -305,6 +329,7 @@ const insertAccountResult = await client.query(
 **Real-World Analogy**: Department manager who can manage their team but not executives
 
 **Hierarchy Rule**: Admins can only affect users with roles **strictly lower** than their own:
+
 - Can create: Users, Moderators, Admins (roles 1, 2, 3)
 - Can modify: Users, Moderators (roles 1, 2)
 - Cannot touch: SuperAdmins, Owners (roles 4, 5)
@@ -316,6 +341,7 @@ const insertAccountResult = await client.query(
 **Use Case**: Senior system administrators, security team
 
 **Permissions:**
+
 - ✓ All Admin permissions
 - ✓ Create/modify Admins (role 3)
 - ✓ Create users up to SuperAdmin (role 4)
@@ -333,6 +359,7 @@ const insertAccountResult = await client.query(
 **Use Case**: System owner, founder, root account
 
 **Permissions:**
+
 - ✓ All SuperAdmin permissions
 - ✓ Create/modify SuperAdmins (role 4)
 - ✓ Create/modify other Owners (role 5)
@@ -396,11 +423,13 @@ static async register(request: IJwtRequest, response: Response): Promise<void> {
 ### Why Always Start at Role 1?
 
 **Security Principle: Least Privilege**
+
 - Users should start with minimum necessary permissions
 - Prevents accidental or malicious privilege escalation during registration
 - Requires explicit promotion by authorized admins
 
 **Attack Prevention:**
+
 ```typescript
 // ❌ BAD: User-controlled role during registration
 POST /auth/register
@@ -451,12 +480,13 @@ static async createUser(request: IJwtRequest, response: Response): Promise<void>
 ```
 
 **Protected by Middleware:**
+
 ```typescript
 // src/routes/admin/index.ts
 adminRoutes.post(
     '/users/create',
-    validateAdminCreateUser,      // Validates request body
-    validateRoleCreation,          // Ensures role ≤ admin's role
+    validateAdminCreateUser, // Validates request body
+    validateRoleCreation, // Ensures role ≤ admin's role
     AdminController.createUser
 );
 ```
@@ -511,24 +541,28 @@ Admin (role 3) can affect:
 ### Why Hierarchy Enforcement Matters
 
 **Without hierarchy enforcement:**
+
 ```typescript
 // ❌ SECURITY VULNERABILITY
 // Admin (role 3) could modify Owner (role 5)!
-PUT /admin/users/1/role
-Authorization: Bearer <admin-jwt>
-{
-    "role": 1  // ← Admin demotes Owner to User!
-}
+PUT / admin / users / 1 / role;
+Authorization: Bearer <
+    admin - jwt >
+    {
+        role: 1, // ← Admin demotes Owner to User!
+    };
 ```
 
 **With hierarchy enforcement:**
+
 ```typescript
 // ✓ SECURE - Middleware blocks the request
-PUT /admin/users/1/role
-Authorization: Bearer <admin-jwt>
-{
-    "role": 1
-}
+PUT / admin / users / 1 / role;
+Authorization: Bearer <
+    admin - jwt >
+    {
+        role: 1,
+    };
 // Response: 403 Forbidden
 // "Cannot change role of user with equal or higher role"
 ```
@@ -545,12 +579,17 @@ export const checkRoleHierarchy = async (
     next: NextFunction
 ) => {
     const targetUserId = parseInt(request.params.id);
-    const adminRole = request.claims.role;  // From JWT
+    const adminRole = request.claims.role; // From JWT
     const adminId = request.claims.id;
 
     // Prevent self-deletion
     if (request.method === 'DELETE' && targetUserId === adminId) {
-        sendError(response, 400, 'Cannot delete your own account', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            400,
+            'Cannot delete your own account',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -562,7 +601,12 @@ export const checkRoleHierarchy = async (
         );
 
         if (targetUserQuery.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -583,10 +627,15 @@ export const checkRoleHierarchy = async (
 
         // Store target role for route handler
         request.targetUserRole = targetRole;
-        next();  // Authorized - proceed
+        next(); // Authorized - proceed
     } catch (error) {
         console.error('Error checking role hierarchy:', error);
-        sendError(response, 500, 'Server error', ErrorCodes.SRVR_DATABASE_ERROR);
+        sendError(
+            response,
+            500,
+            'Server error',
+            ErrorCodes.SRVR_DATABASE_ERROR
+        );
     }
 };
 ```
@@ -602,12 +651,17 @@ export const validateRoleCreation = (
     response: Response,
     next: NextFunction
 ) => {
-    const adminRole = request.claims.role;      // Admin's role
-    const newUserRole = parseInt(request.body.role);  // Requested role
+    const adminRole = request.claims.role; // Admin's role
+    const newUserRole = parseInt(request.body.role); // Requested role
 
     // Validate role is in valid range (1-5)
     if (isNaN(newUserRole) || newUserRole < 1 || newUserRole > 5) {
-        sendError(response, 400, 'Invalid role. Must be between 1-5', ErrorCodes.VALD_INVALID_ROLE);
+        sendError(
+            response,
+            400,
+            'Invalid role. Must be between 1-5',
+            ErrorCodes.VALD_INVALID_ROLE
+        );
         return;
     }
 
@@ -624,7 +678,7 @@ export const validateRoleCreation = (
         return;
     }
 
-    next();  // Authorized
+    next(); // Authorized
 };
 ```
 
@@ -646,7 +700,12 @@ export const checkRoleChangeHierarchy = async (
 
     // Rule 1: Cannot change your own role
     if (targetUserId === adminId) {
-        sendError(response, 400, 'Cannot change your own role', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            400,
+            'Cannot change your own role',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -669,7 +728,12 @@ export const checkRoleChangeHierarchy = async (
         );
 
         if (targetUserQuery.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -697,29 +761,35 @@ export const checkRoleChangeHierarchy = async (
             return;
         }
 
-        next();  // All hierarchy checks passed
+        next(); // All hierarchy checks passed
     } catch (error) {
         console.error('Role change hierarchy check error:', error);
-        sendError(response, 500, 'Server error during authorization check', ErrorCodes.SRVR_DATABASE_ERROR);
+        sendError(
+            response,
+            500,
+            'Server error during authorization check',
+            ErrorCodes.SRVR_DATABASE_ERROR
+        );
     }
 };
 ```
 
 ### Hierarchy Rules Summary Table
 
-| Admin Role | Can Create | Can Modify | Can Delete | Can Promote To |
-|------------|------------|------------|------------|----------------|
-| User (1) | ❌ None | ❌ None | ❌ None | ❌ None |
-| Moderator (2) | ❌ None | ❌ None | ❌ None | ❌ None |
-| Admin (3) | User, Moderator, Admin (1-3) | User, Moderator (1-2) | User, Moderator (1-2) | User, Moderator, Admin (1-3) |
+| Admin Role     | Can Create                               | Can Modify                   | Can Delete                   | Can Promote To                           |
+| -------------- | ---------------------------------------- | ---------------------------- | ---------------------------- | ---------------------------------------- |
+| User (1)       | ❌ None                                  | ❌ None                      | ❌ None                      | ❌ None                                  |
+| Moderator (2)  | ❌ None                                  | ❌ None                      | ❌ None                      | ❌ None                                  |
+| Admin (3)      | User, Moderator, Admin (1-3)             | User, Moderator (1-2)        | User, Moderator (1-2)        | User, Moderator, Admin (1-3)             |
 | SuperAdmin (4) | User, Moderator, Admin, SuperAdmin (1-4) | User, Moderator, Admin (1-3) | User, Moderator, Admin (1-3) | User, Moderator, Admin, SuperAdmin (1-4) |
-| Owner (5) | All (1-5) | All (1-5)* | All (1-5)* | All (1-5) |
+| Owner (5)      | All (1-5)                                | All (1-5)\*                  | All (1-5)\*                  | All (1-5)                                |
 
-*Except self-deletion and self-role-change
+\*Except self-deletion and self-role-change
 
 ### Real-World Attack Scenarios Prevented
 
 **Scenario 1: Privilege Escalation**
+
 ```typescript
 // Attacker with Admin (role 3) tries to promote themselves
 PUT /admin/users/42/role
@@ -733,28 +803,32 @@ Authorization: Bearer <admin-jwt-for-user-42>
 ```
 
 **Scenario 2: Lateral Privilege Escalation**
+
 ```typescript
 // Attacker with Admin (role 3) tries to demote another Admin
-PUT /admin/users/99/role
-Authorization: Bearer <admin-jwt>
-{
-    "role": 1  // Demote rival admin to User
-}
+PUT / admin / users / 99 / role;
+Authorization: Bearer <
+    admin - jwt >
+    {
+        role: 1, // Demote rival admin to User
+    };
 
 // ✓ Blocked by checkRoleChangeHierarchy:
 // "Cannot change role of user with equal or higher role"
 ```
 
 **Scenario 3: Role Creation Bypass**
+
 ```typescript
 // Attacker with Admin (role 3) tries to create SuperAdmin
-POST /admin/users/create
-Authorization: Bearer <admin-jwt>
-{
-    "email": "backdoor@evil.com",
-    "password": "password123",
-    "role": 4  // Try to create SuperAdmin
-}
+POST / admin / users / create;
+Authorization: Bearer <
+    admin - jwt >
+    {
+        email: 'backdoor@evil.com',
+        password: 'password123',
+        role: 4, // Try to create SuperAdmin
+    };
 
 // ✓ Blocked by validateRoleCreation:
 // "Cannot create user with higher role than your own"
@@ -817,7 +891,8 @@ export const requireAdmin = (
 
     // 2. Check if user has admin role or higher (Admin, SuperAdmin, Owner)
     const userRole = request.claims.role;
-    if (userRole < UserRole.ADMIN) {  // UserRole.ADMIN = 3
+    if (userRole < UserRole.ADMIN) {
+        // UserRole.ADMIN = 3
         //          ↑ Less than 3 means User (1) or Moderator (2)
         sendError(
             response,
@@ -834,10 +909,11 @@ export const requireAdmin = (
 ```
 
 **Usage Example:**
+
 ```typescript
 // All routes under /admin require Admin role (3+)
-adminRoutes.use(checkToken);    // Authentication
-adminRoutes.use(requireAdmin);  // Authorization
+adminRoutes.use(checkToken); // Authentication
+adminRoutes.use(requireAdmin); // Authorization
 ```
 
 ### requireSuperAdmin Middleware
@@ -852,13 +928,24 @@ export const requireSuperAdmin = (
     next: NextFunction
 ) => {
     if (!request.claims) {
-        sendError(response, 401, 'Authentication required', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            401,
+            'Authentication required',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
     const userRole = request.claims.role;
-    if (userRole < UserRole.SUPER_ADMIN) {  // UserRole.SUPER_ADMIN = 4
-        sendError(response, 403, 'Super Admin access required', ErrorCodes.AUTH_UNAUTHORIZED);
+    if (userRole < UserRole.SUPER_ADMIN) {
+        // UserRole.SUPER_ADMIN = 4
+        sendError(
+            response,
+            403,
+            'Super Admin access required',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -878,14 +965,25 @@ export const requireOwner = (
     next: NextFunction
 ) => {
     if (!request.claims) {
-        sendError(response, 401, 'Authentication required', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            401,
+            'Authentication required',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
     const userRole = request.claims.role;
-    if (userRole !== UserRole.OWNER) {  // Must be exactly 5
+    if (userRole !== UserRole.OWNER) {
+        // Must be exactly 5
         //       ↑ !== means "not exactly equal"
-        sendError(response, 403, 'Owner access required', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            403,
+            'Owner access required',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -901,37 +999,39 @@ Combine multiple middleware for layered security:
 // src/routes/admin/index.ts
 adminRoutes.put(
     '/users/:id/role',
-    validateAdminRoleChange,      // 1. Validate request body
-    checkRoleChangeHierarchy,     // 2. Check role hierarchy rules
+    validateAdminRoleChange, // 1. Validate request body
+    checkRoleChangeHierarchy, // 2. Check role hierarchy rules
     AdminController.changeUserRole // 3. Execute if authorized
 );
 
 adminRoutes.delete(
     '/users/:id',
-    checkRoleHierarchy,           // 1. Check can delete target
-    AdminController.deleteUser    // 2. Execute deletion
+    checkRoleHierarchy, // 1. Check can delete target
+    AdminController.deleteUser // 2. Execute deletion
 );
 ```
 
 ### Middleware Best Practices
 
 **1. Order Matters**
+
 ```typescript
 // ✓ GOOD: Authentication before authorization
-adminRoutes.use(checkToken);        // Step 1: Who are you?
-adminRoutes.use(requireAdmin);      // Step 2: What can you do?
+adminRoutes.use(checkToken); // Step 1: Who are you?
+adminRoutes.use(requireAdmin); // Step 2: What can you do?
 
 // ❌ BAD: Authorization before authentication
-adminRoutes.use(requireAdmin);      // request.claims is undefined!
+adminRoutes.use(requireAdmin); // request.claims is undefined!
 adminRoutes.use(checkToken);
 ```
 
 **2. Fail Securely (Deny by Default)**
+
 ```typescript
 // ✓ GOOD: Explicit check, deny if missing
 if (!request.claims) {
     sendError(response, 401, 'Authentication required');
-    return;  // Stop execution
+    return; // Stop execution
 }
 
 // ❌ BAD: Continue on error
@@ -942,6 +1042,7 @@ if (request.claims) {
 ```
 
 **3. Validate All Inputs**
+
 ```typescript
 // ✓ GOOD: Validate parameters
 const targetUserId = parseInt(request.params.id);
@@ -956,10 +1057,13 @@ const targetUserId = request.params.id;
 ```
 
 **4. Log Authorization Failures**
+
 ```typescript
 // ✓ GOOD: Log failed attempts for security monitoring
 if (adminRole <= targetRole) {
-    console.warn(`Authorization failed: User ${adminId} (role ${adminRole}) attempted to modify user ${targetUserId} (role ${targetRole})`);
+    console.warn(
+        `Authorization failed: User ${adminId} (role ${adminRole}) attempted to modify user ${targetUserId} (role ${targetRole})`
+    );
     sendError(response, 403, 'Cannot modify user with equal or higher role');
     return;
 }
@@ -990,8 +1094,8 @@ import {
 const adminRoutes = Router();
 
 // ===== GLOBAL MIDDLEWARE (applies to ALL /admin routes) =====
-adminRoutes.use(checkToken);    // 1. Authentication required
-adminRoutes.use(requireAdmin);  // 2. Admin role required (≥3)
+adminRoutes.use(checkToken); // 1. Authentication required
+adminRoutes.use(requireAdmin); // 2. Admin role required (≥3)
 
 // ===== INDIVIDUAL ROUTES =====
 // ...
@@ -1014,6 +1118,7 @@ adminRoutes.get('/users/:id', AdminController.getUserById);
 ```
 
 **Protection:**
+
 - `checkToken`: Validates JWT
 - `requireAdmin`: Ensures role ≥ 3
 
@@ -1028,10 +1133,15 @@ adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers);
 
 // GET /admin/users/search?q=term&fields=email,username
 // Requires: Admin+ role + valid search params
-adminRoutes.get('/users/search', validateUserSearch, AdminController.searchUsers);
+adminRoutes.get(
+    '/users/search',
+    validateUserSearch,
+    AdminController.searchUsers
+);
 ```
 
 **Protection:**
+
 - `checkToken`: Validates JWT
 - `requireAdmin`: Ensures role ≥ 3
 - `validateAdminUsersList` / `validateUserSearch`: Validates query parameters
@@ -1045,7 +1155,7 @@ Routes that modify users (update/delete):
 // Requires: Admin+ role + hierarchy check (can only modify lower roles)
 adminRoutes.put(
     '/users/:id',
-    checkRoleHierarchy,           // Ensures target role < admin role
+    checkRoleHierarchy, // Ensures target role < admin role
     AdminController.updateUser
 );
 
@@ -1053,7 +1163,7 @@ adminRoutes.put(
 // Requires: Admin+ role + hierarchy check + not self
 adminRoutes.delete(
     '/users/:id',
-    checkRoleHierarchy,           // Prevents deleting equal/higher roles
+    checkRoleHierarchy, // Prevents deleting equal/higher roles
     AdminController.deleteUser
 );
 
@@ -1061,13 +1171,14 @@ adminRoutes.delete(
 // Requires: Admin+ role + hierarchy check + valid password
 adminRoutes.put(
     '/users/:id/password',
-    validateAdminPasswordReset,   // Validates password format
-    checkRoleHierarchy,           // Hierarchy enforcement
+    validateAdminPasswordReset, // Validates password format
+    checkRoleHierarchy, // Hierarchy enforcement
     AdminController.resetUserPassword
 );
 ```
 
 **Protection:**
+
 - `checkToken`: Validates JWT
 - `requireAdmin`: Ensures role ≥ 3
 - `checkRoleHierarchy`: Queries target user's role and enforces hierarchy
@@ -1082,8 +1193,8 @@ Routes that create users or change roles:
 // Requires: Admin+ role + role creation validation
 adminRoutes.post(
     '/users/create',
-    validateAdminCreateUser,      // Validates all required fields
-    validateRoleCreation,         // Ensures newRole ≤ adminRole
+    validateAdminCreateUser, // Validates all required fields
+    validateRoleCreation, // Ensures newRole ≤ adminRole
     AdminController.createUser
 );
 
@@ -1091,13 +1202,14 @@ adminRoutes.post(
 // Requires: Admin+ role + strict role change hierarchy rules
 adminRoutes.put(
     '/users/:id/role',
-    validateAdminRoleChange,      // Validates role field
-    checkRoleChangeHierarchy,     // Strictest hierarchy checks
+    validateAdminRoleChange, // Validates role field
+    checkRoleChangeHierarchy, // Strictest hierarchy checks
     AdminController.changeUserRole
 );
 ```
 
 **Protection:**
+
 - `checkToken`: Validates JWT
 - `requireAdmin`: Ensures role ≥ 3
 - `validateRoleCreation` / `checkRoleChangeHierarchy`: Enforces complex role assignment rules
@@ -1127,7 +1239,11 @@ adminRoutes.post(
 adminRoutes.get('/users', validateAdminUsersList, AdminController.getAllUsers);
 
 // Search users (Level 2: Input validation)
-adminRoutes.get('/users/search', validateUserSearch, AdminController.searchUsers);
+adminRoutes.get(
+    '/users/search',
+    validateUserSearch,
+    AdminController.searchUsers
+);
 
 // Dashboard stats (Level 1: Basic admin access)
 adminRoutes.get('/users/stats/dashboard', AdminController.getDashboardStats);
@@ -1136,11 +1252,7 @@ adminRoutes.get('/users/stats/dashboard', AdminController.getDashboardStats);
 adminRoutes.get('/users/:id', AdminController.getUserById);
 
 // Update user (Level 3: Hierarchy enforcement)
-adminRoutes.put(
-    '/users/:id',
-    checkRoleHierarchy,
-    AdminController.updateUser
-);
+adminRoutes.put('/users/:id', checkRoleHierarchy, AdminController.updateUser);
 
 // Delete user (Level 3: Hierarchy enforcement)
 adminRoutes.delete(
@@ -1254,6 +1366,7 @@ static async createUser(request: IJwtRequest, response: Response): Promise<void>
 ```
 
 **Key Points:**
+
 - Admin can specify role in request body
 - `validateRoleCreation` middleware ensures `role ≤ admin's role`
 - New user starts as `'active'` (not `'pending'` like public registrations)
@@ -1354,6 +1467,7 @@ static async getAllUsers(request: IJwtRequest, response: Response): Promise<void
 ```
 
 **Key Points:**
+
 - Dynamic query building based on filters
 - Pagination to prevent loading thousands of users at once
 - Converts `Account_Role` (1-5) to human-readable names
@@ -1429,6 +1543,7 @@ static async updateUser(request: IJwtRequest, response: Response): Promise<void>
 ```
 
 **Key Points:**
+
 - Middleware (`checkRoleHierarchy`) runs first to validate hierarchy
 - Dynamic query only updates provided fields (partial updates)
 - Returns updated data for UI sync
@@ -1471,6 +1586,7 @@ static async deleteUser(request: IJwtRequest, response: Response): Promise<void>
 ```
 
 **Key Points:**
+
 - **Soft delete** (sets status to 'deleted') instead of hard delete (DELETE FROM)
 - Preserves data for auditing and potential recovery
 - Prevents deletion if already deleted (idempotent)
@@ -1544,6 +1660,7 @@ static async changeUserRole(request: IJwtRequest, response: Response): Promise<v
 ```
 
 **Key Points:**
+
 - Most protected operation (strictest middleware)
 - Returns both previous and new role for audit trail
 - Clear success message showing the role change
@@ -1612,6 +1729,7 @@ CREATE TABLE Account_Credential (
 ```
 
 **Why Separate Table?**
+
 - Security: Credentials in separate table with stricter access controls
 - Performance: Account queries don't load password hashes
 - Flexibility: Support multiple credential types (password, OAuth, etc.)
@@ -1619,21 +1737,25 @@ CREATE TABLE Account_Credential (
 ### Role Queries
 
 **Check User's Role:**
+
 ```sql
 SELECT Account_Role FROM Account WHERE Account_ID = $1;
 ```
 
 **Find All Admins:**
+
 ```sql
 SELECT * FROM Account WHERE Account_Role >= 3;
 ```
 
 **Find Users Modifiable by Admin (role 3):**
+
 ```sql
 SELECT * FROM Account WHERE Account_Role < 3;  -- Users and Moderators
 ```
 
 **Count Users by Role:**
+
 ```sql
 SELECT Account_Role, COUNT(*) as count
 FROM Account
@@ -1659,7 +1781,7 @@ export enum UserRole {
     MODERATOR = 2,
     ADMIN = 3,
     SUPER_ADMIN = 4,
-    OWNER = 5
+    OWNER = 5,
 }
 
 export const RoleName = {
@@ -1667,11 +1789,11 @@ export const RoleName = {
     [UserRole.MODERATOR]: 'Moderator',
     [UserRole.ADMIN]: 'Admin',
     [UserRole.SUPER_ADMIN]: 'SuperAdmin',
-    [UserRole.OWNER]: 'Owner'
+    [UserRole.OWNER]: 'Owner',
 } as const;
 
 // Usage:
-const roleName = RoleName[account.account_role];  // RoleName[3] = 'Admin'
+const roleName = RoleName[account.account_role]; // RoleName[3] = 'Admin'
 ```
 
 ---
@@ -1685,15 +1807,25 @@ const roleName = RoleName[account.account_role];  // RoleName[3] = 'Admin'
 ```typescript
 // ❌ INSECURE: No hierarchy check
 app.delete('/admin/users/:id', requireAdmin, async (req, res) => {
-    await pool.query('DELETE FROM Account WHERE Account_ID = $1', [req.params.id]);
+    await pool.query('DELETE FROM Account WHERE Account_ID = $1', [
+        req.params.id,
+    ]);
     // Admin can delete anyone, including Owners!
 });
 
 // ✓ SECURE: Hierarchy middleware
-app.delete('/admin/users/:id', requireAdmin, checkRoleHierarchy, async (req, res) => {
-    // Middleware ensures admin can only delete lower roles
-    await pool.query('UPDATE Account SET Account_Status = \'deleted\' WHERE Account_ID = $1', [req.params.id]);
-});
+app.delete(
+    '/admin/users/:id',
+    requireAdmin,
+    checkRoleHierarchy,
+    async (req, res) => {
+        // Middleware ensures admin can only delete lower roles
+        await pool.query(
+            "UPDATE Account SET Account_Status = 'deleted' WHERE Account_ID = $1",
+            [req.params.id]
+        );
+    }
+);
 ```
 
 ### 2. Prevent Self-Modification for Critical Operations
@@ -1713,6 +1845,7 @@ if (targetUserId === adminId) {
 ```
 
 **Why?** Prevents accidental lockout scenarios:
+
 - Admin accidentally demotes themselves to User
 - Admin deletes their own account
 - Last Owner removes their Owner role
@@ -1728,6 +1861,7 @@ DELETE FROM Account WHERE Account_ID = $1;
 ```
 
 **Benefits:**
+
 - Audit trail preserved
 - Data recovery possible
 - Foreign key relationships maintained
@@ -1759,13 +1893,16 @@ await pool.query('INSERT INTO Account_Credential (...) VALUES (...)', [...]);
 ```typescript
 // ✓ GOOD: Log failed authorization attempts
 if (adminRole <= targetRole) {
-    console.warn(`[AUTHORIZATION FAILED] User ${adminId} (role ${adminRole}) attempted to modify user ${targetUserId} (role ${targetRole})`);
+    console.warn(
+        `[AUTHORIZATION FAILED] User ${adminId} (role ${adminRole}) attempted to modify user ${targetUserId} (role ${targetRole})`
+    );
     sendError(response, 403, 'Cannot modify user with equal or higher role');
     return;
 }
 ```
 
 **Benefits:**
+
 - Security monitoring
 - Detect malicious activity
 - Audit compliance
@@ -1799,7 +1936,10 @@ if (isNaN(newUserRole) || newUserRole < 1 || newUserRole > 5) {
 
 // ❌ BAD: No validation
 const newUserRole = parseInt(request.body.role);
-await pool.query('UPDATE Account SET Account_Role = $1 WHERE Account_ID = $2', [newUserRole, userId]);
+await pool.query('UPDATE Account SET Account_Role = $1 WHERE Account_ID = $2', [
+    newUserRole,
+    userId,
+]);
 // User could set role to 999!
 ```
 
@@ -1811,7 +1951,7 @@ const token = jwt.sign(
     {
         id: account.account_id,
         email: account.email,
-        role: account.account_role  // Include role for RBAC
+        role: account.account_role, // Include role for RBAC
     },
     jwtSecret,
     { expiresIn: '14d' }
@@ -1821,7 +1961,7 @@ const token = jwt.sign(
 const token = jwt.sign(
     {
         id: account.account_id,
-        email: account.email
+        email: account.email,
     },
     jwtSecret,
     { expiresIn: '14d' }
@@ -1857,13 +1997,14 @@ import rateLimit from 'express-rate-limit';
 const adminRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many admin requests from this IP, please try again later.'
+    message: 'Too many admin requests from this IP, please try again later.',
 });
 
 adminRoutes.use(adminRateLimiter);
 ```
 
 **Prevents:**
+
 - Brute force role elevation attempts
 - Admin credential stuffing
 - Denial of service attacks
@@ -1875,16 +2016,18 @@ adminRoutes.use(adminRateLimiter);
 ### Pattern 1: Middleware Composition
 
 **✓ GOOD: Layer middleware for granular control**
+
 ```typescript
 adminRoutes.post(
     '/users/create',
-    validateAdminCreateUser,  // Layer 1: Input validation
-    validateRoleCreation,     // Layer 2: Role hierarchy
+    validateAdminCreateUser, // Layer 1: Input validation
+    validateRoleCreation, // Layer 2: Role hierarchy
     AdminController.createUser // Layer 3: Business logic
 );
 ```
 
 **❌ BAD: Single monolithic controller**
+
 ```typescript
 adminRoutes.post('/users/create', async (req, res) => {
     // Validation, authorization, business logic all mixed
@@ -1897,6 +2040,7 @@ adminRoutes.post('/users/create', async (req, res) => {
 ### Pattern 2: Fail-Fast Authorization
 
 **✓ GOOD: Check cheapest conditions first**
+
 ```typescript
 export const checkRoleHierarchy = async (req, res, next) => {
     // 1. Cheap check: Validate input
@@ -1918,6 +2062,7 @@ export const checkRoleHierarchy = async (req, res, next) => {
 ```
 
 **❌ BAD: Database query first**
+
 ```typescript
 export const checkRoleHierarchy = async (req, res, next) => {
     // Query database even for invalid input
@@ -1934,6 +2079,7 @@ export const checkRoleHierarchy = async (req, res, next) => {
 ### Pattern 3: Explicit Role Checks
 
 **✓ GOOD: Explicit comparison operators**
+
 ```typescript
 // Clear: admin must have strictly higher role
 if (adminRole <= targetRole) {
@@ -1943,6 +2089,7 @@ if (adminRole <= targetRole) {
 ```
 
 **❌ BAD: Implicit or confusing logic**
+
 ```typescript
 // Confusing: what does this actually allow?
 if (!(adminRole > targetRole)) {
@@ -1954,6 +2101,7 @@ if (!(adminRole > targetRole)) {
 ### Pattern 4: Separate Validation from Business Logic
 
 **✓ GOOD: Validation in middleware, logic in controller**
+
 ```typescript
 // Middleware: Validate inputs
 export const validateRoleCreation = (req, res, next) => {
@@ -1974,6 +2122,7 @@ static async createUser(request, response) {
 ```
 
 **❌ BAD: Mixed concerns**
+
 ```typescript
 static async createUser(request, response) {
     // Validation mixed with business logic
@@ -1991,13 +2140,14 @@ static async createUser(request, response) {
 ### Pattern 5: Use Enums for Roles
 
 **✓ GOOD: Type-safe enum**
+
 ```typescript
 export enum UserRole {
     USER = 1,
     MODERATOR = 2,
     ADMIN = 3,
     SUPER_ADMIN = 4,
-    OWNER = 5
+    OWNER = 5,
 }
 
 if (userRole < UserRole.ADMIN) {
@@ -2006,6 +2156,7 @@ if (userRole < UserRole.ADMIN) {
 ```
 
 **❌ BAD: Magic numbers**
+
 ```typescript
 if (userRole < 3) {
     // What is 3? Why 3? Hard to maintain
@@ -2015,15 +2166,19 @@ if (userRole < 3) {
 ### Anti-Pattern 1: Ignoring Hierarchy for "Trusted" Admins
 
 **❌ DANGEROUS:**
+
 ```typescript
 // Never do this!
 if (request.claims.role === UserRole.ADMIN) {
     // "Admins are trusted, skip hierarchy check"
-    await pool.query('DELETE FROM Account WHERE Account_ID = $1', [targetUserId]);
+    await pool.query('DELETE FROM Account WHERE Account_ID = $1', [
+        targetUserId,
+    ]);
 }
 ```
 
 **Why dangerous:**
+
 - Compromised admin account = complete system takeover
 - No protection against malicious insiders
 - Violates defense-in-depth principle
@@ -2031,6 +2186,7 @@ if (request.claims.role === UserRole.ADMIN) {
 ### Anti-Pattern 2: Client-Side Role Checks
 
 **❌ INSECURE:**
+
 ```typescript
 // Frontend (React/Angular/Vue)
 if (user.role >= 3) {
@@ -2040,11 +2196,13 @@ if (user.role >= 3) {
 ```
 
 **Why insecure:**
+
 - Client code is easily bypassed (browser dev tools)
 - User can manipulate JWT in localStorage
 - **Always enforce authorization on the server**
 
 **✓ CORRECT:**
+
 ```typescript
 // Frontend: Show UI based on role (UX only)
 if (user.role >= 3) {
@@ -2058,6 +2216,7 @@ app.delete('/admin/users/:id', checkToken, requireAdmin, checkRoleHierarchy, del
 ### Anti-Pattern 3: Storing Roles as Strings
 
 **❌ PROBLEMATIC:**
+
 ```sql
 CREATE TABLE Account (
     ...
@@ -2066,6 +2225,7 @@ CREATE TABLE Account (
 ```
 
 **Why problematic:**
+
 - Typos: "Adin" vs "Admin"
 - Case sensitivity: "admin" vs "Admin"
 - No natural hierarchy: Can't use `<` or `>` operators
@@ -2074,6 +2234,7 @@ CREATE TABLE Account (
 ### Anti-Pattern 4: Role Proliferation
 
 **❌ BAD: Too many granular roles**
+
 ```typescript
 enum UserRole {
     USER = 1,
@@ -2085,17 +2246,19 @@ enum UserRole {
     ADMIN_HR = 7,
     ADMIN_IT = 8,
     SUPER_ADMIN = 9,
-    OWNER = 10
+    OWNER = 10,
     // ... 20 more roles
 }
 ```
 
 **Why bad:**
+
 - Unmaintainable middleware logic
 - Confusion about hierarchy
 - Consider permission-based RBAC or ABAC (Attribute-Based Access Control) instead
 
 **✓ BETTER: Keep hierarchy simple, use permissions for granularity**
+
 ```typescript
 enum UserRole {
     USER = 1,
@@ -2239,17 +2402,18 @@ if (adminRole <= targetRole) {
 
 ```typescript
 // Client request (Admin promotes User to Moderator)
-PUT /admin/users/42/role
-Authorization: Bearer <admin-jwt>
-{
-    "role": 2  // Moderator
-}
+PUT / admin / users / 42 / role;
+Authorization: Bearer <
+    admin - jwt >
+    {
+        role: 2, // Moderator
+    };
 
 // ===== MIDDLEWARE: checkRoleChangeHierarchy =====
 const targetUserId = 42;
-const adminRole = 3;           // Admin
+const adminRole = 3; // Admin
 const adminId = 10;
-const newRole = 2;             // Moderator
+const newRole = 2; // Moderator
 
 // Check 1: Not self-modification
 if (targetUserId === adminId) {
@@ -2295,23 +2459,27 @@ const currentUser = await pool.query(
 // Update role
 await pool.query(
     'UPDATE Account SET Account_Role = $1, Updated_At = NOW() WHERE Account_ID = $2',
-    [2, 42]  // Set role to 2 (Moderator)
+    [2, 42] // Set role to 2 (Moderator)
 );
 
 // Return detailed response
-sendSuccess(response, {
-    user: {
-        id: 42,
-        firstName: 'John',
-        role: 'Moderator',
-        roleLevel: 2,
-        updatedAt: '2024-01-15T10:30:00.000Z'
+sendSuccess(
+    response,
+    {
+        user: {
+            id: 42,
+            firstName: 'John',
+            role: 'Moderator',
+            roleLevel: 2,
+            updatedAt: '2024-01-15T10:30:00.000Z',
+        },
+        previousRole: {
+            role: 'User',
+            roleLevel: 1,
+        },
     },
-    previousRole: {
-        role: 'User',
-        roleLevel: 1
-    }
-}, 'User role changed from User to Moderator');
+    'User role changed from User to Moderator'
+);
 
 // Client response
 // 200 OK
@@ -2342,54 +2510,54 @@ sendSuccess(response, {
 ### Key Takeaways
 
 1. **Authentication vs Authorization**:
-   - Authentication (AuthN): "Who are you?" - Verify identity via JWT
-   - Authorization (AuthZ): "What can you do?" - Check permissions via RBAC
+    - Authentication (AuthN): "Who are you?" - Verify identity via JWT
+    - Authorization (AuthZ): "What can you do?" - Check permissions via RBAC
 
 2. **5-Tier Role Hierarchy**:
-   - User (1): Default role for all registrations
-   - Moderator (2): Content moderation
-   - Admin (3): Full user management with hierarchy limits
-   - SuperAdmin (4): Elevated administration
-   - Owner (5): Unrestricted access
+    - User (1): Default role for all registrations
+    - Moderator (2): Content moderation
+    - Admin (3): Full user management with hierarchy limits
+    - SuperAdmin (4): Elevated administration
+    - Owner (5): Unrestricted access
 
 3. **Hierarchy Enforcement is Critical**:
-   - Users can only affect users with **strictly lower** roles
-   - Prevents privilege escalation attacks
-   - Enforced by `checkRoleHierarchy` and `checkRoleChangeHierarchy` middleware
+    - Users can only affect users with **strictly lower** roles
+    - Prevents privilege escalation attacks
+    - Enforced by `checkRoleHierarchy` and `checkRoleChangeHierarchy` middleware
 
 4. **Middleware Patterns**:
-   - `requireAdmin`: Basic role check (role >= 3)
-   - `checkRoleHierarchy`: Enforces hierarchy for modify/delete
-   - `checkRoleChangeHierarchy`: Strictest rules for role changes
-   - Middleware composition provides defense-in-depth
+    - `requireAdmin`: Basic role check (role >= 3)
+    - `checkRoleHierarchy`: Enforces hierarchy for modify/delete
+    - `checkRoleChangeHierarchy`: Strictest rules for role changes
+    - Middleware composition provides defense-in-depth
 
 5. **Security Best Practices**:
-   - Always start with least privilege (role 1)
-   - Use soft deletes for audit trail
-   - Prevent self-modification for critical operations
-   - Log authorization failures
-   - Validate all inputs
-   - Use transactions for multi-step operations
+    - Always start with least privilege (role 1)
+    - Use soft deletes for audit trail
+    - Prevent self-modification for critical operations
+    - Log authorization failures
+    - Validate all inputs
+    - Use transactions for multi-step operations
 
 ### Further Learning
 
 - **Explore the Full Implementation**:
-  - [`/src/core/middleware/adminAuth.ts`](../../TCSS-460-auth-squared/src/core/middleware/adminAuth.ts) - RBAC middleware
-  - [`/src/controllers/adminController.ts`](../../TCSS-460-auth-squared/src/controllers/adminController.ts) - Admin operations
-  - [`/src/routes/admin/index.ts`](../../TCSS-460-auth-squared/src/routes/admin/index.ts) - Route protection
-  - [`/src/core/models/index.ts`](../../TCSS-460-auth-squared/src/core/models/index.ts) - Role definitions
+    - [`/src/core/middleware/adminAuth.ts`](../../TCSS-460-auth-squared/src/core/middleware/adminAuth.ts) - RBAC middleware
+    - [`/src/controllers/adminController.ts`](../../TCSS-460-auth-squared/src/controllers/adminController.ts) - Admin operations
+    - [`/src/routes/admin/index.ts`](../../TCSS-460-auth-squared/src/routes/admin/index.ts) - Route protection
+    - [`/src/core/models/index.ts`](../../TCSS-460-auth-squared/src/core/models/index.ts) - Role definitions
 
 - **Deep Dive Topics**:
-  - Permission-Based RBAC (roles + permissions tables)
-  - Attribute-Based Access Control (ABAC)
-  - OAuth 2.0 scopes and claims
-  - Multi-tenancy and role hierarchies
-  - RBAC in microservices architectures
+    - Permission-Based RBAC (roles + permissions tables)
+    - Attribute-Based Access Control (ABAC)
+    - OAuth 2.0 scopes and claims
+    - Multi-tenancy and role hierarchies
+    - RBAC in microservices architectures
 
 - **Related Documentation**:
-  - [Authentication Guide](../../TCSS-460-auth-squared/docs-2.0/authentication-guide.md) - JWT authentication concepts
-  - [Web Security Guide](../../TCSS-460-auth-squared/docs-2.0/web-security-guide.md) - Security best practices
-  - [Database Fundamentals](../../TCSS-460-auth-squared/docs-2.0/database-fundamentals.md) - Schema design
+    - [Authentication Guide](../../TCSS-460-auth-squared/docs-2.0/authentication-guide.md) - JWT authentication concepts
+    - [Web Security Guide](../../TCSS-460-auth-squared/docs-2.0/web-security-guide.md) - Security best practices
+    - [Database Fundamentals](../../TCSS-460-auth-squared/docs-2.0/database-fundamentals.md) - Schema design
 
 ### Related Resources
 

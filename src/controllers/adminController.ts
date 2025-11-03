@@ -8,7 +8,7 @@ import {
     generateSalt,
     generateHash,
     validateUserUniqueness,
-    executeTransactionWithResponse
+    executeTransactionWithResponse,
 } from '@utilities';
 import { IJwtRequest, UserRole, RoleName } from '@models';
 
@@ -16,8 +16,12 @@ export class AdminController {
     /**
      * Create a new user with specified role (admin only)
      */
-    static async createUser(request: IJwtRequest, response: Response): Promise<void> {
-        const { firstname, lastname, email, password, username, role, phone } = request.body;
+    static async createUser(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
+        const { firstname, lastname, email, password, username, role, phone } =
+            request.body;
         const userRole = parseInt(role);
 
         // Check if user already exists
@@ -75,9 +79,15 @@ export class AdminController {
     /**
      * Get all users with pagination and filtering
      */
-    static async getAllUsers(request: IJwtRequest, response: Response): Promise<void> {
+    static async getAllUsers(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const page = parseInt(request.query.page as string) || 1;
-        const limit = Math.min(parseInt(request.query.limit as string) || 20, 100);
+        const limit = Math.min(
+            parseInt(request.query.limit as string) || 20,
+            100
+        );
         const offset = (page - 1) * limit;
         const status = request.query.status as string;
         const role = request.query.role as string;
@@ -107,7 +117,9 @@ export class AdminController {
 
             // Add status filter if provided
             if (status) {
-                whereConditions.push(`Account_Status = $${queryParams.length + 1}`);
+                whereConditions.push(
+                    `Account_Status = $${queryParams.length + 1}`
+                );
                 queryParams.push(status);
             }
 
@@ -115,7 +127,9 @@ export class AdminController {
             if (role) {
                 const roleNumber = parseInt(role);
                 if (!isNaN(roleNumber) && roleNumber >= 1 && roleNumber <= 5) {
-                    whereConditions.push(`Account_Role = $${queryParams.length + 1}`);
+                    whereConditions.push(
+                        `Account_Role = $${queryParams.length + 1}`
+                    );
                     queryParams.push(roleNumber);
                 }
             }
@@ -138,7 +152,7 @@ export class AdminController {
             const usersResult = await pool.query(usersQuery, queryParams);
 
             // Format users data
-            const users = usersResult.rows.map(user => ({
+            const users = usersResult.rows.map((user) => ({
                 id: user.account_id,
                 firstName: user.firstname,
                 lastName: user.lastname,
@@ -151,68 +165,101 @@ export class AdminController {
                 phoneVerified: user.phone_verified,
                 accountStatus: user.account_status,
                 createdAt: user.created_at,
-                updatedAt: user.updated_at
+                updatedAt: user.updated_at,
             }));
 
             // Build applied filters for response
-            const appliedFilters: { 
-                status?: string; 
-                role?: { level: number; name: string } 
+            const appliedFilters: {
+                status?: string;
+                role?: { level: number; name: string };
             } = {};
             if (status) appliedFilters.status = status;
             if (role && !isNaN(parseInt(role))) {
                 const roleNumber = parseInt(role);
                 appliedFilters.role = {
                     level: roleNumber,
-                    name: RoleName[roleNumber as UserRole]
+                    name: RoleName[roleNumber as UserRole],
                 };
             }
 
-            sendSuccess(response, {
-                users,
-                pagination: {
-                    page,
-                    limit,
-                    totalUsers,
-                    totalPages: Math.ceil(totalUsers / limit)
+            sendSuccess(
+                response,
+                {
+                    users,
+                    pagination: {
+                        page,
+                        limit,
+                        totalUsers,
+                        totalPages: Math.ceil(totalUsers / limit),
+                    },
+                    filters:
+                        Object.keys(appliedFilters).length > 0
+                            ? appliedFilters
+                            : null,
                 },
-                filters: Object.keys(appliedFilters).length > 0 ? appliedFilters : null
-            }, `Retrieved ${totalUsers} users${Object.keys(appliedFilters).length > 0 ? ' with filters applied' : ''}`);
-
+                `Retrieved ${totalUsers} users${Object.keys(appliedFilters).length > 0 ? ' with filters applied' : ''}`
+            );
         } catch (error) {
             console.error('Error fetching users:', error);
-            sendError(response, 500, 'Failed to fetch users', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to fetch users',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Search users by name, email, or username
      */
-    static async searchUsers(request: IJwtRequest, response: Response): Promise<void> {
+    static async searchUsers(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const searchTerm = request.query.q as string;
         const fields = request.query.fields as string;
         const page = parseInt(request.query.page as string) || 1;
-        const limit = Math.min(parseInt(request.query.limit as string) || 20, 100);
+        const limit = Math.min(
+            parseInt(request.query.limit as string) || 20,
+            100
+        );
         const offset = (page - 1) * limit;
 
         try {
             // Build search conditions based on fields parameter
-            const searchFields = fields ? fields.split(',').map(f => f.trim()) : ['firstname', 'lastname', 'username', 'email'];
+            const searchFields = fields
+                ? fields.split(',').map((f) => f.trim())
+                : ['firstname', 'lastname', 'username', 'email'];
             const validFields = ['firstname', 'lastname', 'username', 'email'];
-            const fieldsToSearch = searchFields.filter(field => validFields.includes(field.toLowerCase()));
-            
+            const fieldsToSearch = searchFields.filter((field) =>
+                validFields.includes(field.toLowerCase())
+            );
+
             if (fieldsToSearch.length === 0) {
-                sendError(response, 400, 'No valid search fields specified', ErrorCodes.VALD_INVALID_INPUT);
+                sendError(
+                    response,
+                    400,
+                    'No valid search fields specified',
+                    ErrorCodes.VALD_INVALID_INPUT
+                );
                 return;
             }
 
             // Build search conditions
-            const searchConditions = fieldsToSearch.map(field => {
-                const dbField = field.toLowerCase() === 'firstname' ? 'FirstName' : 
-                              field.toLowerCase() === 'lastname' ? 'LastName' :
-                              field.toLowerCase() === 'username' ? 'Username' : 'Email';
-                return `${dbField} ILIKE $1`;
-            }).join(' OR ');
+            const searchConditions = fieldsToSearch
+                .map((field) => {
+                    const dbField =
+                        field.toLowerCase() === 'firstname'
+                            ? 'FirstName'
+                            : field.toLowerCase() === 'lastname'
+                              ? 'LastName'
+                              : field.toLowerCase() === 'username'
+                                ? 'Username'
+                                : 'Email';
+                    return `${dbField} ILIKE $1`;
+                })
+                .join(' OR ');
 
             const searchPattern = `%${searchTerm}%`;
 
@@ -242,10 +289,14 @@ export class AdminController {
                 LIMIT $2 OFFSET $3
             `;
 
-            const searchResult = await pool.query(searchQuery, [searchPattern, limit, offset]);
+            const searchResult = await pool.query(searchQuery, [
+                searchPattern,
+                limit,
+                offset,
+            ]);
 
             // Format users data
-            const users = searchResult.rows.map(user => ({
+            const users = searchResult.rows.map((user) => ({
                 id: user.account_id,
                 firstName: user.firstname,
                 lastName: user.lastname,
@@ -258,35 +309,51 @@ export class AdminController {
                 phoneVerified: user.phone_verified,
                 accountStatus: user.account_status,
                 createdAt: user.created_at,
-                updatedAt: user.updated_at
+                updatedAt: user.updated_at,
             }));
 
-            sendSuccess(response, {
-                users,
-                pagination: {
-                    page,
-                    limit,
-                    totalUsers,
-                    totalPages: Math.ceil(totalUsers / limit)
+            sendSuccess(
+                response,
+                {
+                    users,
+                    pagination: {
+                        page,
+                        limit,
+                        totalUsers,
+                        totalPages: Math.ceil(totalUsers / limit),
+                    },
+                    searchTerm,
+                    fieldsSearched: fieldsToSearch,
                 },
-                searchTerm,
-                fieldsSearched: fieldsToSearch
-            }, `Found ${totalUsers} users matching "${searchTerm}"`);
-
+                `Found ${totalUsers} users matching "${searchTerm}"`
+            );
         } catch (error) {
             console.error('Error searching users:', error);
-            sendError(response, 500, 'Failed to search users', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to search users',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Get specific user details
      */
-    static async getUserById(request: IJwtRequest, response: Response): Promise<void> {
+    static async getUserById(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const userId = parseInt(request.params.id);
 
         if (isNaN(userId)) {
-            sendError(response, 400, 'Invalid user ID', ErrorCodes.VALD_MISSING_FIELDS);
+            sendError(
+                response,
+                400,
+                'Invalid user ID',
+                ErrorCodes.VALD_MISSING_FIELDS
+            );
             return;
         }
 
@@ -297,40 +364,56 @@ export class AdminController {
             );
 
             if (userQuery.rowCount === 0) {
-                sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+                sendError(
+                    response,
+                    404,
+                    'User not found',
+                    ErrorCodes.USER_NOT_FOUND
+                );
                 return;
             }
 
             const user = userQuery.rows[0];
 
-            sendSuccess(response, {
-                user: {
-                    id: user.account_id,
-                    firstName: user.firstname,
-                    lastName: user.lastname,
-                    username: user.username,
-                    email: user.email,
-                    phone: user.phone,
-                    role: RoleName[user.account_role as UserRole],
-                    roleLevel: user.account_role,
-                    emailVerified: user.email_verified,
-                    phoneVerified: user.phone_verified,
-                    accountStatus: user.account_status,
-                    createdAt: user.created_at,
-                    updatedAt: user.updated_at
-                }
-            }, 'User details retrieved successfully');
-
+            sendSuccess(
+                response,
+                {
+                    user: {
+                        id: user.account_id,
+                        firstName: user.firstname,
+                        lastName: user.lastname,
+                        username: user.username,
+                        email: user.email,
+                        phone: user.phone,
+                        role: RoleName[user.account_role as UserRole],
+                        roleLevel: user.account_role,
+                        emailVerified: user.email_verified,
+                        phoneVerified: user.phone_verified,
+                        accountStatus: user.account_status,
+                        createdAt: user.created_at,
+                        updatedAt: user.updated_at,
+                    },
+                },
+                'User details retrieved successfully'
+            );
         } catch (error) {
             console.error('Error fetching user details:', error);
-            sendError(response, 500, 'Failed to fetch user details', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to fetch user details',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Update user details
      */
-    static async updateUser(request: IJwtRequest, response: Response): Promise<void> {
+    static async updateUser(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const userId = parseInt(request.params.id);
         const { accountStatus, emailVerified, phoneVerified } = request.body;
 
@@ -355,7 +438,12 @@ export class AdminController {
         }
 
         if (updates.length === 0) {
-            sendError(response, 400, 'No valid updates provided', ErrorCodes.VALD_MISSING_FIELDS);
+            sendError(
+                response,
+                400,
+                'No valid updates provided',
+                ErrorCodes.VALD_MISSING_FIELDS
+            );
             return;
         }
 
@@ -373,30 +461,41 @@ export class AdminController {
         try {
             const result = await pool.query(updateQuery, values);
 
-            sendSuccess(response, {
-                user: {
-                    id: result.rows[0].account_id,
-                    firstName: result.rows[0].firstname,
-                    lastName: result.rows[0].lastname,
-                    username: result.rows[0].username,
-                    email: result.rows[0].email,
-                    accountStatus: result.rows[0].account_status,
-                    emailVerified: result.rows[0].email_verified,
-                    phoneVerified: result.rows[0].phone_verified,
-                    updatedAt: result.rows[0].updated_at
-                }
-            }, 'User updated successfully');
-
+            sendSuccess(
+                response,
+                {
+                    user: {
+                        id: result.rows[0].account_id,
+                        firstName: result.rows[0].firstname,
+                        lastName: result.rows[0].lastname,
+                        username: result.rows[0].username,
+                        email: result.rows[0].email,
+                        accountStatus: result.rows[0].account_status,
+                        emailVerified: result.rows[0].email_verified,
+                        phoneVerified: result.rows[0].phone_verified,
+                        updatedAt: result.rows[0].updated_at,
+                    },
+                },
+                'User updated successfully'
+            );
         } catch (error) {
             console.error('Error updating user:', error);
-            sendError(response, 500, 'Failed to update user', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to update user',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Soft delete user (set status to 'deleted')
      */
-    static async deleteUser(request: IJwtRequest, response: Response): Promise<void> {
+    static async deleteUser(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const userId = parseInt(request.params.id);
 
         try {
@@ -410,22 +509,34 @@ export class AdminController {
             );
 
             if (result.rowCount === 0) {
-                sendError(response, 404, 'User not found or already deleted', ErrorCodes.USER_NOT_FOUND);
+                sendError(
+                    response,
+                    404,
+                    'User not found or already deleted',
+                    ErrorCodes.USER_NOT_FOUND
+                );
                 return;
             }
 
             sendSuccess(response, null, 'User deleted successfully');
-
         } catch (error) {
             console.error('Error deleting user:', error);
-            sendError(response, 500, 'Failed to delete user', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to delete user',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Get dashboard statistics
      */
-    static async getDashboardStats(request: IJwtRequest, response: Response): Promise<void> {
+    static async getDashboardStats(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         try {
             const stats = await pool.query(`
                 SELECT
@@ -440,20 +551,31 @@ export class AdminController {
                 FROM Account
             `);
 
-            sendSuccess(response, {
-                statistics: stats.rows[0]
-            }, 'Dashboard statistics retrieved');
-
+            sendSuccess(
+                response,
+                {
+                    statistics: stats.rows[0],
+                },
+                'Dashboard statistics retrieved'
+            );
         } catch (error) {
             console.error('Error fetching statistics:', error);
-            sendError(response, 500, 'Failed to fetch statistics', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to fetch statistics',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 
     /**
      * Reset user password (admin only)
      */
-    static async resetUserPassword(request: IJwtRequest, response: Response): Promise<void> {
+    static async resetUserPassword(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const userId = parseInt(request.params.id);
         const { password } = request.body;
 
@@ -465,7 +587,12 @@ export class AdminController {
             );
 
             if (userCheck.rowCount === 0) {
-                sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+                sendError(
+                    response,
+                    404,
+                    'User not found',
+                    ErrorCodes.USER_NOT_FOUND
+                );
                 return;
             }
 
@@ -502,17 +629,24 @@ export class AdminController {
                 'Password reset successfully by admin',
                 'Failed to reset password'
             );
-
         } catch (error) {
             console.error('Admin password reset error:', error);
-            sendError(response, 500, 'Failed to reset password', ErrorCodes.SRVR_TRANSACTION_FAILED);
+            sendError(
+                response,
+                500,
+                'Failed to reset password',
+                ErrorCodes.SRVR_TRANSACTION_FAILED
+            );
         }
     }
 
     /**
      * Change user role (admin only)
      */
-    static async changeUserRole(request: IJwtRequest, response: Response): Promise<void> {
+    static async changeUserRole(
+        request: IJwtRequest,
+        response: Response
+    ): Promise<void> {
         const userId = parseInt(request.params.id);
         const { role } = request.body;
         const newRole = parseInt(role);
@@ -525,7 +659,12 @@ export class AdminController {
             );
 
             if (currentUserQuery.rowCount === 0) {
-                sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+                sendError(
+                    response,
+                    404,
+                    'User not found',
+                    ErrorCodes.USER_NOT_FOUND
+                );
                 return;
             }
 
@@ -538,36 +677,49 @@ export class AdminController {
             );
 
             if (updateResult.rowCount === 0) {
-                sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+                sendError(
+                    response,
+                    404,
+                    'User not found',
+                    ErrorCodes.USER_NOT_FOUND
+                );
                 return;
             }
 
             const updatedUser = updateResult.rows[0];
 
-            sendSuccess(response, {
-                user: {
-                    id: updatedUser.account_id,
-                    firstName: updatedUser.firstname,
-                    lastName: updatedUser.lastname,
-                    username: updatedUser.username,
-                    email: updatedUser.email,
-                    phone: updatedUser.phone,
-                    role: RoleName[newRole],
-                    roleLevel: newRole,
-                    emailVerified: updatedUser.email_verified,
-                    phoneVerified: updatedUser.phone_verified,
-                    accountStatus: updatedUser.account_status,
-                    updatedAt: updatedUser.updated_at
+            sendSuccess(
+                response,
+                {
+                    user: {
+                        id: updatedUser.account_id,
+                        firstName: updatedUser.firstname,
+                        lastName: updatedUser.lastname,
+                        username: updatedUser.username,
+                        email: updatedUser.email,
+                        phone: updatedUser.phone,
+                        role: RoleName[newRole],
+                        roleLevel: newRole,
+                        emailVerified: updatedUser.email_verified,
+                        phoneVerified: updatedUser.phone_verified,
+                        accountStatus: updatedUser.account_status,
+                        updatedAt: updatedUser.updated_at,
+                    },
+                    previousRole: {
+                        role: RoleName[currentUser.account_role],
+                        roleLevel: currentUser.account_role,
+                    },
                 },
-                previousRole: {
-                    role: RoleName[currentUser.account_role],
-                    roleLevel: currentUser.account_role
-                }
-            }, `User role changed from ${RoleName[currentUser.account_role]} to ${RoleName[newRole]}`);
-
+                `User role changed from ${RoleName[currentUser.account_role]} to ${RoleName[newRole]}`
+            );
         } catch (error) {
             console.error('Admin role change error:', error);
-            sendError(response, 500, 'Failed to change user role', ErrorCodes.SRVR_DATABASE_ERROR);
+            sendError(
+                response,
+                500,
+                'Failed to change user role',
+                ErrorCodes.SRVR_DATABASE_ERROR
+            );
         }
     }
 }

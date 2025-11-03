@@ -34,7 +34,7 @@ By studying this guide, you'll understand:
 Think of a restaurant:
 
 - **Customer (Client)** - Orders food, makes requests
-- **Kitchen (Server)** - Prepares food, fulfills requests  
+- **Kitchen (Server)** - Prepares food, fulfills requests
 - **Waiter (Network)** - Carries orders and food between customer and kitchen
 - **Menu (API)** - Lists what's available and how to order
 
@@ -47,16 +47,19 @@ Think of a restaurant:
 ### What Clients Do
 
 **Initiate Communication:**
+
 - Send requests to servers
 - Specify what they want (URL, method, data)
 - Handle responses appropriately
 
 **User Interface:**
+
 - Display information to users
 - Collect user input
 - Provide interactive experiences
 
 **Local Processing:**
+
 - Validate input before sending
 - Cache frequently used data
 - Handle network errors gracefully
@@ -64,14 +67,16 @@ Think of a restaurant:
 ### Types of Clients
 
 **1. Web Browsers**
+
 ```javascript
 // Browser making a request
 fetch('http://localhost:8000/auth/verify')
-  .then(response => response.json())
-  .then(data => console.log(data));
+    .then((response) => response.json())
+    .then((data) => console.log(data));
 ```
 
 **2. Mobile Applications**
+
 ```swift
 // iOS app making a request
 let url = URL(string: "http://localhost:8000/auth/login")!
@@ -81,6 +86,7 @@ URLSession.shared.dataTask(with: url) { data, response, error in
 ```
 
 **3. Other Servers**
+
 ```javascript
 // Node.js server acting as client
 const axios = require('axios');
@@ -88,6 +94,7 @@ const response = await axios.get('http://localhost:8000/health');
 ```
 
 **4. API Testing Tools**
+
 - Postman
 - curl commands
 - Our Swagger UI interface
@@ -101,16 +108,19 @@ const response = await axios.get('http://localhost:8000/health');
 ### What Servers Do
 
 **Process Requests:**
+
 - Receive and parse incoming requests
 - Validate request parameters and data
 - Route requests to appropriate handlers
 
 **Business Logic:**
+
 - Execute application-specific operations
 - Apply business rules and validation
 - Interact with databases and external services
 
 **Generate Responses:**
+
 - Format data according to client needs
 - Set appropriate status codes and headers
 - Handle errors gracefully
@@ -118,6 +128,7 @@ const response = await axios.get('http://localhost:8000/health');
 ### Our TCSS-460-auth-squared API Server
 
 **Server Setup:**
+
 ```typescript
 // src/app.ts - Server configuration
 const app = express();
@@ -131,22 +142,22 @@ app.listen(PORT, () => {
 ```
 
 **Request Processing:**
+
 ```typescript
 // src/controllers/authController.ts - Handling client requests
-export const verifyToken = asyncHandler(async (
-    request: Request,
-    response: Response
-): Promise<void> => {
-    const user: User = {
-        account_id: 1,
-        username: 'john_doe',
-        email: 'john@example.com',
-        account_role: 'user',
-        account_status: 'active'
-    };
+export const verifyToken = asyncHandler(
+    async (request: Request, response: Response): Promise<void> => {
+        const user: User = {
+            account_id: 1,
+            username: 'john_doe',
+            email: 'john@example.com',
+            account_role: 'user',
+            account_status: 'active',
+        };
 
-    sendSuccess(response, user, 'Token verified successfully');
-});
+        sendSuccess(response, user, 'Token verified successfully');
+    }
+);
 ```
 
 **🔧 Explore:** See our server code in `/src/app.ts` and route handlers in `/src/routes/`
@@ -174,6 +185,7 @@ export const verifyToken = asyncHandler(async (
 ### Real Example: GET /auth/verify
 
 **1. Client Request:**
+
 ```http
 GET /auth/verify HTTP/1.1
 Host: localhost:8000
@@ -182,6 +194,7 @@ Accept: application/json
 ```
 
 **2. Server Processing:**
+
 ```typescript
 // Server processes the request
 const user: User = {
@@ -189,11 +202,12 @@ const user: User = {
     username: 'john_doe',
     email: 'john@example.com',
     account_role: 'user',
-    account_status: 'active'
+    account_status: 'active',
 };
 ```
 
 **3. Server Response:**
+
 ```http
 HTTP/1.1 200 OK
 Content-Type: application/json
@@ -221,11 +235,13 @@ Content-Type: application/json
 ### 1. Separation of Concerns
 
 **Clients focus on:**
+
 - User interface and experience
 - Local data presentation
 - User interaction handling
 
 **Servers focus on:**
+
 - Data management and storage
 - Business logic implementation
 - Security and access control
@@ -233,6 +249,7 @@ Content-Type: application/json
 ### 2. Scalability
 
 **Horizontal Scaling:**
+
 ```
 Multiple Clients → Single Server
 [Browser] ──┐
@@ -241,6 +258,7 @@ Multiple Clients → Single Server
 ```
 
 **Server Scaling:**
+
 ```
 Single Client → Multiple Servers
 [Browser] ──→ [Load Balancer] ──┬─→ [Server 1]
@@ -251,6 +269,7 @@ Single Client → Multiple Servers
 ### 3. Technology Independence
 
 **Different Technologies:**
+
 - **Client:** React, Vue.js, Swift, Kotlin, Python
 - **Server:** Node.js, Java, Python, C#, Go
 - **Communication:** HTTP/JSON (standard protocol)
@@ -260,6 +279,7 @@ Single Client → Multiple Servers
 ### 4. Centralized Data Management
 
 **Single Source of Truth:**
+
 - Data stored on server
 - Consistent across all clients
 - Easier backup and maintenance
@@ -273,6 +293,7 @@ Single Client → Multiple Servers
 
 **Challenge:** Clients need network connectivity
 **Our Solution:** Proper error handling
+
 ```typescript
 // Client-side error handling
 try {
@@ -291,6 +312,7 @@ try {
 
 **Challenge:** Network requests take time
 **Solutions:**
+
 - Caching frequently accessed data
 - Optimizing response sizes
 - Using appropriate HTTP status codes
@@ -299,6 +321,7 @@ try {
 
 **Challenge:** Server can become overwhelmed
 **Solutions:**
+
 - Load balancing
 - Efficient database queries
 - Appropriate rate limiting
@@ -308,18 +331,21 @@ try {
 ## Modern Variations
 
 ### Traditional Client-Server
+
 ```
 [Thin Client] ←→ [Server]
    (Browser)     (Database + Logic)
 ```
 
 ### Three-Tier Architecture
+
 ```
 [Client] ←→ [Application Server] ←→ [Database Server]
 (Browser)   (Our Express API)      (PostgreSQL, etc.)
 ```
 
 ### Microservices
+
 ```
 [Client] ←→ [API Gateway] ←→ [Service 1]
                          ←→ [Service 2]
@@ -327,6 +353,7 @@ try {
 ```
 
 ### Serverless
+
 ```
 [Client] ←→ [Function] (runs on demand)
 [Client] ←→ [Function] (auto-scales)
@@ -341,6 +368,7 @@ try {
 ### Client-Side Security
 
 **Never trust the client:**
+
 ```typescript
 // ❌ Bad: Client-side validation only
 if (userInput.length > 0) {
@@ -357,13 +385,17 @@ if (!userInput || userInput.trim().length === 0) {
 ### Server-Side Security
 
 **Validate everything:**
+
 ```typescript
 // Our API validates all inputs
-router.post('/auth/register',
+router.post(
+    '/auth/register',
     [
         body('username').notEmpty().withMessage('Username is required'),
         body('email').isEmail().withMessage('Valid email is required'),
-        body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters'),
     ],
     handleValidationErrors,
     register
@@ -379,11 +411,13 @@ router.post('/auth/register',
 ### Server Components
 
 **Application Server (Express.js):**
+
 - Handles HTTP requests
 - Processes business logic
 - Returns JSON responses
 
 **Route Handlers:**
+
 - `/auth/login` - Authenticates users and issues JWT tokens
 - `/auth/register` - Creates new user accounts
 - `/auth/verify` - Validates JWT tokens
@@ -394,21 +428,24 @@ router.post('/auth/register',
 ### Client Examples
 
 **1. Swagger UI (Browser Client):**
+
 - Interactive API testing
 - Documentation viewing
 - Real-time request/response
 
 **2. Browser DevTools (Manual Client):**
+
 ```javascript
 // Try this in browser console at localhost:8000
 fetch('/auth/verify', {
-  headers: { 'Authorization': 'Bearer YOUR_JWT_TOKEN' }
+    headers: { Authorization: 'Bearer YOUR_JWT_TOKEN' },
 })
-  .then(r => r.json())
-  .then(data => console.log(data));
+    .then((r) => r.json())
+    .then((data) => console.log(data));
 ```
 
 **3. Postman Collection (Testing Client):**
+
 - Automated testing
 - Collection-based workflows
 - Environment management
@@ -422,6 +459,7 @@ fetch('/auth/verify', {
 ### Server Design
 
 **1. Stateless Operations:**
+
 ```typescript
 // ✅ Good: Each request is independent
 export const verifyToken = async (req: Request, res: Response) => {
@@ -432,6 +470,7 @@ export const verifyToken = async (req: Request, res: Response) => {
 ```
 
 **2. Consistent Response Format:**
+
 ```typescript
 // Our standardized response structure
 interface ApiResponse<T> {
@@ -443,6 +482,7 @@ interface ApiResponse<T> {
 ```
 
 **3. Proper Error Handling:**
+
 ```typescript
 // Meaningful error responses
 if (!isValidInput(data)) {
@@ -450,7 +490,7 @@ if (!isValidInput(data)) {
         success: false,
         message: 'Invalid input provided',
         code: 'VALIDATION_ERROR',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 }
 ```
@@ -458,6 +498,7 @@ if (!isValidInput(data)) {
 ### Client Design
 
 **1. Handle Network Errors:**
+
 ```javascript
 // Graceful error handling
 async function fetchData() {
@@ -475,6 +516,7 @@ async function fetchData() {
 ```
 
 **2. Validate Server Responses:**
+
 ```javascript
 // Check response structure
 if (data.success && data.data) {
@@ -507,10 +549,12 @@ Now that you understand client-server architecture, continue with:
 3. **[HTTP Status Codes](/docs/http-status-codes.md)** - Server response meanings
 
 **🔧 Immediate Practice:**
+
 - Act as different types of clients using [our API documentation](http://localhost:8000/api-docs)
 - Try the same endpoint from browser, Postman, and curl
 
 **✋ Hands-On Exploration:**
+
 - Examine `/src/app.ts` to see server setup
 - Look at `/src/routes/` to see request processing
 - Check `/src/core/middleware/` to see cross-cutting concerns
@@ -537,4 +581,4 @@ Understanding this architecture is essential because:
 
 ---
 
-*Continue your learning with [Request-Response Model](/docs/request-response-model.md) to understand the detailed mechanics of client-server communication.*
+_Continue your learning with [Request-Response Model](/docs/request-response-model.md) to understand the detailed mechanics of client-server communication._

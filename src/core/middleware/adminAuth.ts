@@ -120,14 +120,24 @@ export const checkRoleHierarchy = async (
     const adminId = request.claims.id;
 
     if (isNaN(targetUserId)) {
-        sendError(response, 400, 'Invalid user ID', ErrorCodes.VALD_MISSING_FIELDS);
+        sendError(
+            response,
+            400,
+            'Invalid user ID',
+            ErrorCodes.VALD_MISSING_FIELDS
+        );
         return;
     }
 
     // Prevent self-modification for delete operations
     // (Allow self-updates for things like profile changes in the future)
     if (request.method === 'DELETE' && targetUserId === adminId) {
-        sendError(response, 400, 'Cannot delete your own account', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            400,
+            'Cannot delete your own account',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -139,7 +149,12 @@ export const checkRoleHierarchy = async (
         );
 
         if (targetUserQuery.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -162,7 +177,12 @@ export const checkRoleHierarchy = async (
         next();
     } catch (error) {
         console.error('Error checking role hierarchy:', error);
-        sendError(response, 500, 'Server error', ErrorCodes.SRVR_DATABASE_ERROR);
+        sendError(
+            response,
+            500,
+            'Server error',
+            ErrorCodes.SRVR_DATABASE_ERROR
+        );
     }
 };
 
@@ -179,7 +199,12 @@ export const validateRoleCreation = (
     const newUserRole = parseInt(request.body.role);
 
     if (isNaN(newUserRole) || newUserRole < 1 || newUserRole > 5) {
-        sendError(response, 400, 'Invalid role. Must be between 1-5', ErrorCodes.VALD_INVALID_ROLE);
+        sendError(
+            response,
+            400,
+            'Invalid role. Must be between 1-5',
+            ErrorCodes.VALD_INVALID_ROLE
+        );
         return;
     }
 
@@ -216,7 +241,12 @@ export const validateRoleAssignment = (
     }
 
     if (isNaN(assignedRole) || assignedRole < 1 || assignedRole > 5) {
-        sendError(response, 400, 'Invalid role. Must be between 1-5', ErrorCodes.VALD_INVALID_ROLE);
+        sendError(
+            response,
+            400,
+            'Invalid role. Must be between 1-5',
+            ErrorCodes.VALD_INVALID_ROLE
+        );
         return;
     }
 
@@ -252,13 +282,23 @@ export const checkRoleChangeHierarchy = async (
     const newRole = parseInt(request.body.role);
 
     if (isNaN(targetUserId) || isNaN(newRole)) {
-        sendError(response, 400, 'Invalid user ID or role', ErrorCodes.VALD_MISSING_FIELDS);
+        sendError(
+            response,
+            400,
+            'Invalid user ID or role',
+            ErrorCodes.VALD_MISSING_FIELDS
+        );
         return;
     }
 
     // Prevent self-role changes
     if (targetUserId === adminId) {
-        sendError(response, 400, 'Cannot change your own role', ErrorCodes.AUTH_UNAUTHORIZED);
+        sendError(
+            response,
+            400,
+            'Cannot change your own role',
+            ErrorCodes.AUTH_UNAUTHORIZED
+        );
         return;
     }
 
@@ -282,7 +322,12 @@ export const checkRoleChangeHierarchy = async (
         );
 
         if (targetUserQuery.rowCount === 0) {
-            sendError(response, 404, 'User not found', ErrorCodes.USER_NOT_FOUND);
+            sendError(
+                response,
+                404,
+                'User not found',
+                ErrorCodes.USER_NOT_FOUND
+            );
             return;
         }
 
@@ -314,7 +359,12 @@ export const checkRoleChangeHierarchy = async (
         next();
     } catch (error) {
         console.error('Role change hierarchy check error:', error);
-        sendError(response, 500, 'Server error during authorization check', ErrorCodes.SRVR_DATABASE_ERROR);
+        sendError(
+            response,
+            500,
+            'Server error during authorization check',
+            ErrorCodes.SRVR_DATABASE_ERROR
+        );
     }
 };
 

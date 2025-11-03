@@ -44,6 +44,7 @@ In the late 1980s, researchers at CERN (European physics research center) faced 
 **🎯 Learning Objective:** Understand how technical needs drive protocol development
 
 This vision required three key technologies:
+
 1. **HTML** - To structure documents
 2. **URLs** - To address documents uniquely
 3. **HTTP** - To transfer documents between computers
@@ -65,6 +66,7 @@ GET /index.html
 That's it! No headers, no status codes, no POST methods.
 
 **Features:**
+
 - ✅ **Only GET method** - Could only retrieve documents
 - ✅ **HTML only** - Only served HTML documents
 - ✅ **No headers** - No metadata about requests or responses
@@ -96,6 +98,7 @@ Content-Length: 1234
 ```
 
 **New Features:**
+
 - ✅ **Multiple methods** - GET, POST, HEAD
 - ✅ **Status codes** - 200 OK, 404 Not Found, etc.
 - ✅ **Headers** - Content-Type, Content-Length, etc.
@@ -103,6 +106,7 @@ Content-Length: 1234
 - ✅ **Versioning** - Protocol version in requests
 
 **Real-World Impact:**
+
 - **Forms became possible** with POST method
 - **Images could be embedded** with different content types
 - **Error handling improved** with status codes
@@ -131,6 +135,7 @@ Connection: keep-alive
 ```
 
 **Major Improvements:**
+
 - ✅ **Persistent connections** - Reuse connections for multiple requests
 - ✅ **Pipelining** - Send multiple requests without waiting
 - ✅ **Chunked encoding** - Stream large responses
@@ -139,6 +144,7 @@ Connection: keep-alive
 - ✅ **More methods** - PUT, DELETE, OPTIONS, TRACE
 
 **Why This Mattered:**
+
 - **Web pages loaded faster** - Fewer connection setups
 - **Virtual hosting possible** - Multiple domains per server
 - **APIs became practical** - PUT/DELETE enabled REST
@@ -159,6 +165,7 @@ By 2010s, web pages were loading 100+ resources. HTTP/1.1's limitations became a
 - **Header redundancy** - Same headers sent repeatedly
 
 **Revolutionary Changes:**
+
 - ✅ **Binary protocol** - More efficient than text
 - ✅ **Multiplexing** - Multiple requests simultaneously
 - ✅ **Header compression** - Reduce redundant data
@@ -166,6 +173,7 @@ By 2010s, web pages were loading 100+ resources. HTTP/1.1's limitations became a
 - ✅ **Stream prioritization** - Important requests first
 
 **Performance Impact:**
+
 ```
 HTTP/1.1: Request → Wait → Response → Request → Wait → Response
 HTTP/2:   Request ↘
@@ -174,6 +182,7 @@ HTTP/2:   Request ↘
 ```
 
 **Real-World Benefits:**
+
 - **50% faster page loads** on average
 - **Better mobile performance** - Less connection overhead
 - **Improved user experience** - Pages felt more responsive
@@ -194,6 +203,7 @@ HTTP/2 still relied on TCP, which has inherent limitations:
 - **Connection migration issues** - Problems when switching networks
 
 **HTTP/3 Innovations:**
+
 - ✅ **QUIC transport** - UDP-based instead of TCP
 - ✅ **Built-in encryption** - TLS is integral to QUIC
 - ✅ **0-RTT connections** - Faster connection establishment
@@ -201,6 +211,7 @@ HTTP/2 still relied on TCP, which has inherent limitations:
 - ✅ **Improved loss recovery** - Per-stream retransmission
 
 **Why This Matters:**
+
 - **Faster initial connections** - Especially important for mobile
 - **Better handling of packet loss** - Each stream independent
 - **Improved security** - Encryption can't be disabled
@@ -215,23 +226,26 @@ HTTP/2 still relied on TCP, which has inherent limitations:
 Our TCSS-460-auth-squared demonstrates concepts from HTTP's evolution:
 
 **From HTTP/1.0 - Status Codes:**
+
 ```typescript
 // Our API uses meaningful status codes
-response.status(200).json({ success: true, data: healthData });  // Success
+response.status(200).json({ success: true, data: healthData }); // Success
 response.status(404).json({ success: false, code: 'NOT_FOUND' }); // Not found
 response.status(400).json({ success: false, code: 'BAD_REQUEST' }); // Client error
 ```
 
 **From HTTP/1.1 - Multiple Methods:**
+
 ```typescript
 // Our API supports full REST operations
-router.get('/admin/users', getUsers);           // Retrieve data
-router.post('/auth/register', registerUser);    // Create data
-router.put('/admin/users/:id', updateUser);     // Update data
-router.delete('/admin/users/:id', deleteUser);  // Delete data
+router.get('/admin/users', getUsers); // Retrieve data
+router.post('/auth/register', registerUser); // Create data
+router.put('/admin/users/:id', updateUser); // Update data
+router.delete('/admin/users/:id', deleteUser); // Delete data
 ```
 
 **Modern Practices - Content Negotiation:**
+
 ```typescript
 // Our API properly handles content types
 app.use(express.json()); // Parse JSON bodies
@@ -315,16 +329,19 @@ HTTP's improvements benefit mobile and IoT:
 ### Emerging Trends
 
 **Enhanced Security:**
+
 - Mandatory encryption becoming standard
 - Certificate transparency improvements
 - Better privacy protections
 
 **Performance Optimizations:**
+
 - Smarter caching strategies
 - Predictive resource loading
 - Edge computing integration
 
 **IoT and Edge Computing:**
+
 - Lightweight HTTP variants
 - Better support for constrained devices
 - Edge-optimized protocols
@@ -349,10 +366,12 @@ Now that you understand HTTP's evolution, continue with:
 3. **[HTTP Methods](/docs/http-methods.md)** - Understanding GET, POST, PUT, DELETE in detail
 
 **🔧 Immediate Practice:**
+
 - Try different HTTP methods in [our API documentation](http://localhost:8000/api-docs)
 - Notice how our API uses features from HTTP's evolution
 
 **✋ Hands-On Exploration:**
+
 - Examine `/src/core/config/swagger.ts` to see modern HTTP documentation
 - Look at `/src/routes/` to see HTTP methods in action
 
@@ -373,4 +392,4 @@ Understanding this history helps you appreciate why modern web development works
 
 ---
 
-*Continue your learning with [Client-Server Architecture](/docs/client-server-architecture.md) to understand the architectural pattern that HTTP enables.*
+_Continue your learning with [Client-Server Architecture](/docs/client-server-architecture.md) to understand the architectural pattern that HTTP enables._

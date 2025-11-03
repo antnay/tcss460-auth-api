@@ -5,6 +5,7 @@ A comprehensive introduction to JSON (JavaScript Object Notation), the universal
 > **💡 Related Code**: See JSON usage in [`/src/types/apiTypes.ts`](../src/types/apiTypes.ts), request/response examples in controllers, and test data in [`/testing/postman/`](../testing/postman/)
 
 ## Quick Navigation
+
 - 📡 **API Responses**: All endpoints return JSON - Try [Swagger UI](http://localhost:8000/api-docs)
 - 🧪 **Testing**: [Postman Collection](../testing/postman/) uses JSON for requests
 - 📘 **TypeScript**: [TypeScript Patterns](./typescript-patterns.md) - How types relate to JSON
@@ -33,6 +34,7 @@ A comprehensive introduction to JSON (JavaScript Object Notation), the universal
 ### Why JSON?
 
 **Before JSON, we had:**
+
 - **XML** - Verbose, complex, harder to read
 - **Custom formats** - Every API used different formats
 - **Plain text** - No structure, hard to parse
@@ -53,6 +55,7 @@ Think of JSON as a **universal language for data**:
 - Just like English has grammar rules, JSON has syntax rules
 
 **Example: Restaurant Order**
+
 ```
 Human: "I'll have a burger, fries, and a coke"
 JSON: {"meal": "burger", "sides": ["fries"], "drink": "coke"}
@@ -68,7 +71,7 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "name": "John"
+    "name": "John"
 }
 ```
 
@@ -80,9 +83,9 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "name": "John",
-  "age": 25,
-  "active": true
+    "name": "John",
+    "age": 25,
+    "active": true
 }
 ```
 
@@ -92,10 +95,10 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "user": {
-    "name": "John",
-    "age": 25
-  }
+    "user": {
+        "name": "John",
+        "age": 25
+    }
 }
 ```
 
@@ -103,7 +106,7 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "tags": ["student", "developer", "learner"]
+    "tags": ["student", "developer", "learner"]
 }
 ```
 
@@ -111,7 +114,7 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "name": "John"
+    "name": "John"
 }
 ```
 
@@ -121,18 +124,18 @@ JSON has **strict syntax rules**. Breaking any rule makes the JSON invalid!
 
 ```json
 {
-  "name": "John Doe",
-  "age": 25,
-  "active": true,
-  "enrolled": true,
-  "courses": ["TCSS 460", "TCSS 450", "TCSS 480"],
-  "address": {
-    "city": "Tacoma",
-    "state": "WA",
-    "zip": "98402"
-  },
-  "gpa": 3.8,
-  "metadata": null
+    "name": "John Doe",
+    "age": 25,
+    "active": true,
+    "enrolled": true,
+    "courses": ["TCSS 460", "TCSS 450", "TCSS 480"],
+    "address": {
+        "city": "Tacoma",
+        "state": "WA",
+        "zip": "98402"
+    },
+    "gpa": 3.8,
+    "metadata": null
 }
 ```
 
@@ -148,23 +151,25 @@ Text in double quotes.
 
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "status": "active"
+    "name": "John Doe",
+    "email": "john@example.com",
+    "status": "active"
 }
 ```
 
 **Rules:**
+
 - Must use double quotes (not single)
 - Escape special characters: `\"`, `\\`, `\n`, `\t`
 
 **Examples:**
+
 ```json
 {
-  "message": "Hello, World!",
-  "quote": "He said, \"Hello\"",
-  "path": "C:\\Users\\John",
-  "multiline": "Line 1\nLine 2"
+    "message": "Hello, World!",
+    "quote": "He said, \"Hello\"",
+    "path": "C:\\Users\\John",
+    "multiline": "Line 1\nLine 2"
 }
 ```
 
@@ -174,21 +179,23 @@ Integer or floating-point number (no quotes).
 
 ```json
 {
-  "age": 25,
-  "price": 19.99,
-  "quantity": 100,
-  "temperature": -5.5,
-  "scientific": 1.5e10
+    "age": 25,
+    "price": 19.99,
+    "quantity": 100,
+    "temperature": -5.5,
+    "scientific": 1.5e10
 }
 ```
 
 **Rules:**
+
 - No quotes around numbers
 - Can be positive or negative
 - Can be integer or decimal
 - Can use scientific notation
 
 **Not allowed:**
+
 - ❌ Leading zeros: `007`
 - ❌ Hex values: `0xFF`
 - ❌ `NaN` or `Infinity`
@@ -199,13 +206,14 @@ True or false (lowercase, no quotes).
 
 ```json
 {
-  "active": true,
-  "enrolled": false,
-  "verified": true
+    "active": true,
+    "enrolled": false,
+    "verified": true
 }
 ```
 
 **Rules:**
+
 - Must be lowercase: `true` or `false`
 - ❌ NOT: `True`, `TRUE`, `"true"`
 
@@ -215,17 +223,19 @@ Represents absence of value (lowercase, no quotes).
 
 ```json
 {
-  "middleName": null,
-  "secondaryEmail": null
+    "middleName": null,
+    "secondaryEmail": null
 }
 ```
 
 **Use cases:**
+
 - Optional field with no value
 - Explicitly empty value
 - Placeholder
 
 **Not the same as:**
+
 - ❌ Undefined (doesn't exist in JSON)
 - ❌ Empty string `""`
 - ❌ Zero `0`
@@ -236,30 +246,32 @@ Ordered list of values in square brackets.
 
 ```json
 {
-  "tags": ["student", "developer", "active"],
-  "scores": [95, 87, 92, 88],
-  "flags": [true, false, true],
-  "mixed": ["text", 42, true, null],
-  "nested": [
-    ["a", "b"],
-    ["c", "d"]
-  ]
+    "tags": ["student", "developer", "active"],
+    "scores": [95, 87, 92, 88],
+    "flags": [true, false, true],
+    "mixed": ["text", 42, true, null],
+    "nested": [
+        ["a", "b"],
+        ["c", "d"]
+    ]
 }
 ```
 
 **Rules:**
+
 - Values separated by commas
 - Can contain any JSON type
 - Can mix types (but not recommended)
 - Can be nested
 
 **Common use:**
+
 ```json
 {
-  "users": [
-    {"name": "John", "age": 25},
-    {"name": "Jane", "age": 30}
-  ]
+    "users": [
+        { "name": "John", "age": 25 },
+        { "name": "Jane", "age": 30 }
+    ]
 }
 ```
 
@@ -269,22 +281,23 @@ Unordered collection of name/value pairs in curly braces.
 
 ```json
 {
-  "user": {
-    "name": "John",
-    "age": 25
-  },
-  "address": {
-    "street": "123 Main St",
-    "city": "Tacoma",
-    "coordinates": {
-      "lat": 47.2529,
-      "lng": -122.4443
+    "user": {
+        "name": "John",
+        "age": 25
+    },
+    "address": {
+        "street": "123 Main St",
+        "city": "Tacoma",
+        "coordinates": {
+            "lat": 47.2529,
+            "lng": -122.4443
+        }
     }
-  }
 }
 ```
 
 **Rules:**
+
 - Names (keys) must be strings
 - Values can be any JSON type
 - Nested objects allowed
@@ -303,8 +316,8 @@ Both use curly braces and key/value pairs:
 ```javascript
 // JavaScript object
 const user = {
-  name: "John",
-  age: 25
+    name: 'John',
+    age: 25,
 };
 
 // JSON (as string)
@@ -313,14 +326,14 @@ const json = '{"name":"John","age":25}';
 
 ### Key Differences
 
-| Feature | JavaScript Object | JSON |
-|---------|------------------|------|
-| **Keys** | Can be unquoted | Must be quoted strings |
-| **Strings** | Single or double quotes | Only double quotes |
-| **Values** | Functions, undefined, Date, etc. | Only 6 data types |
-| **Trailing commas** | Allowed | ❌ Not allowed |
-| **Comments** | Allowed | ❌ Not allowed |
-| **Format** | Native object | Text string |
+| Feature             | JavaScript Object                | JSON                   |
+| ------------------- | -------------------------------- | ---------------------- |
+| **Keys**            | Can be unquoted                  | Must be quoted strings |
+| **Strings**         | Single or double quotes          | Only double quotes     |
+| **Values**          | Functions, undefined, Date, etc. | Only 6 data types      |
+| **Trailing commas** | Allowed                          | ❌ Not allowed         |
+| **Comments**        | Allowed                          | ❌ Not allowed         |
+| **Format**          | Native object                    | Text string            |
 
 ### Examples
 
@@ -329,14 +342,15 @@ const json = '{"name":"John","age":25}';
 ```javascript
 // JavaScript object (valid)
 const jsObject = {
-  name: 'John',                    // Single quotes OK
-  age: 25,                         // Trailing comma OK
-  greet: function() {              // Functions OK
-    return "Hello";
-  },
-  date: new Date(),                // Date objects OK
-  value: undefined,                // undefined OK
-  /* comment */                    // Comments OK
+    name: 'John', // Single quotes OK
+    age: 25, // Trailing comma OK
+    greet: function () {
+        // Functions OK
+        return 'Hello';
+    },
+    date: new Date(), // Date objects OK
+    value: undefined, // undefined OK
+    /* comment */ // Comments OK
 };
 
 // JSON (invalid - has errors!)
@@ -358,13 +372,15 @@ const validJson = `{
 ### Converting Between Them
 
 **JavaScript → JSON (stringify):**
+
 ```javascript
-const user = { name: "John", age: 25 };
+const user = { name: 'John', age: 25 };
 const json = JSON.stringify(user);
 // Result: '{"name":"John","age":25}'
 ```
 
 **JSON → JavaScript (parse):**
+
 ```javascript
 const json = '{"name":"John","age":25}';
 const user = JSON.parse(json);
@@ -545,18 +561,19 @@ Content-Type: application/json
 ```
 
 **In our code:**
+
 ```typescript
 // TypeScript interface matches JSON structure
 interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
+    username: string;
+    email: string;
+    password: string;
 }
 
 // Express automatically parses JSON
 app.post('/auth/register', (request, response) => {
-  const { username, email, password }: RegisterRequest = request.body;
-  // request.body contains parsed JSON object
+    const { username, email, password }: RegisterRequest = request.body;
+    // request.body contains parsed JSON object
 });
 ```
 
@@ -566,17 +583,17 @@ app.post('/auth/register', (request, response) => {
 
 ```json
 {
-  "success": true,
-  "data": {
-    "user": {
-      "id": 1,
-      "username": "john_doe",
-      "email": "john@example.com"
+    "success": true,
+    "data": {
+        "user": {
+            "id": 1,
+            "username": "john_doe",
+            "email": "john@example.com"
+        },
+        "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  },
-  "message": "User registered successfully",
-  "timestamp": "2025-09-30T10:30:00.000Z"
+    "message": "User registered successfully",
+    "timestamp": "2025-09-30T10:30:00.000Z"
 }
 ```
 
@@ -584,14 +601,14 @@ app.post('/auth/register', (request, response) => {
 
 ```json
 {
-  "success": false,
-  "message": "Validation failed: Name is required",
-  "code": "VALIDATION_ERROR",
-  "timestamp": "2025-09-30T10:30:00.000Z",
-  "details": {
-    "field": "name",
-    "error": "Name must be between 1 and 100 characters"
-  }
+    "success": false,
+    "message": "Validation failed: Name is required",
+    "code": "VALIDATION_ERROR",
+    "timestamp": "2025-09-30T10:30:00.000Z",
+    "details": {
+        "field": "name",
+        "error": "Name must be between 1 and 100 characters"
+    }
 }
 ```
 
@@ -604,6 +621,7 @@ Content-Type: application/json
 ```
 
 **Without this header:**
+
 - Server won't parse request body as JSON
 - Client won't interpret response as JSON
 - Errors will occur!
@@ -631,22 +649,25 @@ curl -X POST http://localhost:8000/auth/register \
 ### Reading JSON
 
 **In browser:**
+
 ```javascript
 fetch('http://localhost:8000/health')
-  .then(response => response.json())  // Parse JSON
-  .then(data => {
-    console.log(data.success);  // Access properties
-    console.log(data.message);
-  });
+    .then((response) => response.json()) // Parse JSON
+    .then((data) => {
+        console.log(data.success); // Access properties
+        console.log(data.message);
+    });
 ```
 
 **In Postman:**
+
 1. Send request
 2. View "Body" tab in response
 3. Postman automatically formats JSON
 4. Click through nested objects
 
 **In cURL:**
+
 ```bash
 curl http://localhost:8000/health | jq
 # jq formats JSON nicely (requires jq installation)
@@ -655,19 +676,21 @@ curl http://localhost:8000/health | jq
 ### Writing JSON
 
 **Creating JSON manually:**
+
 ```json
 {
-  "name": "John",
-  "message": "Hello"
+    "name": "John",
+    "message": "Hello"
 }
 ```
 
 **In JavaScript:**
+
 ```javascript
 // Create object
 const data = {
-  name: "John",
-  message: "Hello"
+    name: 'John',
+    message: 'Hello',
 };
 
 // Convert to JSON string
@@ -684,18 +707,19 @@ const prettyJson = JSON.stringify(data, null, 2);
 ```
 
 **In TypeScript (our project):**
+
 ```typescript
 // Type-safe JSON creation
 interface RegisterRequest {
-  username: string;
-  email: string;
-  password: string;
+    username: string;
+    email: string;
+    password: string;
 }
 
 const requestData: RegisterRequest = {
-  username: "john_doe",
-  email: "john@example.com",
-  password: "securePass123"
+    username: 'john_doe',
+    email: 'john@example.com',
+    password: 'securePass123',
 };
 
 // TypeScript ensures structure matches interface
@@ -709,25 +733,26 @@ const jsonString = JSON.stringify(requestData);
 
 ```json
 {
-  "user": {
-    "name": "John",
-    "address": {
-      "city": "Tacoma",
-      "state": "WA"
+    "user": {
+        "name": "John",
+        "address": {
+            "city": "Tacoma",
+            "state": "WA"
+        }
     }
-  }
 }
 ```
 
 **JavaScript access:**
+
 ```javascript
 const data = JSON.parse(jsonString);
 
-console.log(data.user.name);           // "John"
-console.log(data.user.address.city);   // "Tacoma"
+console.log(data.user.name); // "John"
+console.log(data.user.address.city); // "Tacoma"
 
 // Safe access (if property might not exist)
-console.log(data.user?.phone);         // undefined (no error)
+console.log(data.user?.phone); // undefined (no error)
 ```
 
 ### Arrays in JSON
@@ -736,27 +761,28 @@ console.log(data.user?.phone);         // undefined (no error)
 
 ```json
 {
-  "users": [
-    {"name": "John", "age": 25},
-    {"name": "Jane", "age": 30}
-  ]
+    "users": [
+        { "name": "John", "age": 25 },
+        { "name": "Jane", "age": 30 }
+    ]
 }
 ```
 
 **JavaScript access:**
+
 ```javascript
 const data = JSON.parse(jsonString);
 
 // Access by index
-console.log(data.users[0].name);  // "John"
+console.log(data.users[0].name); // "John"
 
 // Loop through array
-data.users.forEach(user => {
-  console.log(user.name);
+data.users.forEach((user) => {
+    console.log(user.name);
 });
 
 // Map to new array
-const names = data.users.map(user => user.name);
+const names = data.users.map((user) => user.name);
 // Result: ["John", "Jane"]
 ```
 
@@ -773,6 +799,7 @@ const names = data.users.map(user => user.name);
 - [JSONPath Online Evaluator](https://jsonpath.com/) - Test queries
 
 **How to use:**
+
 1. Copy your JSON
 2. Paste into validator
 3. Click "Validate JSON"
@@ -781,22 +808,25 @@ const names = data.users.map(user => user.name);
 ### Common Validation Errors
 
 **Error: Unexpected token**
+
 ```json
 {
-  "name": "John",  // ← Trailing comma
+    "name": "John" // ← Trailing comma
 }
 // Error: Unexpected token }
 ```
 
 **Error: Unexpected string**
+
 ```json
 {
-  name: "John"  // ← Missing quotes on key
+    "name": "John" // ← Missing quotes on key
 }
 // Error: Unexpected string
 ```
 
 **Error: Unexpected end of JSON input**
+
 ```json
 {
   "name": "John"
@@ -807,6 +837,7 @@ const names = data.users.map(user => user.name);
 ### Browser DevTools
 
 **Chrome/Firefox:**
+
 1. Open DevTools (F12)
 2. Go to "Network" tab
 3. Make API request
@@ -815,13 +846,14 @@ const names = data.users.map(user => user.name);
 6. JSON is formatted automatically
 
 **Console:**
+
 ```javascript
 // Test JSON parsing
 const json = '{"name":"John","age":25}';
 console.log(JSON.parse(json));
 
 // Pretty print object
-console.log(data);  // Browser formats nicely
+console.log(data); // Browser formats nicely
 ```
 
 ### VS Code / WebStorm
@@ -835,18 +867,21 @@ console.log(data);  // Browser formats nicely
 - ✅ IntelliSense/code completion
 
 **Format JSON in editor:**
+
 - VS Code: `Shift+Alt+F` (Windows) or `Shift+Option+F` (Mac)
 - WebStorm: `Ctrl+Alt+L` (Windows) or `Cmd+Option+L` (Mac)
 
 ### API Testing Tools
 
 **Postman:**
+
 - Automatically validates JSON
 - Highlights errors
 - Formats responses
 - Saves requests
 
 **Swagger UI (This Project):**
+
 - http://localhost:8000/api-docs
 - Pre-built JSON examples
 - Interactive testing
@@ -859,6 +894,7 @@ console.log(data);  // Browser formats nicely
 ### Exercise 1: Create Valid JSON
 
 **Task:** Represent this data as JSON:
+
 - Student name: Alice Johnson
 - Age: 22
 - Courses: TCSS 460, TCSS 450, TCSS 480
@@ -866,13 +902,14 @@ console.log(data);  // Browser formats nicely
 - Active: yes
 
 **Solution:**
+
 ```json
 {
-  "name": "Alice Johnson",
-  "age": 22,
-  "courses": ["TCSS 460", "TCSS 450", "TCSS 480"],
-  "gpa": 3.8,
-  "active": true
+    "name": "Alice Johnson",
+    "age": 22,
+    "courses": ["TCSS 460", "TCSS 450", "TCSS 480"],
+    "gpa": 3.8,
+    "active": true
 }
 ```
 
@@ -891,17 +928,19 @@ console.log(data);  // Browser formats nicely
 ```
 
 **Solution:**
+
 ```json
 {
-  "name": "John",
-  "age": 25,
-  "active": true,
-  "courses": ["TCSS 460", "TCSS 450"],
-  "metadata": null
+    "name": "John",
+    "age": 25,
+    "active": true,
+    "courses": ["TCSS 460", "TCSS 450"],
+    "metadata": null
 }
 ```
 
 **Errors fixed:**
+
 1. Changed single quotes to double quotes
 2. Quoted the keys
 3. Lowercased `true`
@@ -915,13 +954,14 @@ console.log(data);  // Browser formats nicely
 
 ```json
 {
-  "username": "your_username",
-  "email": "you@example.com",
-  "password": "testPassword123"
+    "username": "your_username",
+    "email": "you@example.com",
+    "password": "testPassword123"
 }
 ```
 
 **Steps:**
+
 1. Start server: `npm run dev`
 2. Open: http://localhost:8000/api-docs
 3. Find `POST /auth/register`
@@ -1004,12 +1044,12 @@ console.log(data);  // Browser formats nicely
 ```json
 // ✅ Good API response
 {
-  "success": true,
-  "data": {
-    "name": "John"
-  },
-  "timestamp": "2025-09-30T10:30:00.000Z",
-  "version": "1.0.0"
+    "success": true,
+    "data": {
+        "name": "John"
+    },
+    "timestamp": "2025-09-30T10:30:00.000Z",
+    "version": "1.0.0"
 }
 ```
 
@@ -1036,14 +1076,17 @@ console.log(data);  // Browser formats nicely
 ## Further Reading
 
 **Official Resources:**
+
 - [JSON.org](https://www.json.org/) - Official JSON specification
 - [MDN: Working with JSON](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Objects/JSON) - Mozilla guide
 
 **Tools:**
+
 - [JSONLint](https://jsonlint.com/) - Validate JSON
 - [JSON Formatter](https://jsonformatter.org/) - Format and validate
 
 **Related Guides:**
+
 - [HTTP Fundamentals](./http-fundamentals.md) - How JSON travels over HTTP
 - [Request-Response Model](./request-response-model.md) - JSON in request/response cycle
 - [TypeScript Patterns](./typescript-patterns.md) - Type-safe JSON handling
@@ -1052,4 +1095,4 @@ console.log(data);  // Browser formats nicely
 
 ---
 
-*Understanding JSON is fundamental to working with modern web APIs. Every endpoint in this project sends and receives JSON data. Master JSON, and you'll be able to work with any web API!*
+_Understanding JSON is fundamental to working with modern web APIs. Every endpoint in this project sends and receives JSON data. Master JSON, and you'll be able to work with any web API!_

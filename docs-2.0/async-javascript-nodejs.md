@@ -30,17 +30,19 @@ Imagine a simple web server that reads a file from disk for every request:
 ```javascript
 // ⚠️ BAD: Synchronous (blocking) code
 function handleRequest(request, response) {
-    const data = readFileSync('data.txt');  // Blocks for 100ms
+    const data = readFileSync('data.txt'); // Blocks for 100ms
     response.send(data);
 }
 ```
 
 When this code runs, the entire server **stops** while waiting for the file to be read. During those 100 milliseconds:
+
 - No other requests can be processed
 - No other code can execute
 - The CPU sits idle waiting for the disk
 
 With 10 concurrent users, each would wait their turn:
+
 - User 1: 0-100ms
 - User 2: 100-200ms (waited 100ms)
 - User 3: 200-300ms (waited 200ms)
@@ -50,6 +52,7 @@ With 10 concurrent users, each would wait their turn:
 
 **Synchronous (Blocking) Approach:**
 Think of a restaurant with one waiter who:
+
 1. Takes order from table 1
 2. Goes to kitchen and **waits** while food is prepared (5 minutes)
 3. Returns with food to table 1
@@ -60,6 +63,7 @@ With 10 tables, the last customer waits 50 minutes just to place their order!
 
 **Asynchronous (Non-Blocking) Approach:**
 Now imagine a smart waiter who:
+
 1. Takes order from table 1, gives it to kitchen
 2. Immediately takes order from table 2, gives it to kitchen
 3. Immediately takes order from table 3, gives it to kitchen
@@ -73,12 +77,13 @@ One waiter efficiently serves 10 tables because they **don't wait idle** during 
 ```javascript
 // ✅ GOOD: Asynchronous (non-blocking) code
 async function handleRequest(request, response) {
-    const data = await readFile('data.txt');  // Doesn't block!
+    const data = await readFile('data.txt'); // Doesn't block!
     response.send(data);
 }
 ```
 
 With async code:
+
 - While waiting for file I/O, the server processes other requests
 - CPU can execute other code
 - Thousands of concurrent connections become possible
@@ -87,6 +92,7 @@ With async code:
 ### Why This Matters for Web Servers
 
 Modern web applications perform many I/O operations:
+
 - **Database queries**: 10-100ms per query
 - **External API calls**: 50-500ms per call
 - **File system operations**: 1-100ms per operation
@@ -131,11 +137,13 @@ When we say Node.js is "single-threaded," we're specifically talking about **Jav
 ```
 
 **JavaScript Layer (Single Thread):**
+
 - Executes your JavaScript code
 - Runs one function at a time
 - No parallel execution of JavaScript
 
 **Libuv Layer (Thread Pool):**
+
 - Default: 4 worker threads
 - Handles file I/O, DNS lookups, compression
 - Your JavaScript doesn't run here
@@ -153,6 +161,7 @@ Connection 1000 → Thread 1000 (8 MB memory) = 8 GB!
 ```
 
 **Problems with this approach:**
+
 - High memory usage (8 MB per thread)
 - Context switching overhead (CPU switches between threads)
 - Race conditions and deadlocks (threads accessing shared data)
@@ -166,6 +175,7 @@ Handles 10,000+ connections with ~100 MB memory
 ```
 
 **Benefits:**
+
 - Low memory footprint
 - No context switching overhead
 - No race conditions (single thread)
@@ -215,7 +225,7 @@ Let's trace a database query through the event loop:
 ```javascript
 // Step 1: Your code executes (synchronous)
 app.get('/users', async (req, res) => {
-    console.log('Handler started');  // Executes immediately
+    console.log('Handler started'); // Executes immediately
 
     // Step 2: Initiate async operation
     const users = await db.query('SELECT * FROM users');
@@ -253,6 +263,7 @@ Time    JavaScript Thread           Libuv Thread Pool
 Understanding these three components is crucial:
 
 #### Call Stack
+
 The call stack tracks what function is currently executing:
 
 ```javascript
@@ -279,6 +290,7 @@ first();
 ```
 
 #### Callback Queue (Task Queue)
+
 Callbacks from async operations wait here:
 
 ```javascript
@@ -297,6 +309,7 @@ console.log('Main code');
 ```
 
 #### Microtask Queue
+
 Promises and `queueMicrotask()` use a higher-priority queue:
 
 ```javascript
@@ -361,6 +374,7 @@ console.log('4');
 While JavaScript is single-threaded, some operations run on background threads:
 
 #### What Runs on Worker Threads (Libuv):
+
 - File system operations (`fs.readFile`, `fs.writeFile`)
 - DNS lookups (`dns.lookup`)
 - Compression (zlib)
@@ -368,6 +382,7 @@ While JavaScript is single-threaded, some operations run on background threads:
 - Some native module operations
 
 #### What Doesn't Use Thread Pool:
+
 - Network I/O (uses OS async capabilities)
 - Timers
 - Most JavaScript execution
@@ -382,11 +397,11 @@ async function readMultipleFiles() {
 
     // These all run on worker threads in parallel
     const [file1, file2, file3, file4, file5] = await Promise.all([
-        fs.readFile('file1.txt'),  // Worker thread 1
-        fs.readFile('file2.txt'),  // Worker thread 2
-        fs.readFile('file3.txt'),  // Worker thread 3
-        fs.readFile('file4.txt'),  // Worker thread 4
-        fs.readFile('file5.txt'),  // Queued, waits for free thread
+        fs.readFile('file1.txt'), // Worker thread 1
+        fs.readFile('file2.txt'), // Worker thread 2
+        fs.readFile('file3.txt'), // Worker thread 3
+        fs.readFile('file4.txt'), // Worker thread 4
+        fs.readFile('file5.txt'), // Queued, waits for free thread
     ]);
 
     console.log('All reads complete');
@@ -417,7 +432,9 @@ const startServer = async (): Promise<void> => {
 
         // Step 3: Register signal handlers (async event listeners)
         const gracefulShutdown = (signal: string) => {
-            console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
+            console.log(
+                `\n🛑 Received ${signal}. Starting graceful shutdown...`
+            );
 
             // Step 4: Close server - async operation
             server.close((err) => {
@@ -433,7 +450,6 @@ const startServer = async (): Promise<void> => {
         // These handlers are added to the event loop
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
     } catch (error) {
         console.error('❌ Failed to start server:', error);
         process.exit(1);
@@ -450,9 +466,9 @@ startServer();
 2. `app.listen()` tells OS to start listening - non-blocking
 3. JavaScript continues, registers signal handlers
 4. Event loop now monitors:
-   - Incoming HTTP connections (poll phase)
-   - Process signals like SIGTERM (signal handlers)
-   - Timer callbacks
+    - Incoming HTTP connections (poll phase)
+    - Process signals like SIGTERM (signal handlers)
+    - Timer callbacks
 5. When connection arrives → request handler executes
 6. When SIGTERM received → gracefulShutdown executes
 
@@ -465,6 +481,7 @@ startServer();
 5. **Non-blocking I/O** is what makes Node.js scalable
 
 Understanding this architecture explains why:
+
 - `await` doesn't actually "wait" (it yields to event loop)
 - You can handle thousands of requests with one process
 - CPU-intensive operations still block (use worker threads for those)
@@ -488,12 +505,14 @@ A callback is simply a function passed as an argument to another function, to be
 ```javascript
 // Synchronous callback (executes immediately)
 const numbers = [1, 2, 3, 4, 5];
-numbers.forEach(function(number) {  // ← This is a callback
+numbers.forEach(function (number) {
+    // ← This is a callback
     console.log(number);
 });
 
 // Asynchronous callback (executes later)
-setTimeout(function() {  // ← This is an async callback
+setTimeout(function () {
+    // ← This is an async callback
     console.log('1 second later');
 }, 1000);
 ```
@@ -570,23 +589,34 @@ fs.readFile('user.json', 'utf8', (err, userData) => {
 
     const user = JSON.parse(userData);
 
-    pool.query('SELECT * FROM Account WHERE Email = $1', [user.email], (err, result) => {
-        if (err) return handleError(err);
+    pool.query(
+        'SELECT * FROM Account WHERE Email = $1',
+        [user.email],
+        (err, result) => {
+            if (err) return handleError(err);
 
-        result.rows.forEach((account) => {
-            fs.writeFile(`user-${account.account_id}.txt`, account.email, (err) => {
-                if (err) return handleError(err);
+            result.rows.forEach((account) => {
+                fs.writeFile(
+                    `user-${account.account_id}.txt`,
+                    account.email,
+                    (err) => {
+                        if (err) return handleError(err);
 
-                logger.log(`Saved account data for ${account.email}`, (err) => {
-                    if (err) return handleError(err);
+                        logger.log(
+                            `Saved account data for ${account.email}`,
+                            (err) => {
+                                if (err) return handleError(err);
 
-                    // SUCCESS! But look at this nesting...
-                    // What if we need to do more operations?
-                    // Code becomes unreadable and unmaintainable
-                });
+                                // SUCCESS! But look at this nesting...
+                                // What if we need to do more operations?
+                                // Code becomes unreadable and unmaintainable
+                            }
+                        );
+                    }
+                );
             });
-        });
-    });
+        }
+    );
 });
 ```
 
@@ -605,7 +635,7 @@ Error handling requires discipline with callbacks:
 ```javascript
 // ❌ BAD: Not checking for errors
 fs.readFile('data.txt', 'utf8', (err, data) => {
-    const parsed = JSON.parse(data);  // What if err is not null?
+    const parsed = JSON.parse(data); // What if err is not null?
     console.log(parsed);
 });
 
@@ -613,7 +643,7 @@ fs.readFile('data.txt', 'utf8', (err, data) => {
 fs.readFile('data.txt', 'utf8', (err, data) => {
     if (err) {
         console.error('File read error:', err);
-        return;  // Don't continue if error
+        return; // Don't continue if error
     }
 
     try {
@@ -660,7 +690,6 @@ http.get('http://api.example.com/data', (response) => {
     response.on('end', () => {
         console.log('Response:', data);
     });
-
 }).on('error', (err) => {
     console.error('Request failed:', err);
 });
@@ -722,7 +751,7 @@ function readFileAsPromise(filename) {
 }
 
 // Method 3: Node.js provides promise versions
-const fs = require('fs').promises;  // ← Promise-based API
+const fs = require('fs').promises; // ← Promise-based API
 
 async function readConfigModern() {
     const data = await fs.readFile('config.json', 'utf8');
@@ -774,69 +803,74 @@ readStream.on('error', (error) => {
 ### Callback Best Practices
 
 1. **Always check errors first**
-   ```javascript
-   callback((err, result) => {
-       if (err) return handleError(err);
-       // Use result
-   });
-   ```
+
+    ```javascript
+    callback((err, result) => {
+        if (err) return handleError(err);
+        // Use result
+    });
+    ```
 
 2. **Use early returns to avoid nesting**
-   ```javascript
-   // ❌ Nested
-   callback((err, result) => {
-       if (!err) {
-           // do something
-       }
-   });
 
-   // ✅ Early return
-   callback((err, result) => {
-       if (err) return handleError(err);
-       // do something
-   });
-   ```
+    ```javascript
+    // ❌ Nested
+    callback((err, result) => {
+        if (!err) {
+            // do something
+        }
+    });
+
+    // ✅ Early return
+    callback((err, result) => {
+        if (err) return handleError(err);
+        // do something
+    });
+    ```
 
 3. **Named functions over anonymous**
-   ```javascript
-   // ❌ Hard to debug
-   fs.readFile('data.txt', (err, data) => {
-       // anonymous function
-   });
 
-   // ✅ Easier to debug (shows in stack traces)
-   fs.readFile('data.txt', function readCallback(err, data) {
-       // named function
-   });
-   ```
+    ```javascript
+    // ❌ Hard to debug
+    fs.readFile('data.txt', (err, data) => {
+        // anonymous function
+    });
+
+    // ✅ Easier to debug (shows in stack traces)
+    fs.readFile('data.txt', function readCallback(err, data) {
+        // named function
+    });
+    ```
 
 4. **Extract nested callbacks into separate functions**
-   ```javascript
-   function handleFileRead(err, data) {
-       if (err) return handleError(err);
-       processData(data);
-   }
 
-   function processData(data) {
-       // Process data
-   }
+    ```javascript
+    function handleFileRead(err, data) {
+        if (err) return handleError(err);
+        processData(data);
+    }
 
-   fs.readFile('data.txt', handleFileRead);
-   ```
+    function processData(data) {
+        // Process data
+    }
+
+    fs.readFile('data.txt', handleFileRead);
+    ```
 
 ### Why We Moved Beyond Callbacks
 
 Callbacks were revolutionary, but they have limitations:
 
-| Problem | Callback Solution | Promise/Async Solution |
-|---------|------------------|----------------------|
-| Error handling | Check at every level | Single try/catch block |
-| Composition | Nested callbacks | Chain with `.then()` or sequential `await` |
-| Parallel operations | Complex coordination | `Promise.all()` |
-| Readability | Horizontal growth | Vertical, synchronous-looking code |
-| Debugging | Multiple stack traces | Single stack trace |
+| Problem             | Callback Solution     | Promise/Async Solution                     |
+| ------------------- | --------------------- | ------------------------------------------ |
+| Error handling      | Check at every level  | Single try/catch block                     |
+| Composition         | Nested callbacks      | Chain with `.then()` or sequential `await` |
+| Parallel operations | Complex coordination  | `Promise.all()`                            |
+| Readability         | Horizontal growth     | Vertical, synchronous-looking code         |
+| Debugging           | Multiple stack traces | Single stack trace                         |
 
 Despite their limitations, callbacks are:
+
 - Still in Node.js core APIs
 - Efficient (no promise overhead)
 - Necessary for event-driven patterns
@@ -855,12 +889,13 @@ Promises revolutionized asynchronous JavaScript by providing a cleaner, more com
 A Promise is an object representing the eventual completion (or failure) of an asynchronous operation.
 
 **Think of a promise like a restaurant receipt:**
+
 - When you order food, you get a receipt (promise)
 - The receipt represents food that will arrive **later**
 - Three outcomes:
-  - ✅ **Fulfilled**: Food arrives as ordered
-  - ❌ **Rejected**: Kitchen is out of ingredients
-  - ⏳ **Pending**: Still cooking
+    - ✅ **Fulfilled**: Food arrives as ordered
+    - ❌ **Rejected**: Kitchen is out of ingredients
+    - ⏳ **Pending**: Still cooking
 
 ```javascript
 // A promise is an object in one of three states:
@@ -871,9 +906,9 @@ const promise = new Promise((resolve, reject) => {
         const success = Math.random() > 0.5;
 
         if (success) {
-            resolve('Operation succeeded!');  // Fulfilled
+            resolve('Operation succeeded!'); // Fulfilled
         } else {
-            reject(new Error('Operation failed!'));  // Rejected
+            reject(new Error('Operation failed!')); // Rejected
         }
     }, 1000);
 });
@@ -904,6 +939,7 @@ const promise = new Promise((resolve, reject) => {
 ```
 
 **State transitions:**
+
 - A promise starts in **pending** state
 - Once **settled**, it cannot change states
 - A promise is **fulfilled** with a value
@@ -929,8 +965,8 @@ function delay(ms) {
 
 // Usage
 delay(1000)
-    .then(result => console.log(result))  // "Waited 1000ms"
-    .catch(error => console.error(error));
+    .then((result) => console.log(result)) // "Waited 1000ms"
+    .catch((error) => console.error(error));
 ```
 
 #### Static Methods
@@ -944,8 +980,8 @@ const rejected = Promise.reject(new Error('Immediate error'));
 
 // Useful for ensuring a value is a promise
 function ensurePromise(value) {
-    return Promise.resolve(value);  // If value is promise, returns it
-                                     // If not, wraps it in resolved promise
+    return Promise.resolve(value); // If value is promise, returns it
+    // If not, wraps it in resolved promise
 }
 ```
 
@@ -954,29 +990,28 @@ function ensurePromise(value) {
 #### The `.then()` Method
 
 ```javascript
-promise
-    .then(
-        value => {
-            // Success handler (onFulfilled)
-            console.log('Success:', value);
-            return value;  // Return value or another promise
-        },
-        error => {
-            // Error handler (onRejected) - optional
-            console.error('Error:', error);
-        }
-    );
+promise.then(
+    (value) => {
+        // Success handler (onFulfilled)
+        console.log('Success:', value);
+        return value; // Return value or another promise
+    },
+    (error) => {
+        // Error handler (onRejected) - optional
+        console.error('Error:', error);
+    }
+);
 ```
 
 #### The `.catch()` Method
 
 ```javascript
 promise
-    .then(value => {
+    .then((value) => {
         console.log('Success:', value);
         return value;
     })
-    .catch(error => {
+    .catch((error) => {
         // Catches any rejection in the chain
         console.error('Error:', error);
     });
@@ -986,8 +1021,8 @@ promise
 
 ```javascript
 promise
-    .then(value => console.log('Success:', value))
-    .catch(error => console.error('Error:', error))
+    .then((value) => console.log('Success:', value))
+    .catch((error) => console.error('Error:', error))
     .finally(() => {
         // Runs regardless of fulfillment or rejection
         console.log('Cleanup code here');
@@ -1000,32 +1035,33 @@ Promises can be chained, with each `.then()` returning a new promise:
 
 ```javascript
 fetch('https://api.example.com/user/1')
-    .then(response => {
+    .then((response) => {
         console.log('Got response');
-        return response.json();  // Returns a promise
+        return response.json(); // Returns a promise
     })
-    .then(user => {
+    .then((user) => {
         console.log('Parsed user:', user);
         return fetch(`https://api.example.com/posts?userId=${user.id}`);
     })
-    .then(response => {
+    .then((response) => {
         console.log('Got posts response');
         return response.json();
     })
-    .then(posts => {
+    .then((posts) => {
         console.log('User posts:', posts);
-        return posts.length;  // Returns a value (wrapped in resolved promise)
+        return posts.length; // Returns a value (wrapped in resolved promise)
     })
-    .then(count => {
+    .then((count) => {
         console.log(`User has ${count} posts`);
     })
-    .catch(error => {
+    .catch((error) => {
         // Catches errors from ANY step in the chain
         console.error('Something failed:', error);
     });
 ```
 
 **Key concepts:**
+
 1. Each `.then()` returns a new promise
 2. Return value becomes the resolved value of that promise
 3. Returning a promise makes the chain wait for it
@@ -1035,22 +1071,22 @@ fetch('https://api.example.com/user/1')
 
 ```javascript
 Promise.resolve('Start')
-    .then(value => {
-        console.log(value);  // "Start"
+    .then((value) => {
+        console.log(value); // "Start"
         throw new Error('Something went wrong');
     })
-    .then(value => {
+    .then((value) => {
         // This is skipped because previous then threw
         console.log('This will not run');
     })
-    .catch(error => {
+    .catch((error) => {
         // Catches the error from above
         console.error('Caught:', error.message);
-        return 'Recovered';  // Can return a value to recover
+        return 'Recovered'; // Can return a value to recover
     })
-    .then(value => {
+    .then((value) => {
         // Chain continues after recovery
-        console.log(value);  // "Recovered"
+        console.log(value); // "Recovered"
     });
 ```
 
@@ -1058,26 +1094,23 @@ Promise.resolve('Start')
 
 ```javascript
 // Strategy 1: Catch at the end (most common)
-doAsyncWork()
-    .then(processResult)
-    .then(saveResult)
-    .catch(handleError);  // Catches all errors
+doAsyncWork().then(processResult).then(saveResult).catch(handleError); // Catches all errors
 
 // Strategy 2: Catch and recover
 doAsyncWork()
-    .catch(error => {
+    .catch((error) => {
         console.log('Using fallback');
-        return fallbackValue;  // Continue with fallback
+        return fallbackValue; // Continue with fallback
     })
-    .then(processResult);  // Processes either result or fallback
+    .then(processResult); // Processes either result or fallback
 
 // Strategy 3: Catch specific errors
 doAsyncWork()
-    .catch(error => {
+    .catch((error) => {
         if (error.code === 'ENOENT') {
-            return defaultValue;  // Specific recovery
+            return defaultValue; // Specific recovery
         }
-        throw error;  // Re-throw other errors
+        throw error; // Re-throw other errors
     })
     .catch(handleUnexpectedError);
 ```
@@ -1100,18 +1133,20 @@ Promise.all([promise1, promise2, promise3])
         console.log('Posts:', posts);
         console.log('Comments:', comments);
     })
-    .catch(error => {
+    .catch((error) => {
         // If ANY promise rejects, catch is called
         console.error('At least one request failed:', error);
     });
 ```
 
 **Use cases:**
+
 - Loading multiple independent resources
 - Parallel database queries
 - Batch operations where all must succeed
 
 **Characteristics:**
+
 - ❌ Fails fast: Rejects as soon as any promise rejects
 - ⏱️ Returns when **all** promises complete
 - 📦 Returns array of results in same order as input
@@ -1122,21 +1157,20 @@ Waits for all promises to settle (fulfill or reject):
 
 ```javascript
 const promises = [
-    fetch('/api/users'),         // Might succeed
-    fetch('/api/nonexistent'),   // Might fail
-    fetch('/api/posts'),         // Might succeed
+    fetch('/api/users'), // Might succeed
+    fetch('/api/nonexistent'), // Might fail
+    fetch('/api/posts'), // Might succeed
 ];
 
-Promise.allSettled(promises)
-    .then(results => {
-        results.forEach((result, index) => {
-            if (result.status === 'fulfilled') {
-                console.log(`Promise ${index} succeeded:`, result.value);
-            } else {
-                console.log(`Promise ${index} failed:`, result.reason);
-            }
-        });
+Promise.allSettled(promises).then((results) => {
+    results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+            console.log(`Promise ${index} succeeded:`, result.value);
+        } else {
+            console.log(`Promise ${index} failed:`, result.reason);
+        }
     });
+});
 
 // Example output:
 // [
@@ -1147,6 +1181,7 @@ Promise.allSettled(promises)
 ```
 
 **Use cases:**
+
 - When you want results from all operations, even if some fail
 - Logging or reporting systems
 - Batch operations where failures are acceptable
@@ -1163,15 +1198,16 @@ const timeout = new Promise((resolve, reject) => {
 const apiCall = fetch('/api/data');
 
 Promise.race([apiCall, timeout])
-    .then(result => {
+    .then((result) => {
         console.log('API call succeeded before timeout');
     })
-    .catch(error => {
+    .catch((error) => {
         console.error('Either API failed or timeout occurred:', error);
     });
 ```
 
 **Use cases:**
+
 - Implementing timeouts
 - First response from multiple sources
 - Racing between cache and network
@@ -1186,17 +1222,18 @@ const backup1 = fetch('https://api-backup1.example.com/data');
 const backup2 = fetch('https://api-backup2.example.com/data');
 
 Promise.any([primary, backup1, backup2])
-    .then(result => {
+    .then((result) => {
         console.log('Got result from fastest successful API');
         return result.json();
     })
-    .catch(error => {
+    .catch((error) => {
         // Only fails if ALL promises reject
         console.error('All APIs failed:', error);
     });
 ```
 
 **Use cases:**
+
 - Fallback to multiple services
 - Load balancing
 - Redundancy strategies
@@ -1214,9 +1251,9 @@ const readFilePromise = util.promisify(fs.readFile);
 
 // Now use with promises
 readFilePromise('config.json', 'utf8')
-    .then(data => JSON.parse(data))
-    .then(config => console.log('Config:', config))
-    .catch(error => console.error('Failed:', error));
+    .then((data) => JSON.parse(data))
+    .then((config) => console.log('Config:', config))
+    .catch((error) => console.error('Failed:', error));
 ```
 
 #### Manual Wrapping
@@ -1226,9 +1263,9 @@ function readFileAsPromise(filename) {
     return new Promise((resolve, reject) => {
         fs.readFile(filename, 'utf8', (error, data) => {
             if (error) {
-                reject(error);  // Convert error to rejection
+                reject(error); // Convert error to rejection
             } else {
-                resolve(data);  // Convert result to fulfillment
+                resolve(data); // Convert result to fulfillment
             }
         });
     });
@@ -1245,16 +1282,28 @@ fs.readFile('user.json', 'utf8', (err, userData) => {
 
     const user = JSON.parse(userData);
 
-    pool.query('SELECT * FROM Account WHERE Email = $1', [user.email], (err, result) => {
-        if (err) return handleError(err);
-
-        async.map(result.rows, (account, callback) => {
-            fs.writeFile(`user-${account.account_id}.txt`, account.email, callback);
-        }, (err) => {
+    pool.query(
+        'SELECT * FROM Account WHERE Email = $1',
+        [user.email],
+        (err, result) => {
             if (err) return handleError(err);
-            console.log('All user accounts saved!');
-        });
-    });
+
+            async.map(
+                result.rows,
+                (account, callback) => {
+                    fs.writeFile(
+                        `user-${account.account_id}.txt`,
+                        account.email,
+                        callback
+                    );
+                },
+                (err) => {
+                    if (err) return handleError(err);
+                    console.log('All user accounts saved!');
+                }
+            );
+        }
+    );
 });
 ```
 
@@ -1264,12 +1313,14 @@ fs.readFile('user.json', 'utf8', (err, userData) => {
 const fs = require('fs').promises;
 
 fs.readFile('user.json', 'utf8')
-    .then(userData => {
+    .then((userData) => {
         const user = JSON.parse(userData);
-        return pool.query('SELECT * FROM Account WHERE Email = $1', [user.email]);
+        return pool.query('SELECT * FROM Account WHERE Email = $1', [
+            user.email,
+        ]);
     })
-    .then(result => {
-        const writePromises = result.rows.map(account =>
+    .then((result) => {
+        const writePromises = result.rows.map((account) =>
             fs.writeFile(`user-${account.account_id}.txt`, account.email)
         );
         return Promise.all(writePromises);
@@ -1277,7 +1328,7 @@ fs.readFile('user.json', 'utf8')
     .then(() => {
         console.log('All user accounts saved!');
     })
-    .catch(error => {
+    .catch((error) => {
         console.error('Operation failed:', error);
     });
 ```
@@ -1288,23 +1339,20 @@ fs.readFile('user.json', 'utf8')
 
 ```javascript
 // ❌ BAD: Nesting promises defeats the purpose
-getData()
-    .then(data => {
-        processData(data)
-            .then(result => {
-                saveData(result)
-                    .then(() => {
-                        console.log('Done');
-                    });
-            });
+getData().then((data) => {
+    processData(data).then((result) => {
+        saveData(result).then(() => {
+            console.log('Done');
+        });
     });
+});
 
 // ✅ GOOD: Chain promises
 getData()
-    .then(data => processData(data))
-    .then(result => saveData(result))
+    .then((data) => processData(data))
+    .then((result) => saveData(result))
     .then(() => console.log('Done'))
-    .catch(error => console.error(error));
+    .catch((error) => console.error(error));
 ```
 
 #### Anti-Pattern 2: Not Returning Promises
@@ -1312,9 +1360,9 @@ getData()
 ```javascript
 // ❌ BAD: Not returning inner promise
 getData()
-    .then(data => {
-        processData(data)  // This promise is not returned!
-            .then(result => console.log(result));
+    .then((data) => {
+        processData(data) // This promise is not returned!
+            .then((result) => console.log(result));
     })
     .then(() => {
         // This runs BEFORE processData completes!
@@ -1323,10 +1371,10 @@ getData()
 
 // ✅ GOOD: Return the promise
 getData()
-    .then(data => {
-        return processData(data);  // Return the promise
+    .then((data) => {
+        return processData(data); // Return the promise
     })
-    .then(result => {
+    .then((result) => {
         console.log(result);
         console.log('All done');
     });
@@ -1338,9 +1386,9 @@ getData()
 // ❌ BAD: Wrapping a promise in a promise
 function getData() {
     return new Promise((resolve, reject) => {
-        fetch('/api/data')  // fetch already returns a promise!
-            .then(data => resolve(data))
-            .catch(error => reject(error));
+        fetch('/api/data') // fetch already returns a promise!
+            .then((data) => resolve(data))
+            .catch((error) => reject(error));
     });
 }
 
@@ -1430,9 +1478,9 @@ export const asyncHandler = (
 2. **Three states**: pending, fulfilled, rejected
 3. **Error handling** is cleaner with `.catch()`
 4. **Composition methods** enable powerful patterns:
-   - `Promise.all()` for parallel execution
-   - `Promise.race()` for timeouts
-   - `Promise.allSettled()` for batch operations
+    - `Promise.all()` for parallel execution
+    - `Promise.race()` for timeouts
+    - `Promise.allSettled()` for batch operations
 5. **Promises are the foundation** for async/await syntax
 
 Next, we'll see how async/await provides an even cleaner syntax built on top of promises.
@@ -1451,13 +1499,13 @@ Async/await doesn't add new functionality—it makes promises easier to read and
 // Promises (still valid and useful)
 function getUserData() {
     return fetchUser()
-        .then(user => {
+        .then((user) => {
             return fetchPosts(user.id);
         })
-        .then(posts => {
+        .then((posts) => {
             return processPosts(posts);
         })
-        .catch(error => {
+        .catch((error) => {
             console.error('Error:', error);
             throw error;
         });
@@ -1478,6 +1526,7 @@ async function getUserData() {
 ```
 
 Both versions do **exactly the same thing**, but async/await is:
+
 - More readable (looks synchronous)
 - Easier to debug (better stack traces)
 - Simpler error handling (try/catch)
@@ -1501,41 +1550,44 @@ function getData() {
 }
 
 // Both return Promise<string>
-getData().then(value => console.log(value));  // "Hello"
+getData().then((value) => console.log(value)); // "Hello"
 ```
 
 **Key properties of async functions:**
 
 1. **Always returns a promise**
-   ```javascript
-   async function example() {
-       return 42;  // Returns Promise.resolve(42)
-   }
 
-   example().then(value => console.log(value));  // 42
-   ```
+    ```javascript
+    async function example() {
+        return 42; // Returns Promise.resolve(42)
+    }
+
+    example().then((value) => console.log(value)); // 42
+    ```
 
 2. **Automatically wraps return values**
-   ```javascript
-   async function explicit() {
-       return Promise.resolve('value');  // Returns promise
-   }
 
-   async function implicit() {
-       return 'value';  // Also returns promise (auto-wrapped)
-   }
+    ```javascript
+    async function explicit() {
+        return Promise.resolve('value'); // Returns promise
+    }
 
-   // Both work the same way
-   ```
+    async function implicit() {
+        return 'value'; // Also returns promise (auto-wrapped)
+    }
+
+    // Both work the same way
+    ```
 
 3. **Thrown errors become rejections**
-   ```javascript
-   async function willReject() {
-       throw new Error('Oops');  // Returns Promise.reject(Error('Oops'))
-   }
 
-   willReject().catch(error => console.error(error));
-   ```
+    ```javascript
+    async function willReject() {
+        throw new Error('Oops'); // Returns Promise.reject(Error('Oops'))
+    }
+
+    willReject().catch((error) => console.error(error));
+    ```
 
 ### The `await` Keyword
 
@@ -1563,14 +1615,14 @@ async function fetchUserData() {
 
     // Without await
     const promise = fetch('/api/user');
-    console.log(promise);  // Promise { <pending> }
+    console.log(promise); // Promise { <pending> }
 
     // With await
     const response = await fetch('/api/user');
-    console.log(response);  // Response object (promise is resolved)
+    console.log(response); // Response object (promise is resolved)
 
     const data = await response.json();
-    console.log(data);  // Parsed JSON data
+    console.log(data); // Parsed JSON data
 
     return data;
 }
@@ -1579,36 +1631,39 @@ async function fetchUserData() {
 **Rules for `await`:**
 
 1. **Only in async functions**
-   ```javascript
-   // ❌ ERROR: await is only valid in async functions
-   function invalid() {
-       const data = await fetchData();
-   }
 
-   // ✅ CORRECT
-   async function valid() {
-       const data = await fetchData();
-   }
-   ```
+    ```javascript
+    // ❌ ERROR: await is only valid in async functions
+    function invalid() {
+        const data = await fetchData();
+    }
+
+    // ✅ CORRECT
+    async function valid() {
+        const data = await fetchData();
+    }
+    ```
 
 2. **Top-level await** (Node.js 14+, ES modules only)
-   ```javascript
-   // In ES modules (.mjs or "type": "module" in package.json)
-   const data = await fetchData();  // Valid at top level!
-   console.log(data);
-   ```
+
+    ```javascript
+    // In ES modules (.mjs or "type": "module" in package.json)
+    const data = await fetchData(); // Valid at top level!
+    console.log(data);
+    ```
 
 3. **Can await any value**
-   ```javascript
-   // Awaiting a non-promise just returns the value
-   const value = await 42;  // Returns 42 immediately
 
-   // Useful for consistent async handling
-   async function maybeAsync(useAsync) {
-       const result = await (useAsync ? asyncOp() : syncOp());
-       return result;
-   }
-   ```
+    ```javascript
+    // Awaiting a non-promise just returns the value
+    const value = await 42; // Returns 42 immediately
+
+    // Useful for consistent async handling
+    async function maybeAsync(useAsync) {
+        const result = await (useAsync ? asyncOp() : syncOp());
+        return result;
+    }
+    ```
 
 ### Error Handling with Try/Catch
 
@@ -1649,7 +1704,7 @@ async function complexOperation() {
     } catch (error) {
         if (error.code === 'TIMEOUT') {
             console.log('Operation timed out, retrying...');
-            return await riskyOperation();  // Retry
+            return await riskyOperation(); // Retry
         }
 
         if (error.code === 'NETWORK') {
@@ -1659,7 +1714,7 @@ async function complexOperation() {
 
         // Unexpected error
         console.error('Unexpected error:', error);
-        throw error;  // Propagate
+        throw error; // Propagate
     }
 }
 ```
@@ -1674,11 +1729,11 @@ One of the most important async/await concepts:
 async function sequential() {
     console.time('sequential');
 
-    const user = await fetchUser();      // Wait 100ms
-    const posts = await fetchPosts();    // Wait 100ms
-    const comments = await fetchComments();  // Wait 100ms
+    const user = await fetchUser(); // Wait 100ms
+    const posts = await fetchPosts(); // Wait 100ms
+    const comments = await fetchComments(); // Wait 100ms
 
-    console.timeEnd('sequential');  // ~300ms total
+    console.timeEnd('sequential'); // ~300ms total
     return { user, posts, comments };
 }
 ```
@@ -1701,7 +1756,7 @@ async function parallel() {
     const posts = await postsPromise;
     const comments = await commentsPromise;
 
-    console.timeEnd('parallel');  // ~100ms total
+    console.timeEnd('parallel'); // ~100ms total
     return { user, posts, comments };
 }
 ```
@@ -1717,10 +1772,10 @@ async function parallelWithPromiseAll() {
     const [user, posts, comments] = await Promise.all([
         fetchUser(),
         fetchPosts(),
-        fetchComments()
+        fetchComments(),
     ]);
 
-    console.timeEnd('parallel');  // ~100ms total
+    console.timeEnd('parallel'); // ~100ms total
     return { user, posts, comments };
 }
 ```
@@ -1730,18 +1785,20 @@ This is the cleanest way to run multiple async operations in parallel.
 #### When to Use Sequential vs Parallel
 
 **Use Sequential When:**
+
 - Operations depend on each other
 - You need result from first operation for second
 
 ```javascript
 async function dependent() {
     const user = await fetchUser(userId);
-    const posts = await fetchPosts(user.id);  // Needs user.id!
+    const posts = await fetchPosts(user.id); // Needs user.id!
     return posts;
 }
 ```
 
 **Use Parallel When:**
+
 - Operations are independent
 - You want to minimize total time
 
@@ -1750,7 +1807,7 @@ async function independent() {
     const [users, products, settings] = await Promise.all([
         fetchUsers(),
         fetchProducts(),
-        fetchSettings()
+        fetchSettings(),
     ]);
     return { users, products, settings };
 }
@@ -1821,6 +1878,7 @@ static async register(request: IJwtRequest, response: Response): Promise<void> {
 ```
 
 This function:
+
 1. Is declared `async` (returns `Promise<void>`)
 2. Uses `await` to perform async database query
 3. Has explicit try/catch for error handling
@@ -1905,14 +1963,15 @@ app.use(async (req, res, next) => {
         // Add user to request
         req.user = user;
 
-        next();  // Continue to next middleware
+        next(); // Continue to next middleware
     } catch (error) {
-        next(error);  // Pass error to error handler
+        next(error); // Pass error to error handler
     }
 });
 ```
 
 **Important:** In Express, you must:
+
 1. Call `next()` to continue
 2. Call `next(error)` to pass errors
 3. Use asyncHandler wrapper (covered next section)
@@ -1970,7 +2029,7 @@ async function* generateSequence() {
 // Usage
 (async () => {
     for await (const num of generateSequence()) {
-        console.log(num);  // Logs 0, 1, 2, 3, 4 with 1s delay
+        console.log(num); // Logs 0, 1, 2, 3, 4 with 1s delay
     }
 })();
 ```
@@ -1982,16 +2041,16 @@ async function* generateSequence() {
 ```javascript
 function getUser(userId) {
     return fetchUser(userId)
-        .then(user => {
+        .then((user) => {
             return fetchProfile(user.profileId);
         })
-        .then(profile => {
+        .then((profile) => {
             return fetchSettings(profile.settingsId);
         })
-        .then(settings => {
+        .then((settings) => {
             return { user, profile, settings };
         })
-        .catch(error => {
+        .catch((error) => {
             console.error('Error:', error);
             throw error;
         });
@@ -2038,10 +2097,10 @@ async function getUserData(userId, includePosts = false) {
 // ❌ BAD: forEach doesn't wait
 async function processUsers(userIds) {
     userIds.forEach(async (id) => {
-        const user = await fetchUser(id);  // These run, but we don't wait
+        const user = await fetchUser(id); // These run, but we don't wait
         await saveUser(user);
     });
-    console.log('Done');  // Logs immediately!
+    console.log('Done'); // Logs immediately!
 }
 
 // ✅ GOOD: Use for-of
@@ -2050,7 +2109,7 @@ async function processUsers(userIds) {
         const user = await fetchUser(id);
         await saveUser(user);
     }
-    console.log('Done');  // Logs after all users processed
+    console.log('Done'); // Logs after all users processed
 }
 
 // ✅ GOOD: Use Promise.all() for parallel
@@ -2060,7 +2119,7 @@ async function processUsersParallel(userIds) {
         return saveUser(user);
     });
     await Promise.all(promises);
-    console.log('Done');  // Logs after all users processed
+    console.log('Done'); // Logs after all users processed
 }
 ```
 
@@ -2073,9 +2132,9 @@ async function fetchWithRetry(url, retries = 3) {
             const response = await fetch(url);
             return await response.json();
         } catch (error) {
-            if (i === retries - 1) throw error;  // Last attempt
+            if (i === retries - 1) throw error; // Last attempt
 
-            const delay = Math.pow(2, i) * 1000;  // Exponential backoff
+            const delay = Math.pow(2, i) * 1000; // Exponential backoff
             console.log(`Retry ${i + 1}/${retries} after ${delay}ms`);
             await sleep(delay);
         }
@@ -2094,10 +2153,7 @@ function timeout(ms) {
 
 async function fetchWithTimeout(url, ms = 5000) {
     try {
-        const result = await Promise.race([
-            fetch(url),
-            timeout(ms)
-        ]);
+        const result = await Promise.race([fetch(url), timeout(ms)]);
         return result;
     } catch (error) {
         if (error.message === 'Timeout') {
@@ -2133,7 +2189,7 @@ Consider this Express route with an async handler:
 ```javascript
 // ⚠️ PROBLEM: Express doesn't catch async errors
 app.get('/user/:id', async (req, res) => {
-    const user = await db.findUser(req.params.id);  // What if this throws?
+    const user = await db.findUser(req.params.id); // What if this throws?
     res.json(user);
 });
 
@@ -2145,6 +2201,7 @@ app.get('/user/:id', async (req, res) => {
 ```
 
 **What happens:**
+
 - Client never gets a response (request timeout)
 - Server logs unhandled rejection warning
 - Server might crash in future Node.js versions
@@ -2152,10 +2209,12 @@ app.get('/user/:id', async (req, res) => {
 ### Why Express Doesn't Catch Async Errors
 
 Express expects route handlers to either:
+
 1. Send a response (`res.send()`, `res.json()`, etc.)
 2. Call `next(error)` to pass errors to error middleware
 
 But async functions return promises, and Express doesn't know to:
+
 - Wait for the promise to resolve
 - Catch rejections and call `next(error)`
 
@@ -2181,7 +2240,7 @@ app.get('/user/:id', async (req, res, next) => {
         const user = await db.findUser(req.params.id);
         res.json(user);
     } catch (error) {
-        next(error);  // Pass to error middleware
+        next(error); // Pass to error middleware
     }
 });
 
@@ -2237,8 +2296,8 @@ export const asyncHandler = (
         Promise.resolve(handler(request, response, next))
             // 4. If promise rejects, pass error to next()
             .catch(next);
-            //     ↑
-            //     Equivalent to: .catch(error => next(error))
+        //     ↑
+        //     Equivalent to: .catch(error => next(error))
     };
 };
 ```
@@ -2277,10 +2336,13 @@ app.get('/user/:id', async (req, res) => {
 });
 
 // With asyncHandler (safe)
-app.get('/user/:id', asyncHandler(async (req, res) => {
-    const user = await db.findUser(req.params.id);
-    res.json(user);
-}));
+app.get(
+    '/user/:id',
+    asyncHandler(async (req, res) => {
+        const user = await db.findUser(req.params.id);
+        res.json(user);
+    })
+);
 ```
 
 #### Examples from This Project
@@ -2371,18 +2433,20 @@ static async updateUserProfile(request: IJwtRequest, response: Response): Promis
 
 ```typescript
 // Example with error
-export const getUserData = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    // Scenario 1: Database throws error
-    const user = await db.findUser(req.params.id);
-    //                              ↑
-    //                              Throws Error: "User not found"
-    //                              Promise rejects
-    //                              asyncHandler catches it
-    //                              Calls next(error)
-    //                              Error middleware handles it
+export const getUserData = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        // Scenario 1: Database throws error
+        const user = await db.findUser(req.params.id);
+        //                              ↑
+        //                              Throws Error: "User not found"
+        //                              Promise rejects
+        //                              asyncHandler catches it
+        //                              Calls next(error)
+        //                              Error middleware handles it
 
-    res.json(user);  // This line never runs
-});
+        res.json(user); // This line never runs
+    }
+);
 
 // Error flows to:
 export const errorHandler = (
@@ -2396,7 +2460,7 @@ export const errorHandler = (
         success: false,
         message: error.message,
         code: ErrorCodes.INTERNAL_ERROR,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 };
 ```
@@ -2406,30 +2470,32 @@ export const errorHandler = (
 You can still throw custom errors in async handlers:
 
 ```typescript
-export const getUser = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const userId = req.params.id;
+export const getUser = asyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        const userId = req.params.id;
 
-    // Validate input
-    if (!userId) {
-        throw new AppError(
-            'User ID is required',
-            400,
-            ErrorCodes.BAD_REQUEST
-        );
+        // Validate input
+        if (!userId) {
+            throw new AppError(
+                'User ID is required',
+                400,
+                ErrorCodes.BAD_REQUEST
+            );
+        }
+
+        const user = await db.findUser(userId);
+
+        if (!user) {
+            throw new AppError(
+                `User ${userId} not found`,
+                404,
+                ErrorCodes.NOT_FOUND
+            );
+        }
+
+        res.json(user);
     }
-
-    const user = await db.findUser(userId);
-
-    if (!user) {
-        throw new AppError(
-            `User ${userId} not found`,
-            404,
-            ErrorCodes.NOT_FOUND
-        );
-    }
-
-    res.json(user);
-});
+);
 ```
 
 The `AppError` class from this project:
@@ -2471,15 +2537,17 @@ require('express-async-errors');
 // Now async errors are automatically caught
 app.get('/user/:id', async (req, res) => {
     const user = await db.findUser(req.params.id);
-    res.json(user);  // No wrapper needed!
+    res.json(user); // No wrapper needed!
 });
 ```
 
 **Pros:**
+
 - No wrapper needed
 - Works automatically
 
 **Cons:**
+
 - Adds magic (harder to understand)
 - Another dependency
 - Less explicit
@@ -2492,64 +2560,69 @@ Express 5 (still in beta) will handle async errors natively:
 // In Express 5 (when released)
 app.get('/user/:id', async (req, res) => {
     const user = await db.findUser(req.params.id);
-    res.json(user);  // Async errors caught automatically
+    res.json(user); // Async errors caught automatically
 });
 ```
 
 ### Best Practices
 
 1. **Always use asyncHandler** for async routes
-   ```typescript
-   // ✅ GOOD
-   export const handler = asyncHandler(async (req, res) => {
-       // async code
-   });
-   ```
+
+    ```typescript
+    // ✅ GOOD
+    export const handler = asyncHandler(async (req, res) => {
+        // async code
+    });
+    ```
 
 2. **Throw meaningful errors**
-   ```typescript
-   if (!user) {
-       throw new AppError('User not found', 404, ErrorCodes.NOT_FOUND);
-   }
-   ```
+
+    ```typescript
+    if (!user) {
+        throw new AppError('User not found', 404, ErrorCodes.NOT_FOUND);
+    }
+    ```
 
 3. **Don't mix callback and async patterns**
-   ```typescript
-   // ❌ BAD: Mixing patterns
-   asyncHandler(async (req, res, next) => {
-       db.query('SELECT *', (err, results) => {  // Callback style
-           if (err) return next(err);
-           res.json(results);
-       });
-   });
 
-   // ✅ GOOD: Use promises/async consistently
-   asyncHandler(async (req, res) => {
-       const results = await db.query('SELECT *');  // Promise style
-       res.json(results);
-   });
-   ```
+    ```typescript
+    // ❌ BAD: Mixing patterns
+    asyncHandler(async (req, res, next) => {
+        db.query('SELECT *', (err, results) => {
+            // Callback style
+            if (err) return next(err);
+            res.json(results);
+        });
+    });
+
+    // ✅ GOOD: Use promises/async consistently
+    asyncHandler(async (req, res) => {
+        const results = await db.query('SELECT *'); // Promise style
+        res.json(results);
+    });
+    ```
 
 4. **Let errors propagate**
-   ```typescript
-   // ❌ BAD: Swallowing errors
-   asyncHandler(async (req, res) => {
-       try {
-           const user = await db.findUser(req.params.id);
-           res.json(user);
-       } catch (error) {
-           console.log('Error:', error);
-           // No re-throw or response!
-       }
-   });
 
-   // ✅ GOOD: Let asyncHandler catch
-   asyncHandler(async (req, res) => {
-       const user = await db.findUser(req.params.id);
-       res.json(user);
-       // Errors automatically propagate to error handler
-   });
-   ```
+    ```typescript
+    // ❌ BAD: Swallowing errors
+    asyncHandler(async (req, res) => {
+        try {
+            const user = await db.findUser(req.params.id);
+            res.json(user);
+        } catch (error) {
+            console.log('Error:', error);
+            // No re-throw or response!
+        }
+    });
+
+    // ✅ GOOD: Let asyncHandler catch
+    asyncHandler(async (req, res) => {
+        const user = await db.findUser(req.params.id);
+        res.json(user);
+        // Errors automatically propagate to error handler
+    });
+    ```
 
 ### Testing asyncHandler
 
@@ -2571,7 +2644,7 @@ describe('asyncHandler', () => {
         handler(req, res, next);
 
         // Wait for promise to reject
-        await new Promise(resolve => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
 
         expect(next).toHaveBeenCalledWith(error);
     });
@@ -2636,7 +2709,9 @@ app.use(async (req, res, next) => {
     // Continue to next middleware
     res.on('finish', () => {
         const duration = Date.now() - startTime;
-        console.log(`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+        console.log(
+            `${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`
+        );
     });
 
     next();
@@ -2644,6 +2719,7 @@ app.use(async (req, res, next) => {
 ```
 
 **Key points:**
+
 - Middleware can be async
 - Must call `next()` to continue chain
 - Use asyncHandler wrapper for error handling
@@ -2651,31 +2727,41 @@ app.use(async (req, res, next) => {
 #### Async Authentication Middleware
 
 ```typescript
-const authenticateUser = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+const authenticateUser = asyncHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const token = req.headers.authorization?.replace('Bearer ', '');
 
-    if (!token) {
-        throw new AppError('No authorization token', 401, ErrorCodes.UNAUTHORIZED);
+        if (!token) {
+            throw new AppError(
+                'No authorization token',
+                401,
+                ErrorCodes.UNAUTHORIZED
+            );
+        }
+
+        // Async operation: verify token
+        const user = await verifyToken(token);
+
+        if (!user) {
+            throw new AppError('Invalid token', 401, ErrorCodes.UNAUTHORIZED);
+        }
+
+        // Add user to request
+        req.user = user;
+
+        // Continue to next middleware or route handler
+        next();
     }
-
-    // Async operation: verify token
-    const user = await verifyToken(token);
-
-    if (!user) {
-        throw new AppError('Invalid token', 401, ErrorCodes.UNAUTHORIZED);
-    }
-
-    // Add user to request
-    req.user = user;
-
-    // Continue to next middleware or route handler
-    next();
-});
+);
 
 // Usage
-app.get('/protected', authenticateUser, asyncHandler(async (req, res) => {
-    res.json({ message: `Hello, ${req.user.name}!` });
-}));
+app.get(
+    '/protected',
+    authenticateUser,
+    asyncHandler(async (req, res) => {
+        res.json({ message: `Hello, ${req.user.name}!` });
+    })
+);
 ```
 
 ### Pattern 2: Async Controllers with Error Propagation
@@ -2727,6 +2813,7 @@ static async getUsersByRole(request: IJwtRequest, response: Response): Promise<v
 ```
 
 **Pattern breakdown:**
+
 1. Explicit try/catch for error handling
 2. `async` function with `await` for database operations
 3. Multiple sequential database queries
@@ -2778,6 +2865,7 @@ static async deleteUserAccount(request: IJwtRequest, response: Response): Promis
 ```
 
 **Pattern benefits:**
+
 - Clear separation of validation, processing, and response
 - Type-safe with TypeScript interfaces
 - Consistent error handling with try/catch
@@ -2803,7 +2891,9 @@ async function startServer() {
         // Start HTTP server
         const server = app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
-            console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+            console.log(
+                `📚 API Documentation: http://localhost:${PORT}/api-docs`
+            );
             console.log(`🔍 Health check: http://localhost:${PORT}/health`);
         });
 
@@ -2826,15 +2916,15 @@ async function startServer() {
         // Register signal handlers (async events)
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
     } catch (error) {
         console.error('❌ Failed to start server:', error);
         process.exit(1);
     }
-};
+}
 ```
 
 **Key async patterns here:**
+
 1. **Async startup**: `app.listen()` is non-blocking
 2. **Event listeners**: Signal handlers are registered for async events
 3. **Graceful shutdown**: `server.close()` waits for active connections
@@ -2858,7 +2948,7 @@ async function loadUserDashboard(userId: string) {
     return {
         user,
         posts,
-        settings
+        settings,
     };
 }
 
@@ -2880,13 +2970,13 @@ async function loadUserDashboard(userId: string) {
     const [user, globalPosts, siteStats] = await Promise.all([
         userPromise,
         fetchGlobalPosts(),
-        fetchSiteStatistics()
+        fetchSiteStatistics(),
     ]);
 
     // Now get user-specific data (depends on user)
     const [userPosts, userSettings] = await Promise.all([
         fetchUserPosts(user.id),
-        fetchUserSettings(user.id)
+        fetchUserSettings(user.id),
     ]);
 
     return {
@@ -2894,7 +2984,7 @@ async function loadUserDashboard(userId: string) {
         globalPosts,
         siteStats,
         userPosts,
-        userSettings
+        userSettings,
     };
 }
 
@@ -2912,13 +3002,18 @@ async function loadApplicationData() {
 
     // These are independent - load in parallel
     const [admins, users, moderators, totalCount] = await Promise.all([
-        pool.query('SELECT * FROM Account WHERE Account_Role = $1 LIMIT 10', [4]),
-        pool.query('SELECT * FROM Account WHERE Account_Role = $1 ORDER BY Created_At DESC', [1]),
+        pool.query('SELECT * FROM Account WHERE Account_Role = $1 LIMIT 10', [
+            4,
+        ]),
+        pool.query(
+            'SELECT * FROM Account WHERE Account_Role = $1 ORDER BY Created_At DESC',
+            [1]
+        ),
         pool.query('SELECT * FROM Account WHERE Account_Role = $1', [2]),
-        pool.query('SELECT COUNT(*) as total FROM Account')
+        pool.query('SELECT COUNT(*) as total FROM Account'),
     ]);
 
-    console.timeEnd('parallel-load');  // ~100ms (one DB round-trip)
+    console.timeEnd('parallel-load'); // ~100ms (one DB round-trip)
 
     return { admins, users, moderators, totalCount };
 }
@@ -2927,12 +3022,23 @@ async function loadApplicationData() {
 async function loadApplicationDataSequential() {
     console.time('sequential-load');
 
-    const admins = await pool.query('SELECT * FROM Account WHERE Account_Role = $1 LIMIT 10', [4]);
-    const users = await pool.query('SELECT * FROM Account WHERE Account_Role = $1 ORDER BY Created_At DESC', [1]);
-    const moderators = await pool.query('SELECT * FROM Account WHERE Account_Role = $1', [2]);
-    const totalCount = await pool.query('SELECT COUNT(*) as total FROM Account');
+    const admins = await pool.query(
+        'SELECT * FROM Account WHERE Account_Role = $1 LIMIT 10',
+        [4]
+    );
+    const users = await pool.query(
+        'SELECT * FROM Account WHERE Account_Role = $1 ORDER BY Created_At DESC',
+        [1]
+    );
+    const moderators = await pool.query(
+        'SELECT * FROM Account WHERE Account_Role = $1',
+        [2]
+    );
+    const totalCount = await pool.query(
+        'SELECT COUNT(*) as total FROM Account'
+    );
 
-    console.timeEnd('sequential-load');  // ~400ms (four separate round-trips)
+    console.timeEnd('sequential-load'); // ~400ms (four separate round-trips)
 
     return { admins, users, moderators, totalCount };
 }
@@ -2961,14 +3067,18 @@ async function loadDashboardWithFallbacks(userId: string) {
     const [posts, stats, notifications] = await Promise.allSettled([
         fetchUserPosts(user.id),
         fetchUserStats(user.id),
-        fetchUserNotifications(user.id)
+        fetchUserNotifications(user.id),
     ]);
 
     return {
         user,
         posts: posts.status === 'fulfilled' ? posts.value : [],
-        stats: stats.status === 'fulfilled' ? stats.value : { postsCount: 0, likesCount: 0 },
-        notifications: notifications.status === 'fulfilled' ? notifications.value : []
+        stats:
+            stats.status === 'fulfilled'
+                ? stats.value
+                : { postsCount: 0, likesCount: 0 },
+        notifications:
+            notifications.status === 'fulfilled' ? notifications.value : [],
     };
 }
 
@@ -3002,7 +3112,7 @@ async function loadUserData(userId: string) {
     return {
         user,
         premiumFeatures,
-        recommendations
+        recommendations,
     };
 }
 ```
@@ -3030,7 +3140,9 @@ async function fetchWithRetry<T>(
             console.log(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
 
             // Wait before retry (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            await new Promise((resolve) =>
+                setTimeout(resolve, delay * attempt)
+            );
         }
     }
 
@@ -3040,9 +3152,9 @@ async function fetchWithRetry<T>(
 
 // Usage
 const userData = await fetchWithRetry(
-    () => fetch('/api/user/123').then(res => res.json()),
-    3,  // 3 retries
-    1000  // 1 second base delay
+    () => fetch('/api/user/123').then((res) => res.json()),
+    3, // 3 retries
+    1000 // 1 second base delay
 );
 ```
 
@@ -3086,7 +3198,7 @@ await processBatch(
         const user = await fetchUser(userId);
         await processUser(user);
     },
-    5  // Max 5 concurrent operations
+    5 // Max 5 concurrent operations
 );
 ```
 
@@ -3134,16 +3246,16 @@ const data = await service.fetchData('123');
 
 ### Summary: Pattern Selection Guide
 
-| Scenario | Pattern to Use |
-|----------|---------------|
-| Route handlers | asyncHandler wrapper |
-| Dependent operations | Sequential await |
-| Independent operations | Promise.all() |
-| Optional operations | Promise.allSettled() + fallbacks |
-| Unreliable services | Retry with exponential backoff |
-| Many items to process | Rate limiting with worker pool |
-| Need operation visibility | Event emitters |
-| Graceful errors | try/catch with recovery |
+| Scenario                  | Pattern to Use                   |
+| ------------------------- | -------------------------------- |
+| Route handlers            | asyncHandler wrapper             |
+| Dependent operations      | Sequential await                 |
+| Independent operations    | Promise.all()                    |
+| Optional operations       | Promise.allSettled() + fallbacks |
+| Unreliable services       | Retry with exponential backoff   |
+| Many items to process     | Rate limiting with worker pool   |
+| Need operation visibility | Event emitters                   |
+| Graceful errors           | try/catch with recovery          |
 
 ---
 
@@ -3160,13 +3272,13 @@ Create a utility to simulate async delays (useful for testing):
  * Delay execution for a specified time
  */
 function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Usage
 async function example() {
     console.log('Starting...');
-    await delay(2000);  // Wait 2 seconds
+    await delay(2000); // Wait 2 seconds
     console.log('2 seconds later');
 }
 
@@ -3192,7 +3304,11 @@ function simulateApiCall<T>(
 // Usage
 async function testApiCall() {
     try {
-        const result = await simulateApiCall({ id: 1, name: 'Test' }, 1000, 0.8);
+        const result = await simulateApiCall(
+            { id: 1, name: 'Test' },
+            1000,
+            0.8
+        );
         console.log('Success:', result);
     } catch (error) {
         console.error('Failed:', error);
@@ -3212,14 +3328,14 @@ class ApiClient {
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
         this.defaultHeaders = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
         };
     }
 
     async get<T>(endpoint: string): Promise<T> {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'GET',
-            headers: this.defaultHeaders
+            headers: this.defaultHeaders,
         });
 
         if (!response.ok) {
@@ -3233,7 +3349,7 @@ class ApiClient {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'POST',
             headers: this.defaultHeaders,
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
 
         if (!response.ok) {
@@ -3255,7 +3371,7 @@ async function example() {
     // Login and get token
     const { token } = await api.post('/auth/login', {
         username: 'user',
-        password: 'pass'
+        password: 'pass',
     });
 
     // Set token for subsequent requests
@@ -3275,12 +3391,12 @@ Practice different error handling strategies:
 // Scenario 1: Fail fast
 async function failFast() {
     try {
-        const user = await fetchUser();  // If this fails, stop
-        const posts = await fetchPosts(user.id);  // Won't run if user fails
+        const user = await fetchUser(); // If this fails, stop
+        const posts = await fetchPosts(user.id); // Won't run if user fails
         return { user, posts };
     } catch (error) {
         console.error('Operation failed:', error);
-        throw error;  // Propagate error
+        throw error; // Propagate error
     }
 }
 
@@ -3289,7 +3405,7 @@ async function collectErrors() {
     const results = await Promise.allSettled([
         fetchUsers(),
         fetchPosts(),
-        fetchComments()
+        fetchComments(),
     ]);
 
     const errors: Error[] = [];
@@ -3313,14 +3429,14 @@ async function collectErrors() {
 // Scenario 3: Fallback values
 async function withFallbacks() {
     const [users, posts] = await Promise.all([
-        fetchUsers().catch(err => {
+        fetchUsers().catch((err) => {
             console.error('Users fetch failed, using empty array');
             return [];
         }),
-        fetchPosts().catch(err => {
+        fetchPosts().catch((err) => {
             console.error('Posts fetch failed, using empty array');
             return [];
-        })
+        }),
     ]);
 
     return { users, posts };
@@ -3368,7 +3484,7 @@ async function loadUserDataParallel(userId: string) {
 
     const [posts, comments] = await Promise.all([
         db.getUserPosts(user.id),
-        db.getUserComments(user.id)
+        db.getUserComments(user.id),
     ]);
 
     return { user, posts, comments };
@@ -3378,6 +3494,7 @@ async function loadUserDataParallel(userId: string) {
 ### Exercise 2: Add Async Middleware
 
 **Task:** Create an async middleware that:
+
 1. Checks if user is authenticated
 2. Loads user data from database
 3. Attaches user to request object
@@ -3414,11 +3531,7 @@ const loadUserMiddleware = asyncHandler(
         const user = await db.getUser(userId);
 
         if (!user) {
-            throw new AppError(
-                'User not found',
-                404,
-                ErrorCodes.NOT_FOUND
-            );
+            throw new AppError('User not found', 404, ErrorCodes.NOT_FOUND);
         }
 
         // Attach to request
@@ -3430,11 +3543,15 @@ const loadUserMiddleware = asyncHandler(
 );
 
 // Usage
-app.get('/profile', loadUserMiddleware, asyncHandler(async (req, res) => {
-    res.json({
-        user: req.user
-    });
-}));
+app.get(
+    '/profile',
+    loadUserMiddleware,
+    asyncHandler(async (req, res) => {
+        res.json({
+            user: req.user,
+        });
+    })
+);
 ```
 
 ### Exercise 3: Handle Multiple Async Operations
@@ -3453,7 +3570,7 @@ async function loadDashboard(userId: string) {
         fetchWeatherData(),
         fetchNewsHeadlines(),
         fetchStockPrices(),
-        fetchUserNotifications(userId)
+        fetchUserNotifications(userId),
     ]);
 
     // Extract successful results with fallbacks
@@ -3477,8 +3594,8 @@ async function loadDashboard(userId: string) {
             weather: weather || { temp: 'N/A', condition: 'Unknown' },
             news: news || [],
             stocks: stocks || [],
-            notifications: notifications || []
-        }
+            notifications: notifications || [],
+        },
     };
 }
 ```
@@ -3508,8 +3625,8 @@ function withTimeout<T>(
 async function fetchWithTimeout() {
     try {
         const data = await withTimeout(
-            fetch('/api/slow-endpoint').then(res => res.json()),
-            5000,  // 5 second timeout
+            fetch('/api/slow-endpoint').then((res) => res.json()),
+            5000, // 5 second timeout
             'API request timed out after 5 seconds'
         );
         console.log('Data:', data);
@@ -3528,18 +3645,18 @@ async function fetchWithTimeout() {
 Try these on your own:
 
 1. **Challenge 1:** Implement a cache that stores async operation results
-   - First call should fetch from API
-   - Subsequent calls should return cached value
-   - Cache should expire after 5 minutes
+    - First call should fetch from API
+    - Subsequent calls should return cached value
+    - Cache should expire after 5 minutes
 
 2. **Challenge 2:** Create a queue system that processes async tasks one at a time
-   - Add tasks to queue
-   - Process them sequentially
-   - Return results when all complete
+    - Add tasks to queue
+    - Process them sequentially
+    - Return results when all complete
 
 3. **Challenge 3:** Build a rate limiter that ensures no more than N requests per second
-   - Use promises to queue excess requests
-   - Release them at appropriate intervals
+    - Use promises to queue excess requests
+    - Release them at appropriate intervals
 
 ---
 
@@ -3554,8 +3671,8 @@ Learn from common mistakes and adopt best practices for async code.
 ```typescript
 // ❌ BAD: Missing await
 async function getUser() {
-    const user = fetchUser();  // Returns Promise, not user data!
-    console.log(user.name);    // TypeError: Cannot read property 'name' of undefined
+    const user = fetchUser(); // Returns Promise, not user data!
+    console.log(user.name); // TypeError: Cannot read property 'name' of undefined
     return user;
 }
 ```
@@ -3565,13 +3682,14 @@ async function getUser() {
 ```typescript
 // ✅ GOOD: Using await
 async function getUser() {
-    const user = await fetchUser();  // Wait for promise to resolve
-    console.log(user.name);          // Now user is the actual data
+    const user = await fetchUser(); // Wait for promise to resolve
+    console.log(user.name); // Now user is the actual data
     return user;
 }
 ```
 
 **How to catch:**
+
 - TypeScript will warn if you try to access properties on a Promise
 - Use linters (ESLint with @typescript-eslint)
 - Enable strict type checking
@@ -3583,12 +3701,12 @@ async function getUser() {
 ```typescript
 // ❌ BAD: No error handling
 async function loadData() {
-    const data = await fetchData();  // What if this throws?
+    const data = await fetchData(); // What if this throws?
     return processData(data);
 }
 
 // Caller never knows about errors!
-loadData().then(result => console.log(result));
+loadData().then((result) => console.log(result));
 // Unhandled promise rejection!
 ```
 
@@ -3602,17 +3720,18 @@ async function loadData() {
         return processData(data);
     } catch (error) {
         console.error('Failed to load data:', error);
-        throw error;  // Re-throw or handle appropriately
+        throw error; // Re-throw or handle appropriately
     }
 }
 
 // Caller can handle errors
 loadData()
-    .then(result => console.log(result))
-    .catch(error => console.error('Load failed:', error));
+    .then((result) => console.log(result))
+    .catch((error) => console.error('Load failed:', error));
 ```
 
 **Best practice:**
+
 - Always handle errors with try/catch
 - Or let asyncHandler catch them in Express routes
 - Never leave promises unhandled
@@ -3624,7 +3743,7 @@ loadData()
 ```typescript
 // ❌ BAD: Sequential when could be parallel (slow!)
 async function loadPageData() {
-    const users = await fetchUsers();      // Wait 100ms
+    const users = await fetchUsers(); // Wait 100ms
     const products = await fetchProducts(); // Wait 100ms
     const settings = await fetchSettings(); // Wait 100ms
     return { users, products, settings };
@@ -3640,7 +3759,7 @@ async function loadPageData() {
     const [users, products, settings] = await Promise.all([
         fetchUsers(),
         fetchProducts(),
-        fetchSettings()
+        fetchSettings(),
     ]);
     return { users, products, settings };
 }
@@ -3648,6 +3767,7 @@ async function loadPageData() {
 ```
 
 **When to use which:**
+
 - **Sequential**: When operations depend on each other
 - **Parallel**: When operations are independent
 
@@ -3662,7 +3782,7 @@ async function processUsers(userIds: string[]) {
         const user = await fetchUser(id);
         await saveUser(user);
     });
-    console.log('Done!');  // Logs immediately, before processing finishes!
+    console.log('Done!'); // Logs immediately, before processing finishes!
 }
 ```
 
@@ -3675,7 +3795,7 @@ async function processUsers(userIds: string[]) {
         const user = await fetchUser(id);
         await saveUser(user);
     }
-    console.log('Done!');  // Logs after all processing
+    console.log('Done!'); // Logs after all processing
 }
 
 // ✅ GOOD: Use Promise.all for parallel
@@ -3686,11 +3806,12 @@ async function processUsersParallel(userIds: string[]) {
             return saveUser(user);
         })
     );
-    console.log('Done!');  // Logs after all processing
+    console.log('Done!'); // Logs after all processing
 }
 ```
 
 **Remember:**
+
 - `.forEach()`, `.map()`, `.filter()` don't wait for async functions
 - Use `for...of` for sequential async operations
 - Use `Promise.all()` with `.map()` for parallel
@@ -3703,7 +3824,8 @@ async function processUsersParallel(userIds: string[]) {
 // ❌ BAD: Mixing patterns
 async function getData() {
     return new Promise((resolve, reject) => {
-        fetchData((err, data) => {  // Callback inside promise
+        fetchData((err, data) => {
+            // Callback inside promise
             if (err) reject(err);
             else resolve(data);
         });
@@ -3718,7 +3840,7 @@ async function getData() {
 const fetchDataPromise = util.promisify(fetchData);
 
 async function getData() {
-    return await fetchDataPromise();  // Clean async/await
+    return await fetchDataPromise(); // Clean async/await
 }
 
 // Or use modern APIs that return promises
@@ -3736,9 +3858,9 @@ async function readConfig() {
 // ❌ BAD: Wrapping a promise in a promise
 async function getUser() {
     return new Promise((resolve, reject) => {
-        fetchUser()  // Already returns a promise!
-            .then(user => resolve(user))
-            .catch(err => reject(err));
+        fetchUser() // Already returns a promise!
+            .then((user) => resolve(user))
+            .catch((err) => reject(err));
     });
 }
 ```
@@ -3748,7 +3870,7 @@ async function getUser() {
 ```typescript
 // ✅ GOOD: Return promise directly
 async function getUser() {
-    return fetchUser();  // That's it!
+    return fetchUser(); // That's it!
 }
 
 // Or just:
@@ -3764,7 +3886,7 @@ const getUser = fetchUser;
 async function getUser(id) {
     const response = await fetch(`/api/user/${id}`);
     const data = await response.json();
-    return data.user.profile.name;  // What if structure is different?
+    return data.user.profile.name; // What if structure is different?
 }
 ```
 
@@ -3815,7 +3937,7 @@ async function robustOperation() {
 
 // Or use .catch()
 async function alternativeHandling() {
-    return await riskyOperation().catch(error => {
+    return await riskyOperation().catch((error) => {
         console.error('Operation failed:', error);
         throw error;
     });
@@ -3845,7 +3967,7 @@ async function fetchWithTimeout(url: string, timeout: number = 5000) {
 
     try {
         const response = await fetch(url, {
-            signal: controller.signal
+            signal: controller.signal,
         });
         return await response.json();
     } finally {
@@ -3890,7 +4012,7 @@ async function processManyItems(items: string[]) {
 
 #### 6. Document Async Behavior
 
-```typescript
+````typescript
 /**
  * Fetches user data from the database
  *
@@ -3908,20 +4030,20 @@ async function processManyItems(items: string[]) {
 async function getUser(userId: string): Promise<User> {
     // Implementation
 }
-```
+````
 
 ### Quick Reference: Do's and Don'ts
 
-| ❌ Don't | ✅ Do |
-|---------|------|
-| Forget `await` | Always `await` promises |
-| Ignore errors | Use try/catch or `.catch()` |
+| ❌ Don't                          | ✅ Do                                   |
+| --------------------------------- | --------------------------------------- |
+| Forget `await`                    | Always `await` promises                 |
+| Ignore errors                     | Use try/catch or `.catch()`             |
 | Sequential when parallel possible | Use `Promise.all()` for independent ops |
-| Use `.forEach()` with async | Use `for...of` or `Promise.all()` |
-| Mix callbacks and promises | Use consistent async patterns |
-| Wrap promises unnecessarily | Return promises directly |
-| Leave types as `any` | Use proper TypeScript types |
-| Swallow errors silently | Log and handle appropriately |
+| Use `.forEach()` with async       | Use `for...of` or `Promise.all()`       |
+| Mix callbacks and promises        | Use consistent async patterns           |
+| Wrap promises unnecessarily       | Return promises directly                |
+| Leave types as `any`              | Use proper TypeScript types             |
+| Swallow errors silently           | Log and handle appropriately            |
 
 ---
 
@@ -3988,6 +4110,7 @@ async function processOrder(orderId: string) {
 ```
 
 **Tips:**
+
 - Prefix logs with request ID for tracing
 - Log entry and exit of async functions
 - Log data shapes, not full objects (can be huge)
@@ -3999,25 +4122,27 @@ Modern debuggers handle async code well:
 
 ```typescript
 async function debugExample() {
-    debugger;  // 1. Execution pauses here
+    debugger; // 1. Execution pauses here
 
     const data = await fetchData();
-    debugger;  // 2. Pauses again after fetchData resolves
+    debugger; // 2. Pauses again after fetchData resolves
 
     const processed = processData(data);
-    debugger;  // 3. Pauses after synchronous processing
+    debugger; // 3. Pauses after synchronous processing
 
     return processed;
 }
 ```
 
 **VS Code debugging:**
+
 1. Set breakpoints in async functions
 2. Use "Step Over" (F10) to await promises
 3. Use "Step Into" (F11) to enter async functions
 4. Inspect variables in Debug panel
 
 **Chrome DevTools:**
+
 1. Add `debugger` statements or click line numbers
 2. Sources panel shows async call stack
 3. Console available while paused
@@ -4028,18 +4153,15 @@ async function debugExample() {
 Track promise resolution/rejection:
 
 ```typescript
-function loggedPromise<T>(
-    name: string,
-    promise: Promise<T>
-): Promise<T> {
+function loggedPromise<T>(name: string, promise: Promise<T>): Promise<T> {
     console.log(`[${name}] Promise created`);
 
     return promise
-        .then(result => {
+        .then((result) => {
             console.log(`[${name}] Promise fulfilled:`, result);
             return result;
         })
-        .catch(error => {
+        .catch((error) => {
             console.error(`[${name}] Promise rejected:`, error);
             throw error;
         });
@@ -4089,9 +4211,10 @@ const user = await timedOperation('fetchUser', () => fetchUser('123'));
 **Cause:** A promise rejected but no `.catch()` or try/catch handled it.
 
 **Fix:**
+
 ```typescript
 // Add error handling
-await operation().catch(error => {
+await operation().catch((error) => {
     console.error('Operation failed:', error);
 });
 ```
@@ -4099,14 +4222,15 @@ await operation().catch(error => {
 #### "Cannot read property 'x' of undefined"
 
 In async context, usually means:
+
 ```typescript
 // Problem: Missing await
-const user = fetchUser();  // Returns Promise
-console.log(user.name);    // Error: user is Promise, not object
+const user = fetchUser(); // Returns Promise
+console.log(user.name); // Error: user is Promise, not object
 
 // Fix: Add await
 const user = await fetchUser();
-console.log(user.name);  // Works!
+console.log(user.name); // Works!
 ```
 
 #### "Timeout of Xms exceeded"
@@ -4114,6 +4238,7 @@ console.log(user.name);  // Works!
 **Cause:** Async operation took longer than allowed.
 
 **Debug:**
+
 ```typescript
 async function debugTimeout() {
     const timeout = setTimeout(() => {
@@ -4144,6 +4269,7 @@ node --inspect-brk index.js
 ```
 
 **Features:**
+
 - Set breakpoints in Chrome DevTools
 - Inspect async call stacks
 - Profile async performance
@@ -4152,33 +4278,34 @@ node --inspect-brk index.js
 ### Tools for Async Debugging
 
 1. **VS Code Debugger**
-   - Built-in support for async debugging
-   - Set breakpoints in TypeScript source
-   - Inspect promise values
+    - Built-in support for async debugging
+    - Set breakpoints in TypeScript source
+    - Inspect promise values
 
 2. **Chrome DevTools**
-   - Network panel for API calls
-   - Performance panel for async timing
-   - Console for interactive debugging
+    - Network panel for API calls
+    - Performance panel for async timing
+    - Console for interactive debugging
 
 3. **Async Hooks (Advanced)**
-   ```typescript
-   const async_hooks = require('async_hooks');
 
-   const hook = async_hooks.createHook({
-       init(asyncId, type, triggerAsyncId) {
-           console.log(`Async operation ${type} created`);
-       },
-       before(asyncId) {
-           console.log(`Before async operation ${asyncId}`);
-       },
-       after(asyncId) {
-           console.log(`After async operation ${asyncId}`);
-       }
-   });
+    ```typescript
+    const async_hooks = require('async_hooks');
 
-   hook.enable();
-   ```
+    const hook = async_hooks.createHook({
+        init(asyncId, type, triggerAsyncId) {
+            console.log(`Async operation ${type} created`);
+        },
+        before(asyncId) {
+            console.log(`Before async operation ${asyncId}`);
+        },
+        after(asyncId) {
+            console.log(`After async operation ${asyncId}`);
+        },
+    });
+
+    hook.enable();
+    ```
 
 ### Debugging Checklist
 
@@ -4215,9 +4342,9 @@ describe('User Service', () => {
     });
 
     it('should handle user not found', async () => {
-        await expect(userService.getUser('nonexistent'))
-            .rejects
-            .toThrow('User not found');
+        await expect(userService.getUser('nonexistent')).rejects.toThrow(
+            'User not found'
+        );
     });
 });
 ```
@@ -4226,7 +4353,7 @@ describe('User Service', () => {
 
 ```typescript
 it('should resolve with user data', () => {
-    return userService.getUser('123').then(user => {
+    return userService.getUser('123').then((user) => {
         expect(user.id).toBe('123');
     });
 });
@@ -4242,9 +4369,9 @@ it('should resolve with user data', async () => {
 
 ```typescript
 it('should reject with error', async () => {
-    await expect(userService.getUser('invalid'))
-        .rejects
-        .toThrow('Invalid user ID');
+    await expect(userService.getUser('invalid')).rejects.toThrow(
+        'Invalid user ID'
+    );
 });
 
 // Or with try/catch
@@ -4278,14 +4405,12 @@ it('should handle mocked async call', async () => {
 
 it('should handle mocked rejection', async () => {
     // Setup mock to reject
-    userService.getUser = jest.fn().mockRejectedValue(
-        new Error('Database error')
-    );
+    userService.getUser = jest
+        .fn()
+        .mockRejectedValue(new Error('Database error'));
 
     // Test
-    await expect(userService.getUser('123'))
-        .rejects
-        .toThrow('Database error');
+    await expect(userService.getUser('123')).rejects.toThrow('Database error');
 });
 ```
 
@@ -4318,13 +4443,10 @@ it('should execute operations in parallel', async () => {
     const start = Date.now();
 
     // Each operation takes 100ms
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    const delay = (ms: number) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
 
-    await Promise.all([
-        delay(100),
-        delay(100),
-        delay(100)
-    ]);
+    await Promise.all([delay(100), delay(100), delay(100)]);
 
     const duration = Date.now() - start;
 
@@ -4337,14 +4459,11 @@ it('should execute operations in parallel', async () => {
 
 ```typescript
 it('should timeout after specified duration', async () => {
-    const slowOperation = () => new Promise(
-        resolve => setTimeout(resolve, 5000)
-    );
+    const slowOperation = () =>
+        new Promise((resolve) => setTimeout(resolve, 5000));
 
-    await expect(
-        withTimeout(slowOperation(), 1000)
-    ).rejects.toThrow('Timeout');
-}, 2000);  // Test timeout: 2 seconds
+    await expect(withTimeout(slowOperation(), 1000)).rejects.toThrow('Timeout');
+}, 2000); // Test timeout: 2 seconds
 ```
 
 ### Testing Error Recovery
@@ -4377,18 +4496,14 @@ import app from './app';
 
 describe('GET /user/:id', () => {
     it('should return user data', async () => {
-        const response = await request(app)
-            .get('/user/123')
-            .expect(200);
+        const response = await request(app).get('/user/123').expect(200);
 
         expect(response.body).toHaveProperty('id', '123');
         expect(response.body).toHaveProperty('name');
     });
 
     it('should return 404 for non-existent user', async () => {
-        await request(app)
-            .get('/user/nonexistent')
-            .expect(404);
+        await request(app).get('/user/nonexistent').expect(404);
     });
 });
 ```
@@ -4396,47 +4511,51 @@ describe('GET /user/:id', () => {
 ### Best Practices for Testing Async Code
 
 1. **Always return or await promises in tests**
-   ```typescript
-   // ❌ BAD: Test completes before async operation
-   it('bad test', () => {
-       someAsyncOperation();  // Not awaited!
-   });
 
-   // ✅ GOOD
-   it('good test', async () => {
-       await someAsyncOperation();
-   });
-   ```
+    ```typescript
+    // ❌ BAD: Test completes before async operation
+    it('bad test', () => {
+        someAsyncOperation(); // Not awaited!
+    });
+
+    // ✅ GOOD
+    it('good test', async () => {
+        await someAsyncOperation();
+    });
+    ```
 
 2. **Set appropriate timeouts**
-   ```typescript
-   it('slow operation', async () => {
-       await verySlowOperation();
-   }, 10000);  // 10 second timeout
-   ```
+
+    ```typescript
+    it('slow operation', async () => {
+        await verySlowOperation();
+    }, 10000); // 10 second timeout
+    ```
 
 3. **Clean up after tests**
-   ```typescript
-   afterEach(async () => {
-       await database.clear();
-       await cache.flush();
-   });
-   ```
+
+    ```typescript
+    afterEach(async () => {
+        await database.clear();
+        await cache.flush();
+    });
+    ```
 
 4. **Use fake timers for time-dependent code**
-   ```typescript
-   jest.useFakeTimers();
 
-   it('should execute after delay', async () => {
-       const callback = jest.fn();
-       setTimeout(callback, 1000);
+    ```typescript
+    jest.useFakeTimers();
 
-       jest.advanceTimersByTime(1000);
-       await Promise.resolve();  // Flush promises
+    it('should execute after delay', async () => {
+        const callback = jest.fn();
+        setTimeout(callback, 1000);
 
-       expect(callback).toHaveBeenCalled();
-   });
-   ```
+        jest.advanceTimersByTime(1000);
+        await Promise.resolve(); // Flush promises
+
+        expect(callback).toHaveBeenCalled();
+    });
+    ```
 
 ---
 
@@ -4447,28 +4566,33 @@ Continue your async JavaScript learning journey with these resources.
 ### Official Documentation
 
 **JavaScript & Node.js:**
+
 - [MDN: Async functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
 - [MDN: Using Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises)
 - [Node.js: Event Loop](https://nodejs.org/en/docs/guides/event-loop-timers-and-nexttick/)
 - [Node.js: Asynchronous Programming](https://nodejs.org/en/learn/asynchronous-work/overview-of-blocking-vs-non-blocking)
 
 **TypeScript:**
+
 - [TypeScript: Async Functions](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-1-7.html#async-functions)
 - [TypeScript: Type Guards](https://www.typescriptlang.org/docs/handbook/2/narrowing.html)
 
 ### Interactive Learning
 
 **Visualizations:**
+
 - [Loupe: Event Loop Visualizer](http://latentflip.com/loupe/) - See how the event loop processes code
 - [JavaScript Visualizer](https://www.jsv9000.app/) - Visualize async code execution
 
 **Tutorials:**
+
 - [javascript.info: Async/await](https://javascript.info/async-await)
 - [javascript.info: Promises](https://javascript.info/promise-basics)
 
 ### Books
 
 **Recommended Reading:**
+
 - "You Don't Know JS: Async & Performance" by Kyle Simpson
 - "Node.js Design Patterns" by Mario Casciaro & Luciano Mammino
 - "JavaScript: The Definitive Guide" by David Flanagan (Chapters on Async)
@@ -4481,12 +4605,14 @@ Continue your async JavaScript learning journey with these resources.
 ### Articles & Blog Posts
 
 **Deep Dives:**
+
 - [Jake Archibald: Tasks, microtasks, queues and schedules](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)
 - [Philip Roberts: What the heck is the event loop anyway?](https://www.youtube.com/watch?v=8aGhZQkoFbQ) (Video)
 
 ### Related Documentation in This Project
 
 **Continue Learning:**
+
 - [Node.js & Express Architecture](./node-express-architecture.md) - How async fits into Express applications
 - [Error Handling Patterns](./error-handling-patterns.md) - Comprehensive error handling strategies
 - [Development Workflow](./development-workflow.md) - TypeScript compilation and development process
@@ -4495,18 +4621,21 @@ Continue your async JavaScript learning journey with these resources.
 ### Tools & Libraries
 
 **Async Utilities:**
+
 - [p-limit](https://www.npmjs.com/package/p-limit) - Limit promise concurrency
 - [p-queue](https://www.npmjs.com/package/p-queue) - Promise queue with concurrency control
 - [p-retry](https://www.npmjs.com/package/p-retry) - Retry failed promises
 - [p-timeout](https://www.npmjs.com/package/p-timeout) - Add timeouts to promises
 
 **Express Async:**
+
 - [express-async-errors](https://www.npmjs.com/package/express-async-errors) - Automatic async error handling
 - [express-async-handler](https://www.npmjs.com/package/express-async-handler) - Alternative asyncHandler implementation
 
 ### Community
 
 **Get Help:**
+
 - [Stack Overflow: async-await tag](https://stackoverflow.com/questions/tagged/async-await)
 - [Node.js Discord](https://discord.gg/nodejs)
 - [r/node Reddit Community](https://www.reddit.com/r/node/)
@@ -4545,6 +4674,7 @@ You've learned:
 ✅ **Testing strategies** - Mocking, assertions, and timeouts
 
 **Remember:**
+
 - Async/await is syntactic sugar over promises
 - Always handle errors appropriately
 - Use Promise.all() for parallel operations
@@ -4553,4 +4683,4 @@ You've learned:
 
 ---
 
-*This documentation is part of the TCSS-460 Message API educational project. For questions or improvements, please see the [project repository](/).*
+_This documentation is part of the TCSS-460 Message API educational project. For questions or improvements, please see the [project repository](/)._

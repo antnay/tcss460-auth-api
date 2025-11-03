@@ -9,7 +9,7 @@ export enum UserRole {
     MODERATOR = 2,
     ADMIN = 3,
     SUPER_ADMIN = 4,
-    OWNER = 5
+    OWNER = 5,
 }
 
 /**
@@ -20,7 +20,7 @@ export const RoleName = {
     [UserRole.MODERATOR]: 'Moderator',
     [UserRole.ADMIN]: 'Admin',
     [UserRole.SUPER_ADMIN]: 'SuperAdmin',
-    [UserRole.OWNER]: 'Owner'
+    [UserRole.OWNER]: 'Owner',
 } as const;
 
 /**
@@ -39,7 +39,7 @@ export interface IJwtClaims {
  */
 export interface IJwtRequest extends Request {
     claims?: IJwtClaims;
-    targetUserRole?: UserRole;  // Used by role hierarchy middleware
+    targetUserRole?: UserRole; // Used by role hierarchy middleware
 }
 
 /**
@@ -132,31 +132,31 @@ export interface IPasswordResetToken {
 /**
  * JWT Configuration Constants
  */
-export const JWT_EXPIRY = '14d';           // Access token expiry
-export const JWT_RESET_EXPIRY = '1h';      // Password reset token expiry
+export const JWT_EXPIRY = '14d'; // Access token expiry
+export const JWT_RESET_EXPIRY = '1h'; // Password reset token expiry
 
 // Email-to-SMS gateway mappings
 export const SMS_GATEWAYS: { [key: string]: string } = {
     // US Carriers
-    'att': '@txt.att.net',
-    'tmobile': '@tmomail.net',
-    'verizon': '@vtext.com',
-    'sprint': '@messaging.sprintpcs.com',
-    'boost': '@sms.myboostmobile.com',
-    'cricket': '@sms.cricketwireless.net',
-    'metro': '@mymetropcs.com',
-    'tracfone': '@mmst5.tracfone.com',
-    'uscellular': '@email.uscc.net',
-    'virgin': '@vmobl.com',
+    att: '@txt.att.net',
+    tmobile: '@tmomail.net',
+    verizon: '@vtext.com',
+    sprint: '@messaging.sprintpcs.com',
+    boost: '@sms.myboostmobile.com',
+    cricket: '@sms.cricketwireless.net',
+    metro: '@mymetropcs.com',
+    tracfone: '@mmst5.tracfone.com',
+    uscellular: '@email.uscc.net',
+    virgin: '@vmobl.com',
 
     // Canadian Carriers
-    'telus': '@msg.telus.com',
-    'bell': '@txt.bellmobility.ca',
-    'rogers': '@pcs.rogers.com',
-    'fido': '@fido.ca',
-    'koodo': '@msg.koodomobile.com',
+    telus: '@msg.telus.com',
+    bell: '@txt.bellmobility.ca',
+    rogers: '@pcs.rogers.com',
+    fido: '@fido.ca',
+    koodo: '@msg.koodomobile.com',
 
     // For testing/development
-    'test': '@example.com',
-    'mock': '@mock.local'
+    test: '@example.com',
+    mock: '@mock.local',
 };

@@ -48,7 +48,7 @@ router.get('/', (request: Request, response: Response) => {
             success: false,
             message: 'Failed to generate documentation index',
             errorCode: 'DOCS_INDEX_ERROR',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
     }
 });
@@ -74,7 +74,7 @@ router.get(
             .matches(/^[a-zA-Z0-9_-]+\.md$/)
             .withMessage(
                 'Filename must be a valid markdown file (alphanumeric, underscores, hyphens only)'
-            )
+            ),
     ],
     handleValidationErrors,
     (request: Request, response: Response): void => {
@@ -85,7 +85,7 @@ router.get(
                     success: false,
                     message: 'Filename parameter is required',
                     errorCode: 'MISSING_FILENAME',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -102,7 +102,7 @@ router.get(
                     success: false,
                     message: 'Invalid file path',
                     errorCode: 'INVALID_PATH',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -112,7 +112,7 @@ router.get(
                     success: false,
                     message: `Documentation file '${filename}' not found`,
                     errorCode: 'DOCS_FILE_NOT_FOUND',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -120,7 +120,10 @@ router.get(
             const markdownContent = fs.readFileSync(filePath, 'utf8');
 
             response.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            response.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+            response.setHeader(
+                'Content-Disposition',
+                `inline; filename="${filename}"`
+            );
             response.send(markdownContent);
         } catch (error) {
             console.error('Error serving raw markdown file:', error);
@@ -128,7 +131,7 @@ router.get(
                 success: false,
                 message: 'Failed to serve documentation file',
                 errorCode: 'DOCS_SERVE_ERROR',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         }
     }
@@ -156,7 +159,7 @@ router.get(
             .matches(/^[a-zA-Z0-9_-]+\.md$/)
             .withMessage(
                 'Filename must be a valid markdown file (alphanumeric, underscores, hyphens only)'
-            )
+            ),
     ],
     handleValidationErrors,
     (request: Request, response: Response): void => {
@@ -167,7 +170,7 @@ router.get(
                     success: false,
                     message: 'Filename parameter is required',
                     errorCode: 'MISSING_FILENAME',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -184,7 +187,7 @@ router.get(
                     success: false,
                     message: 'Invalid file path',
                     errorCode: 'INVALID_PATH',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -196,7 +199,7 @@ router.get(
                     success: false,
                     message: `Documentation file '${filename}' not found`,
                     errorCode: 'DOCS_FILE_NOT_FOUND',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
                 return;
             }
@@ -209,7 +212,7 @@ router.get(
                 success: false,
                 message: 'Failed to render documentation file',
                 errorCode: 'DOCS_RENDER_ERROR',
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         }
     }

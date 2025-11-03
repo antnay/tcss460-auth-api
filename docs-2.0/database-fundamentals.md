@@ -5,6 +5,7 @@ A comprehensive guide to database concepts and practices for web application dev
 > **💡 Related Code**: See implementations in [`/src/core/utilities/transactionUtils.ts`](../src/core/utilities/transactionUtils.ts) and [`/src/core/utilities/database.ts`](../src/core/utilities/database.ts)
 
 ## Quick Navigation
+
 - 🔧 **Transaction Utilities**: [`transactionUtils.ts`](../src/core/utilities/transactionUtils.ts) - `withTransaction()`, `executeTransactionWithResponse()`
 - 🗃️ **Database Connection**: [`database.ts`](../src/core/utilities/database.ts) - Connection pooling and setup
 - 🎯 **Usage Examples**: [`authController.ts`](../src/controllers/authController.ts) - Real transaction usage
@@ -31,6 +32,7 @@ A database transaction is a sequence of one or more database operations that are
 ### Real-World Analogy: Bank Transfer
 
 Think of it like a bank transfer:
+
 1. Subtract $100 from Account A
 2. Add $100 to Account B
 
@@ -45,11 +47,13 @@ If step 2 fails, you MUST undo step 1 - otherwise money disappears from the syst
 ### When to Use Transactions
 
 #### ✅ **Use Transactions For:**
+
 - Multiple related database operations that must all succeed together
 - Operations that could leave data in an inconsistent state if partially completed
 - When you need to ensure data integrity across multiple tables
 
 #### ❌ **Don't Use Transactions For:**
+
 - Single, simple operations (like SELECT or single INSERT)
 - Read-only operations that don't modify data
 - Operations where partial success is acceptable
@@ -64,8 +68,14 @@ If step 2 fails, you MUST undo step 1 - otherwise money disappears from the syst
 
 ```typescript
 // BAD: If step 2 fails, you have an account without credentials!
-await pool.query('INSERT INTO Account (username, email) VALUES ($1, $2)', [username, email]);
-await pool.query('INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)', [accountId, hash]); // Could fail!
+await pool.query('INSERT INTO Account (username, email) VALUES ($1, $2)', [
+    username,
+    email,
+]);
+await pool.query(
+    'INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)',
+    [accountId, hash]
+); // Could fail!
 ```
 
 ### Safe Example With Transactions
@@ -73,21 +83,21 @@ await pool.query('INSERT INTO Account_Credential (account_id, password_hash) VAL
 ```typescript
 const client = await pool.connect();
 try {
-  await client.query('BEGIN');
-  const accountResult = await client.query(
-    'INSERT INTO Account (username, email) VALUES ($1, $2) RETURNING id',
-    [username, email]
-  );
-  await client.query(
-    'INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)',
-    [accountResult.rows[0].id, hash]
-  );
-  await client.query('COMMIT'); // Success: both operations saved
+    await client.query('BEGIN');
+    const accountResult = await client.query(
+        'INSERT INTO Account (username, email) VALUES ($1, $2) RETURNING id',
+        [username, email]
+    );
+    await client.query(
+        'INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)',
+        [accountResult.rows[0].id, hash]
+    );
+    await client.query('COMMIT'); // Success: both operations saved
 } catch (error) {
-  await client.query('ROLLBACK'); // Failure: both operations undone
-  throw error;
+    await client.query('ROLLBACK'); // Failure: both operations undone
+    throw error;
 } finally {
-  client.release();
+    client.release();
 }
 ```
 
@@ -99,21 +109,21 @@ try {
 // From /src/core/utilities/transactionUtils.ts
 // Example: User registration with account and credentials
 const result = await withTransaction(async (client) => {
-  const accountResult = await client.query(
-    'INSERT INTO Account (username, email) VALUES ($1, $2) RETURNING id',
-    [username, email]
-  );
-  await client.query(
-    'INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)',
-    [accountResult.rows[0].id, passwordHash]
-  );
-  return accountResult.rows[0];
+    const accountResult = await client.query(
+        'INSERT INTO Account (username, email) VALUES ($1, $2) RETURNING id',
+        [username, email]
+    );
+    await client.query(
+        'INSERT INTO Account_Credential (account_id, password_hash) VALUES ($1, $2)',
+        [accountResult.rows[0].id, passwordHash]
+    );
+    return accountResult.rows[0];
 });
 
 if (result.success) {
-  console.log('User registered:', result.data);
+    console.log('User registered:', result.data);
 } else {
-  console.error('Registration failed:', result.error);
+    console.error('Registration failed:', result.error);
 }
 ```
 
@@ -124,17 +134,19 @@ if (result.success) {
 Transactions follow ACID principles to ensure database reliability:
 
 ### **A - ATOMICITY**
+
 All operations succeed or all fail (no partial success)
 
 ```typescript
 // Either both operations happen, or neither happens
 await withTransaction(async (client) => {
-  await client.query('INSERT INTO Account...');
-  await client.query('INSERT INTO Account_Credential...');
+    await client.query('INSERT INTO Account...');
+    await client.query('INSERT INTO Account_Credential...');
 });
 ```
 
 ### **C - CONSISTENCY**
+
 Database remains in a valid state before and after transaction
 
 ```sql
@@ -143,6 +155,7 @@ ALTER TABLE accounts ADD CONSTRAINT positive_balance CHECK (balance >= 0);
 ```
 
 ### **I - ISOLATION**
+
 Concurrent transactions don't interfere with each other
 
 ```typescript
@@ -152,6 +165,7 @@ BEGIN ISOLATION LEVEL SERIALIZABLE;   -- Highest isolation
 ```
 
 ### **D - DURABILITY**
+
 Once committed, changes are permanent (survive system crashes)
 
 ---
@@ -165,12 +179,14 @@ Connection pooling maintains a cache of database connections that can be reused 
 ### Why Connection Pooling Matters
 
 #### ✅ **Benefits:**
+
 - **Performance**: Reusing connections is much faster than creating new ones
 - **Resource Management**: Limits concurrent database connections
 - **Scalability**: Handles many concurrent users efficiently
 - **Reliability**: Automatic connection recovery and health checks
 
 #### ❌ **Without Pooling:**
+
 - High latency from connection overhead
 - Database server overwhelmed by too many connections
 - Resource leaks from unclosed connections
@@ -181,14 +197,14 @@ Connection pooling maintains a cache of database connections that can be reused 
 ```typescript
 // From /src/core/utilities/database.ts
 const pool = new Pool({
-  host: 'localhost',
-  port: 5432,
-  user: 'postgres',
-  password: 'password',
-  database: 'auth_db',
-  max: 20,                    // Maximum connections in pool
-  idleTimeoutMillis: 30000,   // Close idle connections after 30s
-  connectionTimeoutMillis: 2000, // Wait max 2s for connection
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 'password',
+    database: 'auth_db',
+    max: 20, // Maximum connections in pool
+    idleTimeoutMillis: 30000, // Close idle connections after 30s
+    connectionTimeoutMillis: 2000, // Wait max 2s for connection
 });
 ```
 
@@ -198,10 +214,10 @@ const pool = new Pool({
 // ✅ GOOD: Always release connections
 const client = await pool.connect();
 try {
-  const result = await client.query('SELECT...');
-  return result.rows;
+    const result = await client.query('SELECT...');
+    return result.rows;
 } finally {
-  client.release(); // Always release!
+    client.release(); // Always release!
 }
 
 // ✅ BETTER: Use pool.query() for simple queries
@@ -220,6 +236,7 @@ const result = await client.query('SELECT...');
 ### Understanding Query Performance
 
 #### **1. Use Indexes Effectively**
+
 ```sql
 -- Create index for frequently queried columns
 CREATE INDEX idx_account_username ON Account(username);
@@ -230,11 +247,12 @@ SELECT * FROM Account WHERE username = 'john_doe';
 ```
 
 #### **2. Limit Result Sets**
+
 ```typescript
 // ✅ GOOD: Paginated results
 const result = await pool.query(
-  'SELECT * FROM Account ORDER BY created_at LIMIT $1 OFFSET $2',
-  [10, page * 10]
+    'SELECT * FROM Account ORDER BY created_at LIMIT $1 OFFSET $2',
+    [10, page * 10]
 );
 
 // ❌ BAD: Loading all data
@@ -242,6 +260,7 @@ const result = await pool.query('SELECT * FROM Account');
 ```
 
 #### **3. Use Specific Columns**
+
 ```sql
 -- ✅ GOOD: Only select needed columns
 SELECT id, username, email FROM Account WHERE username = 'john_doe';
@@ -345,11 +364,11 @@ CREATE TABLE messages (
 // ❌ BAD: N+1 queries (1 + N individual queries)
 const accounts = await pool.query('SELECT * FROM Account');
 for (const account of accounts.rows) {
-  const credentials = await pool.query(
-    'SELECT * FROM Account_Credential WHERE account_id = $1',
-    [account.id]
-  );
-  account.credentials = credentials.rows;
+    const credentials = await pool.query(
+        'SELECT * FROM Account_Credential WHERE account_id = $1',
+        [account.id]
+    );
+    account.credentials = credentials.rows;
 }
 
 // ✅ GOOD: Single JOIN query
@@ -368,17 +387,17 @@ const result = await pool.query(`
 const client = await pool.connect();
 const result = await client.query('SELECT...');
 if (someCondition) {
-  return result; // Connection never released!
+    return result; // Connection never released!
 }
 client.release();
 
 // ✅ GOOD: Always release in finally block
 const client = await pool.connect();
 try {
-  const result = await client.query('SELECT...');
-  return result;
+    const result = await client.query('SELECT...');
+    return result;
 } finally {
-  client.release(); // Always executed
+    client.release(); // Always executed
 }
 ```
 
@@ -435,4 +454,4 @@ VACUUM ANALYZE Account;
 
 ---
 
-*Understanding database fundamentals is crucial for building scalable, reliable web applications. These concepts form the foundation of backend development.*
+_Understanding database fundamentals is crucial for building scalable, reliable web applications. These concepts form the foundation of backend development._

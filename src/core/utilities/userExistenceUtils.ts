@@ -35,7 +35,7 @@ export const checkUserExistence = async (
             exists: true,
             field: 'email',
             errorCode: ErrorCodes.AUTH_EMAIL_EXISTS,
-            message: 'Email already exists'
+            message: 'Email already exists',
         };
     }
 
@@ -49,7 +49,7 @@ export const checkUserExistence = async (
             exists: true,
             field: 'username',
             errorCode: ErrorCodes.AUTH_USERNAME_EXISTS,
-            message: 'Username already exists'
+            message: 'Username already exists',
         };
     }
 
@@ -63,7 +63,7 @@ export const checkUserExistence = async (
             exists: true,
             field: 'phone',
             errorCode: ErrorCodes.AUTH_PHONE_EXISTS,
-            message: 'Phone already exists'
+            message: 'Phone already exists',
         };
     }
 

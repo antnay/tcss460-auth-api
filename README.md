@@ -16,6 +16,7 @@ This is the **student starter template** for the Auth² (Auth Squared) project -
 This template provides:
 
 ### ✅ Working Features
+
 - **Project Structure**: Complete TypeScript/Node.js/Express setup with path aliases
 - **Database Schema**: Full PostgreSQL schema with 4 tables (Account, Account_Credential, Email_Verification, Phone_Verification)
 - **Core Utilities**: Password hashing, JWT generation, email service, database connection
@@ -27,7 +28,9 @@ This template provides:
 - **Educational Documentation**: Complete guides in `docs-2.0/` directory
 
 ### 📝 Routes (Without Validation)
+
 **Public Routes** (Open):
+
 - `POST /auth/login` - User login
 - `POST /auth/register` - New user registration
 - `POST /auth/password/reset-request` - Request password reset
@@ -39,6 +42,7 @@ This template provides:
 - `GET /doc/:filename` - Rendered markdown docs
 
 **Protected Routes** (Closed - Requires JWT):
+
 - `POST /auth/user/password/change` - Change password
 - `POST /auth/verify/phone/send` - Send SMS verification
 - `POST /auth/verify/phone/verify` - Verify SMS code
@@ -49,6 +53,7 @@ This template provides:
 ### 🎯 Your Learning Objectives
 
 #### 1. Input Validation (Primary Goal)
+
 **File**: `src/core/middleware/validation.ts`
 
 The validation middleware file has been gutted. You need to implement express-validator validation chains for:
@@ -66,18 +71,22 @@ The validation middleware file has been gutted. You need to implement express-va
 - `validatePagination` - Page and limit validation
 
 **Learning Focus**:
+
 - Request validation with express-validator
 - Security best practices (input sanitization)
 - Error handling and user feedback
 - Data type validation and constraints
 
 #### 2. Admin API (Advanced Feature)
+
 **Files to Create**:
+
 - `src/controllers/adminController.ts`
 - `src/core/middleware/adminAuth.ts`
 - `src/routes/admin/index.ts`
 
 **Endpoints to Implement**:
+
 - `POST /admin/users/create` - Create user with specified role
 - `GET /admin/users` - List users (with pagination, filters)
 - `GET /admin/users/search` - Search users
@@ -89,6 +98,7 @@ The validation middleware file has been gutted. You need to implement express-va
 - `GET /admin/users/stats/dashboard` - Dashboard statistics
 
 **Learning Focus**:
+
 - Role-based access control (RBAC)
 - Role hierarchy enforcement (users can only manage lower/equal roles)
 - Advanced SQL queries (filtering, pagination, search)
@@ -156,6 +166,7 @@ npm run format       # Format code with Prettier
 ### Environment Variables
 
 Required in `.env`:
+
 ```bash
 # Server
 PORT=8000
@@ -188,6 +199,7 @@ TWILIO_PHONE_NUMBER=your-twilio-number
 ### Tables
 
 **Account** - Main user table
+
 ```sql
 Account_ID, FirstName, LastName, Username (unique),
 Email (unique), Email_Verified, Phone (unique),
@@ -196,11 +208,13 @@ Created_At, Updated_At
 ```
 
 **Account_Credential** - Password storage
+
 ```sql
 Credential_ID, Account_ID (FK), Salted_Hash, Salt
 ```
 
 **Email_Verification** - Email verification tokens
+
 ```sql
 Verification_ID, Account_ID (FK), Email,
 Verification_Token (unique), Token_Expires,
@@ -208,6 +222,7 @@ Verified, Created_At
 ```
 
 **Phone_Verification** - SMS verification codes
+
 ```sql
 Verification_ID, Account_ID (FK), Phone,
 Verification_Code, Code_Expires, Attempts,
@@ -247,6 +262,7 @@ import { IJwtRequest, UserRole, RoleName } from '@models';
 ```
 
 **Available Aliases**:
+
 - `@core/*` → `src/core/*`
 - `@routes/*` → `src/routes/*`
 - `@controllers` → `src/controllers/index`

@@ -99,11 +99,14 @@ async function startServer() {
         // Only show success message after server is actually listening
         server.on('listening', () => {
             // Determine base URL based on environment
-            const baseUrl = process.env.APP_BASE_URL || `http://localhost:${PORT}`;
+            const baseUrl =
+                process.env.APP_BASE_URL || `http://localhost:${PORT}`;
 
             console.log(`\n🚀 TCSS-460-auth-squared Template Server Running`);
             console.log(`   Port: ${PORT}`);
-            console.log(`\n📖 API Documentation (Swagger): ${baseUrl}/api-docs`);
+            console.log(
+                `\n📖 API Documentation (Swagger): ${baseUrl}/api-docs`
+            );
             console.log(`📚 Educational Documentation: ${baseUrl}/doc`);
             console.log(`🧪 JWT Test Route: ${baseUrl}/jwt_test`);
         });
@@ -137,7 +140,6 @@ async function startServer() {
 
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
     } catch (error) {
         // Don't log the full error object/stack trace - validateEnv() already
         // printed helpful error messages. Just exit cleanly.

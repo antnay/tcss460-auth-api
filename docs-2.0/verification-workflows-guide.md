@@ -5,6 +5,7 @@ A comprehensive educational guide to implementing secure user verification syste
 > **Learning Objectives**: Understand email and SMS verification workflows, token/code generation, expiry handling, security considerations, and common edge cases in authentication systems.
 
 ## Quick Navigation
+
 - **Why Verification**: [Security & Ownership](#why-verification-matters)
 - **Email Workflow**: [Full Lifecycle](#email-verification-workflow)
 - **SMS Workflow**: [Code-based Verification](#sms-verification-workflow)
@@ -40,6 +41,7 @@ A comprehensive educational guide to implementing secure user verification syste
 When a user registers with an email address or phone number, how do you know they actually own it?
 
 **Without Verification**:
+
 ```
 Attacker registers: victim@company.com
 System creates account and grants access
@@ -48,6 +50,7 @@ Victim doesn't know their email was used
 ```
 
 **Scenario: Account Takeover**
+
 ```
 1. Attacker registers with victim@bank.com
 2. Attacker uses "forgot password" on real banking site
@@ -58,12 +61,14 @@ Victim doesn't know their email was used
 ### User Ownership Verification
 
 **Email Verification** proves:
+
 - ✅ User has access to the email inbox
 - ✅ User can receive and act on communications
 - ✅ Email address is valid and deliverable
 - ✅ User owns or controls the email account
 
 **SMS Verification** proves:
+
 - ✅ User has physical possession of the phone
 - ✅ Phone number is active and receiving messages
 - ✅ User can access the device in real-time
@@ -72,6 +77,7 @@ Victim doesn't know their email was used
 ### Real-World Use Cases
 
 **Email Verification**:
+
 - Initial account registration confirmation
 - Password reset authorization
 - Email change confirmation
@@ -79,6 +85,7 @@ Victim doesn't know their email was used
 - Legal/compliance requirements (GDPR, CAN-SPAM)
 
 **SMS Verification**:
+
 - Two-factor authentication (2FA)
 - High-security operations (money transfers)
 - Account recovery when email is compromised
@@ -98,6 +105,7 @@ Highly-Secured Account
 ```
 
 **Different levels enable different features**:
+
 - **Unverified**: Limited access, can't reset password
 - **Email-Verified**: Full access, can receive notifications
 - **SMS-Verified**: Can enable 2FA, perform sensitive operations
@@ -184,7 +192,8 @@ async function sendEmailVerification(accountId: number, email: string) {
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
     // Store in database
-    await pool.query(`
+    await pool.query(
+        `
         INSERT INTO Email_Verification (Account_ID, Token, Expires_At, Created_At)
         VALUES ($1, $2, $3, NOW())
         ON CONFLICT (Account_ID)
@@ -192,7 +201,9 @@ async function sendEmailVerification(accountId: number, email: string) {
             Token = $2,
             Expires_At = $3,
             Created_At = NOW()
-    `, [accountId, verificationToken, expiresAt]);
+    `,
+        [accountId, verificationToken, expiresAt]
+    );
 
     // Build verification URL
     const verificationUrl = `https://yourapp.com/auth/verify/email/confirm?token=${verificationToken}`;
@@ -200,19 +211,20 @@ async function sendEmailVerification(accountId: number, email: string) {
     // Send email
     await sendEmail({
         to: email,
-        subject: "Verify Your Email Address",
+        subject: 'Verify Your Email Address',
         html: `
             <h2>Welcome to TCSS-460-auth-squared!</h2>
             <p>Please verify your email address by clicking the link below:</p>
             <a href="${verificationUrl}">Verify Email</a>
             <p>This link will expire in 48 hours.</p>
             <p>If you didn't create this account, please ignore this email.</p>
-        `
+        `,
     });
 }
 ```
 
 **Key Security Points**:
+
 - ✅ 32 bytes (256 bits) of cryptographic randomness
 - ✅ Token is single-use (deleted after verification)
 - ✅ 48-hour expiration window
@@ -231,13 +243,14 @@ async function confirmEmailVerification(req: Request, res: Response) {
     if (!token || typeof token !== 'string' || token.length !== 64) {
         return res.status(400).json({
             success: false,
-            error: 'Invalid verification token format'
+            error: 'Invalid verification token format',
         });
     }
 
     try {
         // Look up token in database
-        const result = await pool.query(`
+        const result = await pool.query(
+            `
             SELECT
                 ev.Account_ID,
                 ev.Expires_At,
@@ -246,13 +259,15 @@ async function confirmEmailVerification(req: Request, res: Response) {
             FROM Email_Verification ev
             JOIN Account a ON ev.Account_ID = a.Account_ID
             WHERE ev.Token = $1
-        `, [token]);
+        `,
+            [token]
+        );
 
         // Check if token exists
         if (result.rows.length === 0) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid or expired verification token'
+                error: 'Invalid or expired verification token',
             });
         }
 
@@ -262,7 +277,7 @@ async function confirmEmailVerification(req: Request, res: Response) {
         if (verification.email_verified) {
             return res.status(200).json({
                 success: true,
-                message: 'Email already verified'
+                message: 'Email already verified',
             });
         }
 
@@ -272,7 +287,7 @@ async function confirmEmailVerification(req: Request, res: Response) {
             return res.status(400).json({
                 success: false,
                 error: 'Verification token has expired. Please request a new one.',
-                errorCode: 'TOKEN_EXPIRED'
+                errorCode: 'TOKEN_EXPIRED',
             });
         }
 
@@ -297,21 +312,19 @@ async function confirmEmailVerification(req: Request, res: Response) {
 
             return res.status(200).json({
                 success: true,
-                message: 'Email verified successfully!'
+                message: 'Email verified successfully!',
             });
-
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();
         }
-
     } catch (error) {
         console.error('Email verification error:', error);
         return res.status(500).json({
             success: false,
-            error: 'Failed to verify email'
+            error: 'Failed to verify email',
         });
     }
 }
@@ -369,6 +382,7 @@ export function generateEmailVerificationToken(): string {
 ### Why 32 Bytes (256 bits)?
 
 **Entropy Calculation**:
+
 ```
 32 bytes = 256 bits
 Possible tokens: 2^256 = 1.15 × 10^77
@@ -381,6 +395,7 @@ For comparison:
 **Bad Token Generation Examples**:
 
 ❌ **Predictable Timestamp-Based**:
+
 ```typescript
 // NEVER DO THIS
 const token = Date.now().toString();
@@ -388,6 +403,7 @@ const token = Date.now().toString();
 ```
 
 ❌ **Sequential IDs**:
+
 ```typescript
 // NEVER DO THIS
 const token = userId + '-' + incrementingCounter;
@@ -395,6 +411,7 @@ const token = userId + '-' + incrementingCounter;
 ```
 
 ❌ **Math.random() (Not Cryptographically Secure)**:
+
 ```typescript
 // NEVER DO THIS
 const token = Math.random().toString(36).substring(2);
@@ -402,6 +419,7 @@ const token = Math.random().toString(36).substring(2);
 ```
 
 ✅ **Correct: crypto.randomBytes()**:
+
 ```typescript
 // Always use this
 const token = crypto.randomBytes(32).toString('hex');
@@ -420,21 +438,24 @@ export async function validateEmailToken(token: string): Promise<{
     if (!token || token.length !== 64 || !/^[0-9a-f]{64}$/i.test(token)) {
         return {
             valid: false,
-            error: 'Invalid token format'
+            error: 'Invalid token format',
         };
     }
 
     // 2. Database lookup
-    const result = await pool.query(`
+    const result = await pool.query(
+        `
         SELECT Account_ID, Expires_At
         FROM Email_Verification
         WHERE Token = $1
-    `, [token]);
+    `,
+        [token]
+    );
 
     if (result.rows.length === 0) {
         return {
             valid: false,
-            error: 'Token not found'
+            error: 'Token not found',
         };
     }
 
@@ -443,14 +464,14 @@ export async function validateEmailToken(token: string): Promise<{
     if (new Date() > expiresAt) {
         return {
             valid: false,
-            error: 'Token expired'
+            error: 'Token expired',
         };
     }
 
     // 4. Valid token
     return {
         valid: true,
-        account_id: result.rows[0].account_id
+        account_id: result.rows[0].account_id,
     };
 }
 ```
@@ -489,6 +510,7 @@ const result = await pool.query(
 ```
 
 **Why hash?**
+
 - If database is breached, attacker gets hashes, not usable tokens
 - Similar principle to password hashing
 - Tokens in email are vulnerable (email servers, network intercept)
@@ -568,16 +590,16 @@ STEP 1: User Requests SMS Verification
 
 ### Key Differences: SMS vs Email
 
-| Aspect | Email Verification | SMS Verification |
-|--------|-------------------|------------------|
-| **Token Type** | Long random token (64 chars) | Short numeric code (6 digits) |
-| **Delivery** | Email (asynchronous) | SMS (near real-time) |
-| **Expiry** | 48 hours | 15 minutes |
-| **User Action** | Click link | Type code manually |
-| **Attempt Limit** | None (link is one-time use) | 3 attempts |
-| **Cost** | Free (using SMTP) | $0.01-0.05 per SMS |
-| **Security** | Lower (email can be forwarded) | Higher (requires device) |
-| **UX** | One-click | Requires typing |
+| Aspect            | Email Verification             | SMS Verification              |
+| ----------------- | ------------------------------ | ----------------------------- |
+| **Token Type**    | Long random token (64 chars)   | Short numeric code (6 digits) |
+| **Delivery**      | Email (asynchronous)           | SMS (near real-time)          |
+| **Expiry**        | 48 hours                       | 15 minutes                    |
+| **User Action**   | Click link                     | Type code manually            |
+| **Attempt Limit** | None (link is one-time use)    | 3 attempts                    |
+| **Cost**          | Free (using SMTP)              | $0.01-0.05 per SMS            |
+| **Security**      | Lower (email can be forwarded) | Higher (requires device)      |
+| **UX**            | One-click                      | Requires typing               |
 
 ---
 
@@ -631,7 +653,8 @@ Trade-off:
 ```typescript
 async function verifySMSCode(phone: string, submittedCode: string) {
     // Look up verification record
-    const result = await pool.query(`
+    const result = await pool.query(
+        `
         SELECT
             Account_ID,
             Code,
@@ -639,12 +662,14 @@ async function verifySMSCode(phone: string, submittedCode: string) {
             Attempts
         FROM Phone_Verification
         WHERE Phone_Number = $1
-    `, [phone]);
+    `,
+        [phone]
+    );
 
     if (result.rows.length === 0) {
         return {
             success: false,
-            error: 'No verification code found for this phone number'
+            error: 'No verification code found for this phone number',
         };
     }
 
@@ -656,7 +681,7 @@ async function verifySMSCode(phone: string, submittedCode: string) {
         return {
             success: false,
             error: 'Verification code has expired. Please request a new code.',
-            errorCode: 'CODE_EXPIRED'
+            errorCode: 'CODE_EXPIRED',
         };
     }
 
@@ -665,7 +690,7 @@ async function verifySMSCode(phone: string, submittedCode: string) {
         return {
             success: false,
             error: 'Too many failed attempts. Please request a new code.',
-            errorCode: 'MAX_ATTEMPTS_REACHED'
+            errorCode: 'MAX_ATTEMPTS_REACHED',
         };
     }
 
@@ -683,7 +708,7 @@ async function verifySMSCode(phone: string, submittedCode: string) {
             success: false,
             error: `Invalid code. ${remainingAttempts} attempt(s) remaining.`,
             errorCode: 'INVALID_CODE',
-            attemptsRemaining: remainingAttempts
+            attemptsRemaining: remainingAttempts,
         };
     }
 
@@ -708,9 +733,8 @@ async function verifySMSCode(phone: string, submittedCode: string) {
 
         return {
             success: true,
-            message: 'Phone number verified successfully!'
+            message: 'Phone number verified successfully!',
         };
-
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
@@ -787,20 +811,22 @@ CREATE INDEX idx_email_verification_expires ON Email_Verification(Expires_At);
 
 **Column Breakdown**:
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `Verification_ID` | SERIAL | Primary key (auto-increment) |
-| `Account_ID` | INTEGER | Links to Account table (UNIQUE: one verification per account) |
-| `Token` | VARCHAR(64) | 64-character hex token (UNIQUE: no duplicate tokens) |
-| `Expires_At` | TIMESTAMP | When token expires (48 hours from creation) |
-| `Created_At` | TIMESTAMP | When token was generated (for auditing) |
+| Column            | Type        | Purpose                                                       |
+| ----------------- | ----------- | ------------------------------------------------------------- |
+| `Verification_ID` | SERIAL      | Primary key (auto-increment)                                  |
+| `Account_ID`      | INTEGER     | Links to Account table (UNIQUE: one verification per account) |
+| `Token`           | VARCHAR(64) | 64-character hex token (UNIQUE: no duplicate tokens)          |
+| `Expires_At`      | TIMESTAMP   | When token expires (48 hours from creation)                   |
+| `Created_At`      | TIMESTAMP   | When token was generated (for auditing)                       |
 
 **Why UNIQUE on Account_ID?**
+
 - Prevents multiple pending verifications per user
 - `ON CONFLICT DO UPDATE` allows resending verification
 - Old token is replaced with new one
 
 **Example Records**:
+
 ```
 Verification_ID | Account_ID | Token                              | Expires_At           | Created_At
 ----------------|------------|-----------------------------------|----------------------|--------------------
@@ -838,17 +864,18 @@ CREATE INDEX idx_phone_verification_expires ON Phone_Verification(Expires_At);
 
 **Column Breakdown**:
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| `Verification_ID` | SERIAL | Primary key |
-| `Account_ID` | INTEGER | Links to Account table |
-| `Phone_Number` | VARCHAR(15) | User's phone number (E.164 format: +12065551234) |
-| `Code` | CHAR(6) | 6-digit verification code |
-| `Expires_At` | TIMESTAMP | 15 minutes from creation |
-| `Attempts` | INTEGER | Failed verification attempts (0-3) |
-| `Created_At` | TIMESTAMP | When code was generated |
+| Column            | Type        | Purpose                                          |
+| ----------------- | ----------- | ------------------------------------------------ |
+| `Verification_ID` | SERIAL      | Primary key                                      |
+| `Account_ID`      | INTEGER     | Links to Account table                           |
+| `Phone_Number`    | VARCHAR(15) | User's phone number (E.164 format: +12065551234) |
+| `Code`            | CHAR(6)     | 6-digit verification code                        |
+| `Expires_At`      | TIMESTAMP   | 15 minutes from creation                         |
+| `Attempts`        | INTEGER     | Failed verification attempts (0-3)               |
+| `Created_At`      | TIMESTAMP   | When code was generated                          |
 
 **Example Records**:
+
 ```
 Verification_ID | Account_ID | Phone_Number    | Code   | Expires_At          | Attempts | Created_At
 ----------------|------------|-----------------|--------|---------------------|----------|--------------------
@@ -871,6 +898,7 @@ CREATE TABLE Account (
 ```
 
 **Verification Flow Impact**:
+
 ```
 Registration:
 Account { Email_Verified: false, Phone_Verified: false }
@@ -888,10 +916,10 @@ Account { Email_Verified: true, Phone_Verified: true }
 
 ### Why Different Expiry Times?
 
-| Verification Type | Expiry Time | Reasoning |
-|------------------|-------------|-----------|
-| **Email Token** | 48 hours | - Email checks are asynchronous<br>- Users may not check email immediately<br>- Balance security vs. UX<br>- Longer window is acceptable (low cost to resend) |
-| **SMS Code** | 15 minutes | - SMS is expensive ($0.01-0.05 each)<br>- Short codes are easier to brute-force<br>- Users typically have phone in hand<br>- Real-time verification expected |
+| Verification Type | Expiry Time | Reasoning                                                                                                                                                     |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Email Token**   | 48 hours    | - Email checks are asynchronous<br>- Users may not check email immediately<br>- Balance security vs. UX<br>- Longer window is acceptable (low cost to resend) |
+| **SMS Code**      | 15 minutes  | - SMS is expensive ($0.01-0.05 each)<br>- Short codes are easier to brute-force<br>- Users typically have phone in hand<br>- Real-time verification expected  |
 
 ### Email Token Expiry Implementation
 
@@ -909,6 +937,7 @@ await pool.query(
 ```
 
 **Validation: Database-Level Check**:
+
 ```sql
 -- Query automatically excludes expired tokens
 SELECT Account_ID, Token
@@ -918,6 +947,7 @@ WHERE Token = $1
 ```
 
 **Validation: Application-Level Check**:
+
 ```typescript
 const result = await pool.query(
     'SELECT Account_ID, Expires_At FROM Email_Verification WHERE Token = $1',
@@ -935,7 +965,7 @@ if (now > expiresAt) {
     return {
         error: 'Token expired',
         expiredAt: expiresAt.toISOString(),
-        message: 'Please request a new verification email'
+        message: 'Please request a new verification email',
     };
 }
 ```
@@ -948,7 +978,8 @@ const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 //                           └────┬─────────────┘
 //                                15 minutes in milliseconds
 
-await pool.query(`
+await pool.query(
+    `
     INSERT INTO Phone_Verification (Account_ID, Phone_Number, Code, Expires_At, Attempts)
     VALUES ($1, $2, $3, $4, 0)
     ON CONFLICT (Account_ID)
@@ -957,16 +988,22 @@ await pool.query(`
         Expires_At = $4,
         Attempts = 0,  -- Reset attempts on new code
         Created_At = NOW()
-`, [accountId, phoneNumber, code, expiresAt]);
+`,
+    [accountId, phoneNumber, code, expiresAt]
+);
 ```
 
 **Validation with Attempt Check**:
+
 ```typescript
-const result = await pool.query(`
+const result = await pool.query(
+    `
     SELECT Account_ID, Code, Expires_At, Attempts
     FROM Phone_Verification
     WHERE Phone_Number = $1
-`, [phoneNumber]);
+`,
+    [phoneNumber]
+);
 
 if (result.rows.length === 0) {
     return { error: 'No verification code found' };
@@ -980,7 +1017,7 @@ if (new Date() > new Date(verification.expires_at)) {
     return {
         error: 'Code expired',
         message: 'This code expired. Please request a new one.',
-        errorCode: 'CODE_EXPIRED'
+        errorCode: 'CODE_EXPIRED',
     };
 }
 
@@ -989,7 +1026,7 @@ if (verification.attempts >= 3) {
     return {
         error: 'Too many attempts',
         message: 'Maximum attempts reached. Request a new code.',
-        errorCode: 'MAX_ATTEMPTS'
+        errorCode: 'MAX_ATTEMPTS',
     };
 }
 
@@ -999,12 +1036,14 @@ if (verification.attempts >= 3) {
 ### Cleanup: Removing Expired Records
 
 **Why cleanup matters**:
+
 - Database bloat (millions of expired records)
 - Index degradation
 - Slower queries
 - Privacy/compliance (don't keep data longer than needed)
 
 **Cleanup Strategy 1: Scheduled Job (Cron)**:
+
 ```typescript
 // Run daily at 2:00 AM
 // cron: '0 2 * * *'
@@ -1026,8 +1065,9 @@ async function cleanupExpiredVerifications() {
 
         await client.query('COMMIT');
 
-        console.log(`Cleanup complete: ${emailResult.rowCount} email, ${smsResult.rowCount} SMS records deleted`);
-
+        console.log(
+            `Cleanup complete: ${emailResult.rowCount} email, ${smsResult.rowCount} SMS records deleted`
+        );
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Cleanup failed:', error);
@@ -1038,6 +1078,7 @@ async function cleanupExpiredVerifications() {
 ```
 
 **Cleanup Strategy 2: On-Demand (During Request)**:
+
 ```typescript
 // Before generating new token, delete expired ones
 async function sendEmailVerification(accountId: number, email: string) {
@@ -1060,6 +1101,7 @@ async function sendEmailVerification(accountId: number, email: string) {
 **Attack Scenarios Without Rate Limiting**:
 
 1. **Email Bombing**:
+
 ```
 Attacker requests verification emails for victim@example.com
 System sends: 1, 2, 10, 100, 1000 emails
@@ -1068,6 +1110,7 @@ Email provider may block sender domain
 ```
 
 2. **SMS Cost Attack**:
+
 ```
 Attacker requests SMS codes repeatedly
 1000 SMS × $0.02 = $20.00
@@ -1077,6 +1120,7 @@ Company pays, attacker pays nothing
 ```
 
 3. **Resource Exhaustion**:
+
 ```
 Attacker makes 1 million verification requests
 Database fills with expired tokens
@@ -1102,7 +1146,7 @@ async function resendEmailVerification(req: Request, res: Response) {
         // Don't reveal if email exists (prevent enumeration)
         return res.json({
             success: true,
-            message: 'If that email exists, a verification link has been sent'
+            message: 'If that email exists, a verification link has been sent',
         });
     }
 
@@ -1112,26 +1156,30 @@ async function resendEmailVerification(req: Request, res: Response) {
     if (account.email_verified) {
         return res.json({
             success: true,
-            message: 'Email is already verified'
+            message: 'Email is already verified',
         });
     }
 
     // RATE LIMITING: Check recent verifications
-    const recentVerification = await pool.query(`
+    const recentVerification = await pool.query(
+        `
         SELECT Created_At
         FROM Email_Verification
         WHERE Account_ID = $1
           AND Created_At > NOW() - INTERVAL '5 minutes'
-    `, [account.account_id]);
+    `,
+        [account.account_id]
+    );
 
     if (recentVerification.rows.length > 0) {
         const lastSent = new Date(recentVerification.rows[0].created_at);
-        const waitTime = 5 - Math.floor((Date.now() - lastSent.getTime()) / 60000);
+        const waitTime =
+            5 - Math.floor((Date.now() - lastSent.getTime()) / 60000);
 
         return res.status(429).json({
             success: false,
             error: `Please wait ${waitTime} minute(s) before requesting another verification email`,
-            errorCode: 'RATE_LIMITED'
+            errorCode: 'RATE_LIMITED',
         });
     }
 
@@ -1139,7 +1187,8 @@ async function resendEmailVerification(req: Request, res: Response) {
     const token = generateEmailVerificationToken();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
-    await pool.query(`
+    await pool.query(
+        `
         INSERT INTO Email_Verification (Account_ID, Token, Expires_At)
         VALUES ($1, $2, $3)
         ON CONFLICT (Account_ID)
@@ -1147,14 +1196,16 @@ async function resendEmailVerification(req: Request, res: Response) {
             Token = $2,
             Expires_At = $3,
             Created_At = NOW()
-    `, [account.account_id, token, expiresAt]);
+    `,
+        [account.account_id, token, expiresAt]
+    );
 
     // Send email
     await sendVerificationEmail(email, token);
 
     return res.json({
         success: true,
-        message: 'Verification email sent'
+        message: 'Verification email sent',
     });
 }
 ```
@@ -1166,25 +1217,29 @@ async function resendEmailVerification(req: Request, res: Response) {
 ```typescript
 async function resendSMSVerification(req: Request, res: Response) {
     const { phoneNumber } = req.body;
-    const accountId = req.claims.id;  // From JWT
+    const accountId = req.claims.id; // From JWT
 
     // RATE LIMITING: Check recent SMS sends
-    const recentSMS = await pool.query(`
+    const recentSMS = await pool.query(
+        `
         SELECT Created_At
         FROM Phone_Verification
         WHERE Account_ID = $1
           AND Created_At > NOW() - INTERVAL '2 minutes'
-    `, [accountId]);
+    `,
+        [accountId]
+    );
 
     if (recentSMS.rows.length > 0) {
         const lastSent = new Date(recentSMS.rows[0].created_at);
-        const waitSeconds = 120 - Math.floor((Date.now() - lastSent.getTime()) / 1000);
+        const waitSeconds =
+            120 - Math.floor((Date.now() - lastSent.getTime()) / 1000);
 
         return res.status(429).json({
             success: false,
             error: `Please wait ${waitSeconds} seconds before requesting another code`,
             errorCode: 'RATE_LIMITED',
-            retryAfter: waitSeconds
+            retryAfter: waitSeconds,
         });
     }
 
@@ -1192,7 +1247,8 @@ async function resendSMSVerification(req: Request, res: Response) {
     const code = generateSMSCode();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    await pool.query(`
+    await pool.query(
+        `
         INSERT INTO Phone_Verification (Account_ID, Phone_Number, Code, Expires_At, Attempts)
         VALUES ($1, $2, $3, $4, 0)
         ON CONFLICT (Account_ID)
@@ -1202,47 +1258,61 @@ async function resendSMSVerification(req: Request, res: Response) {
             Expires_At = $4,
             Attempts = 0,
             Created_At = NOW()
-    `, [accountId, phoneNumber, code, expiresAt]);
+    `,
+        [accountId, phoneNumber, code, expiresAt]
+    );
 
     // Send SMS
-    await sendSMS(phoneNumber, `Your verification code is: ${code}\nValid for 15 minutes.`);
+    await sendSMS(
+        phoneNumber,
+        `Your verification code is: ${code}\nValid for 15 minutes.`
+    );
 
     return res.json({
         success: true,
-        message: 'Verification code sent'
+        message: 'Verification code sent',
     });
 }
 ```
 
 ### Rate Limiting Strategies
 
-| Strategy | Pros | Cons | Use Case |
-|----------|------|------|----------|
-| **Time-based** | Simple to implement | Can still be abused | Email resend (5 min cooldown) |
-| **IP-based** | Prevents distributed attacks | VPN/proxy bypass | Public endpoints |
-| **Account-based** | Precise targeting | Requires authentication | SMS resend (authenticated) |
-| **Token bucket** | Allows bursts | Complex to implement | High-traffic APIs |
-| **Sliding window** | Smooth rate limiting | Memory overhead | Production-grade systems |
+| Strategy           | Pros                         | Cons                    | Use Case                      |
+| ------------------ | ---------------------------- | ----------------------- | ----------------------------- |
+| **Time-based**     | Simple to implement          | Can still be abused     | Email resend (5 min cooldown) |
+| **IP-based**       | Prevents distributed attacks | VPN/proxy bypass        | Public endpoints              |
+| **Account-based**  | Precise targeting            | Requires authentication | SMS resend (authenticated)    |
+| **Token bucket**   | Allows bursts                | Complex to implement    | High-traffic APIs             |
+| **Sliding window** | Smooth rate limiting         | Memory overhead         | Production-grade systems      |
 
 **Implementation: IP-based Rate Limiting**:
+
 ```typescript
 import rateLimit from 'express-rate-limit';
 
 const verificationLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,  // 15 minutes
-    max: 3,  // 3 requests per window per IP
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // 3 requests per window per IP
     message: {
         success: false,
         error: 'Too many verification requests. Please try again later.',
-        errorCode: 'RATE_LIMIT_EXCEEDED'
+        errorCode: 'RATE_LIMIT_EXCEEDED',
     },
-    standardHeaders: true,  // Return rate limit info in headers
-    legacyHeaders: false
+    standardHeaders: true, // Return rate limit info in headers
+    legacyHeaders: false,
 });
 
 // Apply to verification endpoints
-app.post('/auth/verify/email/request', verificationLimiter, resendEmailVerification);
-app.post('/auth/verify/sms/request', verificationLimiter, resendSMSVerification);
+app.post(
+    '/auth/verify/email/request',
+    verificationLimiter,
+    resendEmailVerification
+);
+app.post(
+    '/auth/verify/sms/request',
+    verificationLimiter,
+    resendSMSVerification
+);
 ```
 
 ---
@@ -1254,6 +1324,7 @@ app.post('/auth/verify/sms/request', verificationLimiter, resendSMSVerification)
 **Attack**: Brute-force token enumeration
 
 **Email Token (64 hex chars)**:
+
 ```
 Possible tokens: 16^64 = 2^256
 Attempts needed: ~10^77
@@ -1264,6 +1335,7 @@ Verdict: IMPOSSIBLE
 ```
 
 **SMS Code (6 digits)**:
+
 ```
 Possible codes: 10^6 = 1,000,000
 Attempts allowed: 3
@@ -1273,6 +1345,7 @@ Verdict: Acceptable with attempt limiting
 ```
 
 **Defense**:
+
 - Email: Long cryptographic tokens
 - SMS: 3-attempt limit + 15-minute expiry
 - Both: Rate limiting on requests
@@ -1282,14 +1355,16 @@ Verdict: Acceptable with attempt limiting
 **Vulnerability**: Code comparison leaks information via timing
 
 ❌ **Vulnerable Code**:
+
 ```typescript
 // Early return on mismatch
 if (submittedCode !== storedCode) {
-    return false;  // Returns faster if first digit wrong
+    return false; // Returns faster if first digit wrong
 }
 ```
 
 **Attack**:
+
 ```
 Attacker tries: 000000, 100000, 200000, ..., 900000
 Measures response times
@@ -1298,6 +1373,7 @@ Repeats for remaining digits
 ```
 
 ✅ **Secure Code**:
+
 ```typescript
 import crypto from 'crypto';
 
@@ -1324,6 +1400,7 @@ function verifyCode(submittedCode: string, storedCode: string): boolean {
 **Attack**: Discover which emails/phones are registered
 
 ❌ **Vulnerable Response**:
+
 ```typescript
 // Different responses leak information
 if (emailExists) {
@@ -1334,11 +1411,12 @@ if (emailExists) {
 ```
 
 ✅ **Secure Response**:
+
 ```typescript
 // Same response regardless
 return res.json({
     success: true,
-    message: 'If that email exists, a verification link has been sent'
+    message: 'If that email exists, a verification link has been sent',
 });
 ```
 
@@ -1347,12 +1425,10 @@ return res.json({
 **Attack**: Reuse intercepted verification tokens
 
 **Defense**:
+
 ```typescript
 // Single-use tokens: Delete after verification
-await pool.query(
-    'DELETE FROM Email_Verification WHERE Token = $1',
-    [token]
-);
+await pool.query('DELETE FROM Email_Verification WHERE Token = $1', [token]);
 
 // Attempting to reuse:
 const result = await pool.query(
@@ -1367,6 +1443,7 @@ const result = await pool.query(
 **Attack**: Attacker convinces carrier to transfer victim's number
 
 **Scenario**:
+
 ```
 1. Attacker calls T-Mobile support
 2. Social engineers: "I lost my phone, transfer my number to new SIM"
@@ -1375,6 +1452,7 @@ const result = await pool.query(
 ```
 
 **Defense**:
+
 - Use SMS as 2FA, not sole auth factor
 - Offer TOTP (Google Authenticator) as alternative
 - Monitor for SIM swap indicators (sudden location change)
@@ -1385,6 +1463,7 @@ const result = await pool.query(
 **Attack**: Attacker sets up email forwarding
 
 **Scenario**:
+
 ```
 1. Attacker briefly accesses victim's email
 2. Sets forwarding rule: Forward all emails to attacker@evil.com
@@ -1393,6 +1472,7 @@ const result = await pool.query(
 ```
 
 **Defense**:
+
 - Email verification confirms access, not permanent ownership
 - Require password re-entry for sensitive operations
 - Monitor for unusual email settings changes
@@ -1402,6 +1482,7 @@ const result = await pool.query(
 **Risk**: Users share verification links/codes
 
 **User mistake**:
+
 ```
 User receives: "Your code is 123456"
 User posts on forum: "Help! What do I do with 123456?"
@@ -1409,6 +1490,7 @@ Attacker sees code and uses it
 ```
 
 **Defense**:
+
 - Clear messaging: "Do NOT share this code with anyone"
 - Education: Explain what verification is for
 - Short expiry (limits window of exposure)
@@ -1436,8 +1518,8 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-    }
+        pass: process.env.EMAIL_PASSWORD,
+    },
 });
 
 /**
@@ -1460,7 +1542,8 @@ export async function sendVerificationEmail(
         const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
         // Store in database
-        await pool.query(`
+        await pool.query(
+            `
             INSERT INTO Email_Verification (Account_ID, Token, Expires_At)
             VALUES ($1, $2, $3)
             ON CONFLICT (Account_ID)
@@ -1468,7 +1551,9 @@ export async function sendVerificationEmail(
                 Token = $2,
                 Expires_At = $3,
                 Created_At = NOW()
-        `, [accountId, token, expiresAt]);
+        `,
+            [accountId, token, expiresAt]
+        );
 
         // Build verification URL
         const baseUrl = process.env.APP_BASE_URL || 'http://localhost:8000';
@@ -1518,16 +1603,15 @@ export async function sendVerificationEmail(
                     </div>
                 </body>
                 </html>
-            `
+            `,
         });
 
         return { success: true };
-
     } catch (error) {
         console.error('Failed to send verification email:', error);
         return {
             success: false,
-            error: 'Failed to send verification email'
+            error: 'Failed to send verification email',
         };
     }
 }
@@ -1543,12 +1627,13 @@ export async function verifyEmailToken(
         if (!token || token.length !== 64 || !/^[0-9a-f]{64}$/i.test(token)) {
             return {
                 success: false,
-                error: 'Invalid token format'
+                error: 'Invalid token format',
             };
         }
 
         // Look up token
-        const result = await pool.query(`
+        const result = await pool.query(
+            `
             SELECT
                 ev.Account_ID,
                 ev.Expires_At,
@@ -1556,12 +1641,14 @@ export async function verifyEmailToken(
             FROM Email_Verification ev
             JOIN Account a ON ev.Account_ID = a.Account_ID
             WHERE ev.Token = $1
-        `, [token]);
+        `,
+            [token]
+        );
 
         if (result.rows.length === 0) {
             return {
                 success: false,
-                error: 'Invalid or expired verification token'
+                error: 'Invalid or expired verification token',
             };
         }
 
@@ -1572,7 +1659,7 @@ export async function verifyEmailToken(
             return {
                 success: true,
                 accountId: verification.account_id,
-                error: 'Email already verified'
+                error: 'Email already verified',
             };
         }
 
@@ -1580,7 +1667,7 @@ export async function verifyEmailToken(
         if (new Date() > new Date(verification.expires_at)) {
             return {
                 success: false,
-                error: 'Verification token has expired'
+                error: 'Verification token has expired',
             };
         }
 
@@ -1603,21 +1690,19 @@ export async function verifyEmailToken(
 
             return {
                 success: true,
-                accountId: verification.account_id
+                accountId: verification.account_id,
             };
-
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();
         }
-
     } catch (error) {
         console.error('Email verification error:', error);
         return {
             success: false,
-            error: 'Failed to verify email'
+            error: 'Failed to verify email',
         };
     }
 }
@@ -1642,8 +1727,8 @@ const snsClient = new SNSClient({
     region: process.env.AWS_REGION || 'us-west-2',
     credentials: {
         accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-    }
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
 });
 
 /**
@@ -1663,20 +1748,24 @@ export async function sendSMSCode(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         // Check rate limit
-        const recentSMS = await pool.query(`
+        const recentSMS = await pool.query(
+            `
             SELECT Created_At
             FROM Phone_Verification
             WHERE Account_ID = $1
               AND Created_At > NOW() - INTERVAL '2 minutes'
-        `, [accountId]);
+        `,
+            [accountId]
+        );
 
         if (recentSMS.rows.length > 0) {
             const lastSent = new Date(recentSMS.rows[0].created_at);
-            const waitSeconds = 120 - Math.floor((Date.now() - lastSent.getTime()) / 1000);
+            const waitSeconds =
+                120 - Math.floor((Date.now() - lastSent.getTime()) / 1000);
 
             return {
                 success: false,
-                error: `Please wait ${waitSeconds} seconds before requesting another code`
+                error: `Please wait ${waitSeconds} seconds before requesting another code`,
             };
         }
 
@@ -1685,7 +1774,8 @@ export async function sendSMSCode(
         const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
         // Store in database
-        await pool.query(`
+        await pool.query(
+            `
             INSERT INTO Phone_Verification (Account_ID, Phone_Number, Code, Expires_At, Attempts)
             VALUES ($1, $2, $3, $4, 0)
             ON CONFLICT (Account_ID)
@@ -1695,29 +1785,32 @@ export async function sendSMSCode(
                 Expires_At = $4,
                 Attempts = 0,
                 Created_At = NOW()
-        `, [accountId, phoneNumber, code, expiresAt]);
+        `,
+            [accountId, phoneNumber, code, expiresAt]
+        );
 
         // Send SMS via AWS SNS
         const message = `Your TCSS-460 verification code is: ${code}\nValid for 15 minutes.\nDo not share this code.`;
 
-        await snsClient.send(new PublishCommand({
-            PhoneNumber: phoneNumber,
-            Message: message,
-            MessageAttributes: {
-                'AWS.SNS.SMS.SMSType': {
-                    DataType: 'String',
-                    StringValue: 'Transactional'  // Higher delivery priority
-                }
-            }
-        }));
+        await snsClient.send(
+            new PublishCommand({
+                PhoneNumber: phoneNumber,
+                Message: message,
+                MessageAttributes: {
+                    'AWS.SNS.SMS.SMSType': {
+                        DataType: 'String',
+                        StringValue: 'Transactional', // Higher delivery priority
+                    },
+                },
+            })
+        );
 
         return { success: true };
-
     } catch (error) {
         console.error('Failed to send SMS code:', error);
         return {
             success: false,
-            error: 'Failed to send SMS code'
+            error: 'Failed to send SMS code',
         };
     }
 }
@@ -1739,12 +1832,13 @@ export async function verifySMSCode(
         if (!submittedCode || !/^\d{6}$/.test(submittedCode)) {
             return {
                 success: false,
-                error: 'Invalid code format (must be 6 digits)'
+                error: 'Invalid code format (must be 6 digits)',
             };
         }
 
         // Look up verification record
-        const result = await pool.query(`
+        const result = await pool.query(
+            `
             SELECT
                 pv.Account_ID,
                 pv.Code,
@@ -1752,12 +1846,14 @@ export async function verifySMSCode(
                 pv.Attempts
             FROM Phone_Verification pv
             WHERE pv.Phone_Number = $1
-        `, [phoneNumber]);
+        `,
+            [phoneNumber]
+        );
 
         if (result.rows.length === 0) {
             return {
                 success: false,
-                error: 'No verification code found for this phone number'
+                error: 'No verification code found for this phone number',
             };
         }
 
@@ -1767,7 +1863,7 @@ export async function verifySMSCode(
         if (new Date() > new Date(verification.expires_at)) {
             return {
                 success: false,
-                error: 'Verification code has expired. Please request a new code.'
+                error: 'Verification code has expired. Please request a new code.',
             };
         }
 
@@ -1776,7 +1872,7 @@ export async function verifySMSCode(
             return {
                 success: false,
                 error: 'Too many failed attempts. Please request a new code.',
-                attemptsRemaining: 0
+                attemptsRemaining: 0,
             };
         }
 
@@ -1796,7 +1892,7 @@ export async function verifySMSCode(
             return {
                 success: false,
                 error: `Invalid code. ${remainingAttempts} attempt(s) remaining.`,
-                attemptsRemaining: remainingAttempts
+                attemptsRemaining: remainingAttempts,
             };
         }
 
@@ -1821,21 +1917,19 @@ export async function verifySMSCode(
 
             return {
                 success: true,
-                accountId: verification.account_id
+                accountId: verification.account_id,
             };
-
         } catch (error) {
             await client.query('ROLLBACK');
             throw error;
         } finally {
             client.release();
         }
-
     } catch (error) {
         console.error('SMS verification error:', error);
         return {
             success: false,
-            error: 'Failed to verify SMS code'
+            error: 'Failed to verify SMS code',
         };
     }
 }
@@ -1850,9 +1944,13 @@ export async function verifySMSCode(
 **Best Practices**:
 
 1. **Clear Call-to-Action**
+
 ```html
 <!-- Good: Prominent button -->
-<a href="{verificationUrl}" style="display: inline-block; padding: 12px 24px; background: #4CAF50; color: white;">
+<a
+    href="{verificationUrl}"
+    style="display: inline-block; padding: 12px 24px; background: #4CAF50; color: white;"
+>
     Verify Email Address
 </a>
 
@@ -1861,6 +1959,7 @@ export async function verifySMSCode(
 ```
 
 2. **Mobile-Friendly Emails**
+
 ```html
 <!-- Responsive design -->
 <div style="max-width: 600px; margin: 0 auto;">
@@ -1869,6 +1968,7 @@ export async function verifySMSCode(
 ```
 
 3. **Expiration Visibility**
+
 ```
 Subject: Verify Your Email (Expires in 48 hours)
 
@@ -1876,6 +1976,7 @@ Body: This link will expire in 48 hours.
 ```
 
 4. **Resend Option**
+
 ```
 Can't find the email?
 [Resend Verification Email]
@@ -1889,6 +1990,7 @@ Copy and paste: https://app.com/verify?token=abc123...
 **Best Practices**:
 
 1. **Auto-fill Support** (iOS/Android)
+
 ```
 Message format for auto-detection:
 "Your verification code is: 123456"
@@ -1898,6 +2000,7 @@ Android SMS Retriever API can auto-enter code
 ```
 
 2. **Code Display**
+
 ```html
 <!-- Large, easy-to-read input -->
 <input
@@ -1911,6 +2014,7 @@ Android SMS Retriever API can auto-enter code
 ```
 
 3. **Visual Countdown Timer**
+
 ```
 Code expires in: 14:32
 
@@ -1920,6 +2024,7 @@ Button: "Resend Code" (disabled until 2 minutes elapsed)
 ```
 
 4. **Attempt Feedback**
+
 ```
 Attempt 1/3: ❌ Invalid code. 2 attempts remaining.
 Attempt 2/3: ❌ Invalid code. 1 attempt remaining.
@@ -1931,24 +2036,26 @@ Attempt 3/3: ❌ Too many attempts. Please request a new code.
 **User-Friendly vs Technical**:
 
 ❌ **Bad** (too technical):
+
 ```
 Error: Database query failed - constraint violation on FK Account_ID
 ```
 
 ✅ **Good** (user-friendly):
+
 ```
 Something went wrong. Please try again or contact support.
 ```
 
 **Specific Guidance**:
 
-| Error | User-Friendly Message | Action Guidance |
-|-------|---------------------|-----------------|
-| Token expired | "This verification link has expired." | "Click here to request a new link" |
-| Invalid token | "This verification link is invalid or has already been used." | "Check your email for the latest link" |
-| Code expired | "This code has expired." | "Click 'Resend Code' to get a new one" |
-| Too many attempts | "Too many incorrect attempts." | "Request a new code to try again" |
-| Rate limited | "Please wait before requesting another code." | "Try again in 2 minutes" |
+| Error             | User-Friendly Message                                         | Action Guidance                        |
+| ----------------- | ------------------------------------------------------------- | -------------------------------------- |
+| Token expired     | "This verification link has expired."                         | "Click here to request a new link"     |
+| Invalid token     | "This verification link is invalid or has already been used." | "Check your email for the latest link" |
+| Code expired      | "This code has expired."                                      | "Click 'Resend Code' to get a new one" |
+| Too many attempts | "Too many incorrect attempts."                                | "Request a new code to try again"      |
+| Rate limited      | "Please wait before requesting another code."                 | "Try again in 2 minutes"               |
 
 ---
 
@@ -1965,7 +2072,7 @@ interface VerificationError {
     error: string;
     errorCode: string;
     details?: any;
-    retryAfter?: number;  // For rate limiting
+    retryAfter?: number; // For rate limiting
 }
 
 /**
@@ -1983,7 +2090,7 @@ function sendVerificationError(
         error: message,
         errorCode,
         details,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 }
 ```
@@ -2010,7 +2117,7 @@ export enum VerificationErrorCode {
     // General
     INVALID_FORMAT = 'INVALID_FORMAT',
     DATABASE_ERROR = 'DATABASE_ERROR',
-    UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+    UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 ```
 
@@ -2041,21 +2148,15 @@ async function verifyEmail(req: Request, res: Response) {
                 errorCode = VerificationErrorCode.EMAIL_TOKEN_EXPIRED;
             }
 
-            return sendVerificationError(
-                res,
-                400,
-                result.error!,
-                errorCode
-            );
+            return sendVerificationError(res, 400, result.error!, errorCode);
         }
 
         // Success
         return res.json({
             success: true,
             message: 'Email verified successfully',
-            accountId: result.accountId
+            accountId: result.accountId,
         });
-
     } catch (error) {
         // Log error for debugging
         console.error('Email verification error:', error);
@@ -2097,10 +2198,9 @@ async function verifyAndUpdateAccount(token: string) {
         );
 
         // Step 3: Delete token
-        await client.query(
-            'DELETE FROM Email_Verification WHERE Token = $1',
-            [token]
-        );
+        await client.query('DELETE FROM Email_Verification WHERE Token = $1', [
+            token,
+        ]);
 
         // Step 4: Create audit log
         await client.query(
@@ -2112,7 +2212,6 @@ async function verifyAndUpdateAccount(token: string) {
         await client.query('COMMIT');
 
         return { success: true };
-
     } catch (error) {
         // Any error - rollback ALL changes
         await client.query('ROLLBACK');
@@ -2120,9 +2219,8 @@ async function verifyAndUpdateAccount(token: string) {
         console.error('Transaction failed:', error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
         };
-
     } finally {
         // Always release connection back to pool
         client.release();
@@ -2137,6 +2235,7 @@ async function verifyAndUpdateAccount(token: string) {
 ### Edge Case 1: User Clicks Link Twice
 
 **Scenario**:
+
 ```
 1. User clicks verification link
 2. Email is verified, token deleted
@@ -2145,6 +2244,7 @@ async function verifyAndUpdateAccount(token: string) {
 ```
 
 **Solution**:
+
 ```typescript
 // Check if already verified BEFORE checking token
 const accountResult = await pool.query(
@@ -2156,7 +2256,7 @@ if (accountResult.rows[0].email_verified) {
     return res.json({
         success: true,
         message: 'Email is already verified!',
-        alreadyVerified: true
+        alreadyVerified: true,
     });
 }
 
@@ -2166,6 +2266,7 @@ if (accountResult.rows[0].email_verified) {
 ### Edge Case 2: User Requests Multiple Codes
 
 **Scenario**:
+
 ```
 1. User requests SMS code (Code A)
 2. Code A hasn't arrived yet
@@ -2175,9 +2276,11 @@ if (accountResult.rows[0].email_verified) {
 ```
 
 **Solution**:
+
 ```typescript
 // ON CONFLICT replaces old code with new one
-await pool.query(`
+await pool.query(
+    `
     INSERT INTO Phone_Verification (Account_ID, Phone_Number, Code, Expires_At, Attempts)
     VALUES ($1, $2, $3, $4, 0)
     ON CONFLICT (Account_ID)
@@ -2186,7 +2289,9 @@ await pool.query(`
         Expires_At = $4,
         Attempts = 0,       -- Reset attempts
         Created_At = NOW()
-`, [accountId, phoneNumber, newCode, expiresAt]);
+`,
+    [accountId, phoneNumber, newCode, expiresAt]
+);
 
 // Only the LATEST code will work
 ```
@@ -2194,6 +2299,7 @@ await pool.query(`
 ### Edge Case 3: Token Expires While User Is Reading Email
 
 **Scenario**:
+
 ```
 Day 1, 10:00 AM: Verification email sent (expires Day 3, 10:00 AM)
 Day 3, 9:59 AM: User opens email, reads it
@@ -2202,6 +2308,7 @@ Result: Token expired
 ```
 
 **Solution**:
+
 ```typescript
 // Graceful expiry handling with resend option
 if (new Date() > new Date(verification.expires_at)) {
@@ -2216,9 +2323,10 @@ if (new Date() > new Date(verification.expires_at)) {
             success: false,
             error: 'Verification link expired',
             errorCode: 'TOKEN_EXPIRED',
-            message: 'This link expired recently. Click below to receive a new one.',
+            message:
+                'This link expired recently. Click below to receive a new one.',
             resendAvailable: true,
-            email: verification.email
+            email: verification.email,
         });
     } else {
         // Long expired - just inform
@@ -2226,7 +2334,8 @@ if (new Date() > new Date(verification.expires_at)) {
             success: false,
             error: 'Verification link expired',
             errorCode: 'TOKEN_EXPIRED',
-            message: 'This link has expired. Please log in and request a new verification email.'
+            message:
+                'This link has expired. Please log in and request a new verification email.',
         });
     }
 }
@@ -2235,6 +2344,7 @@ if (new Date() > new Date(verification.expires_at)) {
 ### Edge Case 4: User Changes Email Before Verifying
 
 **Scenario**:
+
 ```
 1. User registers with email1@example.com
 2. Verification email sent to email1@example.com
@@ -2244,6 +2354,7 @@ if (new Date() > new Date(verification.expires_at)) {
 ```
 
 **Solution**:
+
 ```typescript
 // Store email address WITH the token
 CREATE TABLE Email_Verification (
@@ -2277,12 +2388,14 @@ if (tokenData.rows[0].email !== accountData.rows[0].email) {
 ### Edge Case 5: Concurrent Verification Attempts
 
 **Scenario**:
+
 ```
 User opens verification link in 3 browser tabs simultaneously
 All 3 tabs try to verify at same time
 ```
 
 **Solution**:
+
 ```typescript
 // Use database transaction with SELECT FOR UPDATE
 const client = await pool.connect();
@@ -2291,12 +2404,15 @@ try {
     await client.query('BEGIN');
 
     // Lock row to prevent concurrent updates
-    const result = await client.query(`
+    const result = await client.query(
+        `
         SELECT Account_ID, Email_Verified
         FROM Account
         WHERE Account_ID = $1
         FOR UPDATE  -- Locks this row until transaction completes
-    `, [accountId]);
+    `,
+        [accountId]
+    );
 
     if (result.rows[0].email_verified) {
         await client.query('COMMIT');
@@ -2311,7 +2427,6 @@ try {
 
     await client.query('COMMIT');
     return { success: true };
-
 } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -2323,6 +2438,7 @@ try {
 ### Edge Case 6: SMS Code Contains Leading Zeros
 
 **Scenario**:
+
 ```
 Generated code: "000123"
 User sees: "123" (phone strips leading zeros)
@@ -2331,6 +2447,7 @@ Comparison: "123" !== "000123" (fails)
 ```
 
 **Solution**:
+
 ```typescript
 // Always pad submitted code
 function normalizeSMSCode(code: string): string {
@@ -2348,6 +2465,7 @@ const isValid = crypto.timingSafeEqual(
 ### Edge Case 7: User Has No Email Access
 
 **Scenario**:
+
 ```
 User registers with work email
 User gets fired, loses access to work email
@@ -2356,6 +2474,7 @@ Account is permanently locked
 ```
 
 **Solution**:
+
 ```typescript
 // Allow registration without immediate verification
 // Provide alternative verification methods
@@ -2368,7 +2487,7 @@ if (!account.email_verified) {
         accessToken: generateToken(account),
         user: account,
         emailVerified: false,
-        message: 'Please verify your email to access all features'
+        message: 'Please verify your email to access all features',
     };
 }
 
@@ -2380,6 +2499,7 @@ if (!account.email_verified) {
 ### Edge Case 8: Spam Filter Blocks Verification Email
 
 **Scenario**:
+
 ```
 User registers
 Verification email sent
@@ -2388,6 +2508,7 @@ User never receives email
 ```
 
 **Solution**:
+
 ```typescript
 // Monitoring and alerts
 async function trackEmailDelivery(email: string, status: string) {
@@ -2422,6 +2543,7 @@ async function trackEmailDelivery(email: string, status: string) {
 ## Summary and Key Takeaways
 
 ### Email Verification
+
 - **Token**: 64-character hex (32 bytes entropy)
 - **Expiry**: 48 hours
 - **Delivery**: Asynchronous (email)
@@ -2429,6 +2551,7 @@ async function trackEmailDelivery(email: string, status: string) {
 - **Security**: Cryptographically secure, timing-safe comparison
 
 ### SMS Verification
+
 - **Code**: 6-digit numeric
 - **Expiry**: 15 minutes
 - **Delivery**: Real-time (SMS)
@@ -2436,6 +2559,7 @@ async function trackEmailDelivery(email: string, status: string) {
 - **Security**: Attempt limiting, rate limiting, timing-safe comparison
 
 ### Critical Security Points
+
 1. ✅ Use `crypto.randomBytes()` for token/code generation
 2. ✅ Implement expiration on all verification methods
 3. ✅ Use timing-safe comparison for codes
@@ -2445,6 +2569,7 @@ async function trackEmailDelivery(email: string, status: string) {
 7. ✅ Prevent email/phone enumeration
 
 ### Best Practices
+
 - Clear expiration communication to users
 - Mobile-friendly email design
 - Auto-fill support for SMS codes
@@ -2454,6 +2579,7 @@ async function trackEmailDelivery(email: string, status: string) {
 - Comprehensive edge case handling
 
 ### Database Design
+
 - Separate tables for Email_Verification and Phone_Verification
 - Use `ON CONFLICT DO UPDATE` for resend logic
 - Implement cleanup jobs for expired records

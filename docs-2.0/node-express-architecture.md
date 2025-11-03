@@ -5,6 +5,7 @@ A comprehensive guide to building scalable web applications with Node.js and Exp
 > **💡 Related Code**: See implementations in [`/src/app.ts`](../src/app.ts), [`/src/index.ts`](../src/index.ts), [`/src/controllers/`](../src/controllers/), and [`/src/routes/`](../src/routes/)
 
 ## Quick Navigation
+
 - 🏗️ **Application Factory**: [`app.ts`](../src/app.ts) - Express app configuration and middleware setup
 - 🚀 **Server Lifecycle**: [`index.ts`](../src/index.ts) - Application startup and graceful shutdown
 - 🎯 **MVC Controllers**: [`controllers/`](../src/controllers/) - Business logic implementation
@@ -35,6 +36,7 @@ MVC (Model-View-Controller) is an architectural pattern that separates applicati
 ### MVC Components in Web APIs
 
 #### **MODEL (Data Layer)**
+
 - Database operations (queries, transactions)
 - Data validation and business rules
 - Entity definitions and relationships
@@ -42,28 +44,29 @@ MVC (Model-View-Controller) is an architectural pattern that separates applicati
 ```typescript
 // Example: Database models and operations
 export interface UserRecord {
-  user_id: number;
-  username: string;
-  email: string;
-  password_hash: string;
-  role: string;
-  created_at: Date;
-  updated_at: Date;
+    user_id: number;
+    username: string;
+    email: string;
+    password_hash: string;
+    role: string;
+    created_at: Date;
+    updated_at: Date;
 }
 
 // Database operations
 export const getUsersFromDB = async (role?: string): Promise<UserRecord[]> => {
-  const query = role
-    ? 'SELECT * FROM users WHERE role = $1 ORDER BY created_at'
-    : 'SELECT * FROM users ORDER BY created_at';
-  const result = await pool.query(query, role ? [role] : []);
-  return result.rows;
+    const query = role
+        ? 'SELECT * FROM users WHERE role = $1 ORDER BY created_at'
+        : 'SELECT * FROM users ORDER BY created_at';
+    const result = await pool.query(query, role ? [role] : []);
+    return result.rows;
 };
 ```
 
 **📚 Database Integration:** See [Database Fundamentals](/docs/database-fundamentals.md) for transaction patterns, connection pooling, and query optimization strategies used in the Model layer.
 
 #### **VIEW (Presentation Layer)**
+
 - In web APIs, this is the JSON response format
 - Response utilities handle the "view" formatting
 - Frontend applications consume these JSON "views"
@@ -71,16 +74,17 @@ export const getUsersFromDB = async (role?: string): Promise<UserRecord[]> => {
 ```typescript
 // Response formatting (the "view" in API context)
 export const formatUserResponse = (user: UserRecord): UserResponse => ({
-  user_id: user.user_id,
-  username: user.username,
-  email: user.email,
-  role: user.role,
-  created_at: user.created_at
-  // Note: password_hash is intentionally excluded for security
+    user_id: user.user_id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    created_at: user.created_at,
+    // Note: password_hash is intentionally excluded for security
 });
 ```
 
 #### **CONTROLLER (Business Logic Layer)**
+
 - Processes incoming requests
 - Coordinates between models and views
 - Handles business logic and workflows
@@ -88,33 +92,47 @@ export const formatUserResponse = (user: UserRecord): UserResponse => ({
 
 ```typescript
 // Controller handles the business logic
-export const registerUser = async (request: Request, response: Response): Promise<void> => {
-  try {
-    const { username, email, password }: RegisterRequest = request.body;
+export const registerUser = async (
+    request: Request,
+    response: Response
+): Promise<void> => {
+    try {
+        const { username, email, password }: RegisterRequest = request.body;
 
-    // Business logic: Check for duplicates
-    const existingUser = await checkUserExists(username, email);
-    if (existingUser) {
-      return sendError(response, 400, "User already exists", ErrorCodes.USER_EXISTS);
+        // Business logic: Check for duplicates
+        const existingUser = await checkUserExists(username, email);
+        if (existingUser) {
+            return sendError(
+                response,
+                400,
+                'User already exists',
+                ErrorCodes.USER_EXISTS
+            );
+        }
+
+        // Model interaction: Hash password and save to database
+        const passwordHash = await bcrypt.hash(password, 10);
+        const savedUser = await createUser(username, email, passwordHash);
+
+        // View formatting: Format response (exclude password)
+        const formattedResponse = formatUserResponse(savedUser);
+
+        sendSuccess(
+            response,
+            formattedResponse,
+            'User registered successfully',
+            201
+        );
+    } catch (error) {
+        handleControllerError(error, response);
     }
-
-    // Model interaction: Hash password and save to database
-    const passwordHash = await bcrypt.hash(password, 10);
-    const savedUser = await createUser(username, email, passwordHash);
-
-    // View formatting: Format response (exclude password)
-    const formattedResponse = formatUserResponse(savedUser);
-
-    sendSuccess(response, formattedResponse, "User registered successfully", 201);
-  } catch (error) {
-    handleControllerError(error, response);
-  }
 };
 ```
 
 ### Separation of Concerns
 
 #### **Good MVC Design:**
+
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
 │     ROUTES      │───▶│   CONTROLLERS    │───▶│     MODELS      │
@@ -135,6 +153,7 @@ export const registerUser = async (request: Request, response: Response): Promis
 ```
 
 #### **Controller Responsibilities:**
+
 ✅ Extract and validate request data (body, params, query)
 ✅ Execute business logic (create, read, update, delete operations)
 ✅ Coordinate database operations
@@ -142,6 +161,7 @@ export const registerUser = async (request: Request, response: Response): Promis
 ✅ Format and send responses using response utilities
 
 #### **Controllers should NOT:**
+
 ❌ Contain database connection logic (use utilities)
 ❌ Handle HTTP parsing (Express middleware does this)
 ❌ Format responses manually (use response utilities)
@@ -158,29 +178,31 @@ Express.js is a minimal and flexible Node.js web application framework that prov
 ### Application vs Server Distinction
 
 #### **APPLICATION (app.ts)**
+
 Defines how to handle requests (routes, middleware, error handling)
 
 ```typescript
 // app.ts - Application configuration
 export const createApp = (): express.Application => {
-  const app = express();
+    const app = express();
 
-  // Middleware configuration
-  app.use(cors());
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
+    // Middleware configuration
+    app.use(cors());
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true }));
 
-  // Routes configuration
-  app.use('/', routes);
+    // Routes configuration
+    app.use('/', routes);
 
-  // Error handling
-  app.use(globalErrorHandler);
+    // Error handling
+    app.use(globalErrorHandler);
 
-  return app;
+    return app;
 };
 ```
 
 #### **SERVER (index.ts)**
+
 Actually listens on a port and accepts incoming connections
 
 ```typescript
@@ -188,7 +210,7 @@ Actually listens on a port and accepts incoming connections
 const app = createApp();
 
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
 
 // Graceful shutdown
@@ -218,8 +240,8 @@ type Middleware = (req: Request, res: Response, next: NextFunction) => void;
 
 // Example middleware
 const loggingMiddleware: Middleware = (req, res, next) => {
-  console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-  next(); // Call next middleware in stack
+    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next(); // Call next middleware in stack
 };
 ```
 
@@ -253,6 +275,7 @@ app.use(globalErrorHandler);
 ### Types of Middleware
 
 #### **1. Application-Level Middleware**
+
 ```typescript
 // Applies to all routes
 app.use(cors());
@@ -264,6 +287,7 @@ app.use('/admin', authenticateAdmin);
 ```
 
 #### **2. Router-Level Middleware**
+
 ```typescript
 const router = express.Router();
 
@@ -275,106 +299,126 @@ router.get('/users', validateQuery, getUsers);
 ```
 
 #### **3. Error-Handling Middleware**
+
 ```typescript
 // Error middleware has 4 parameters
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled error:', err);
+const errorHandler = (
+    err: Error,
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    console.error('Unhandled error:', err);
 
-  if (err instanceof ValidationError) {
-    return sendError(res, 400, err.message, 'VALIDATION_ERROR');
-  }
+    if (err instanceof ValidationError) {
+        return sendError(res, 400, err.message, 'VALIDATION_ERROR');
+    }
 
-  sendError(res, 500, 'Internal server error', 'INTERNAL_ERROR');
+    sendError(res, 500, 'Internal server error', 'INTERNAL_ERROR');
 };
 
 app.use(errorHandler); // Must be last middleware
 ```
 
 #### **4. Built-in Middleware**
+
 ```typescript
 // Body parsing
-app.use(express.json());           // Parse JSON bodies
-app.use(express.urlencoded());     // Parse URL-encoded bodies
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded()); // Parse URL-encoded bodies
 app.use(express.static('public')); // Serve static files
 
 // Third-party middleware
-app.use(cors());                   // Enable CORS
-app.use(helmet());                 // Security headers
-app.use(morgan('combined'));       // Request logging
+app.use(cors()); // Enable CORS
+app.use(helmet()); // Security headers
+app.use(morgan('combined')); // Request logging
 ```
 
 ### Custom Middleware Examples
 
 #### **Authentication Middleware**
+
 ```typescript
 const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    return sendError(res, 401, 'Access token required', 'AUTH_TOKEN_REQUIRED');
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET!, (err, user) => {
-    if (err) {
-      return sendError(res, 403, 'Invalid token', 'AUTH_TOKEN_INVALID');
+    if (!token) {
+        return sendError(
+            res,
+            401,
+            'Access token required',
+            'AUTH_TOKEN_REQUIRED'
+        );
     }
-    req.user = user;
-    next();
-  });
+
+    jwt.verify(token, process.env.JWT_SECRET!, (err, user) => {
+        if (err) {
+            return sendError(res, 403, 'Invalid token', 'AUTH_TOKEN_INVALID');
+        }
+        req.user = user;
+        next();
+    });
 };
 ```
 
 #### **Rate Limiting Middleware**
+
 ```typescript
 const createRateLimit = (windowMs: number, max: number) => {
-  return rateLimit({
-    windowMs,
-    max,
-    message: {
-      success: false,
-      message: "Too many requests, please try again later",
-      errorCode: "RATE_LIMIT_EXCEEDED"
-    }
-  });
+    return rateLimit({
+        windowMs,
+        max,
+        message: {
+            success: false,
+            message: 'Too many requests, please try again later',
+            errorCode: 'RATE_LIMIT_EXCEEDED',
+        },
+    });
 };
 
 app.use('/api', createRateLimit(15 * 60 * 1000, 100)); // 100 requests per 15 minutes
 ```
 
 #### **Request Validation Middleware**
+
 ```typescript
 const validateRegisterUser = [
-  body('username')
-    .notEmpty()
-    .withMessage('Username is required')
-    .isLength({ min: 3, max: 50 })
-    .withMessage('Username must be between 3 and 50 characters'),
+    body('username')
+        .notEmpty()
+        .withMessage('Username is required')
+        .isLength({ min: 3, max: 50 })
+        .withMessage('Username must be between 3 and 50 characters'),
 
-  body('email')
-    .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Must be a valid email address'),
+    body('email')
+        .notEmpty()
+        .withMessage('Email is required')
+        .isEmail()
+        .withMessage('Must be a valid email address'),
 
-  body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain uppercase, lowercase, and number'),
+    body('password')
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters')
+        .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+        .withMessage('Password must contain uppercase, lowercase, and number'),
 
-  // Validation error handler
-  (req: Request, res: Response, next: NextFunction) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return sendValidationError(res, "Validation failed", errors.array());
-    }
-    next();
-  }
+    // Validation error handler
+    (req: Request, res: Response, next: NextFunction) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return sendValidationError(
+                res,
+                'Validation failed',
+                errors.array()
+            );
+        }
+        next();
+    },
 ];
 ```
 
 **📚 Related Reading:**
+
 - [Validation Strategies](/docs/validation-strategies.md) - Validation middleware patterns
 - [Web Security Guide](/docs/web-security-guide.md) - Security middleware considerations
 
@@ -389,22 +433,23 @@ const validateRegisterUser = [
 export const routes = Router();
 
 // Mount sub-routers
-routes.use('/open', openRoutes);     // Public routes (register, login)
+routes.use('/open', openRoutes); // Public routes (register, login)
 routes.use('/closed', closedRoutes); // Protected routes (user management)
 
 // API information
 routes.get('/', (req, res) => {
-  res.json({
-    name: 'TCSS-460-auth-squared - IAM System',
-    version: '2.0.0',
-    documentation: '/api-docs'
-  });
+    res.json({
+        name: 'TCSS-460-auth-squared - IAM System',
+        version: '2.0.0',
+        documentation: '/api-docs',
+    });
 });
 ```
 
 ### Route Organization Strategies
 
 #### **1. By Feature**
+
 ```
 /routes
 ├── index.ts           # Main router
@@ -427,6 +472,7 @@ routes.get('/', (req, res) => {
 ```
 
 #### **3. By Version**
+
 ```
 /routes
 ├── index.ts           # Route version selection
@@ -441,6 +487,7 @@ routes.get('/', (req, res) => {
 ### Route Parameter Patterns
 
 #### **Path Parameters**
+
 ```typescript
 // /users/:userId
 router.get('/users/:userId', validateUserIdParam, getUserById);
@@ -450,29 +497,33 @@ router.put('/users/:userId/roles/:roleId', assignRoleToUser);
 ```
 
 #### **Query Parameters**
+
 ```typescript
 // /users?role=admin&limit=10&sort=created_at
 router.get('/users', (req, res) => {
-  const { role, limit = 20, sort = 'created_at' } = req.query;
-  // Handle filtering and pagination
+    const { role, limit = 20, sort = 'created_at' } = req.query;
+    // Handle filtering and pagination
 });
 ```
 
 #### **Route Middleware**
+
 ```typescript
 // Middleware applied to specific routes
-router.post('/register',
-  validateRegisterUser,   // Validation middleware
-  rateLimitRegister,      // Rate limiting
-  registerUser           // Controller function
+router.post(
+    '/register',
+    validateRegisterUser, // Validation middleware
+    rateLimitRegister, // Rate limiting
+    registerUser // Controller function
 );
 
 // Multiple middleware functions
-router.get('/admin/users',
-  authenticateToken,      // Must be logged in
-  requireAdminRole,       // Must be admin
-  auditLog,              // Log admin actions
-  getAllUsers            // Controller
+router.get(
+    '/admin/users',
+    authenticateToken, // Must be logged in
+    requireAdminRole, // Must be admin
+    auditLog, // Log admin actions
+    getAllUsers // Controller
 );
 ```
 
@@ -485,32 +536,33 @@ router.get('/admin/users',
 ```typescript
 // From /src/index.ts
 async function startServer() {
-  try {
-    // 1. Validate environment variables
-    validateEnv();
-    console.log('✅ Environment variables validated');
+    try {
+        // 1. Validate environment variables
+        validateEnv();
+        console.log('✅ Environment variables validated');
 
-    // 2. Connect to external resources
-    await connectToDatabase();
-    console.log('✅ Database connection established');
+        // 2. Connect to external resources
+        await connectToDatabase();
+        console.log('✅ Database connection established');
 
-    // 3. Create Express application
-    const app = createApp();
+        // 3. Create Express application
+        const app = createApp();
 
-    // 4. Start HTTP server
-    const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-      console.log(`🔍 Health check: http://localhost:${PORT}/health`);
-    });
+        // 4. Start HTTP server
+        const server = app.listen(PORT, () => {
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(
+                `📚 API Documentation: http://localhost:${PORT}/api-docs`
+            );
+            console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+        });
 
-    // 5. Setup graceful shutdown
-    setupGracefulShutdown(server);
-
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+        // 5. Setup graceful shutdown
+        setupGracefulShutdown(server);
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
 }
 ```
 
@@ -518,33 +570,35 @@ async function startServer() {
 
 ```typescript
 const gracefulShutdown = async (server: Server, signal: string) => {
-  console.log(`\\n${signal} received. Starting graceful shutdown...`);
+    console.log(`\\n${signal} received. Starting graceful shutdown...`);
 
-  // 1. Stop accepting new connections
-  server.close(async () => {
-    console.log('HTTP server closed');
+    // 1. Stop accepting new connections
+    server.close(async () => {
+        console.log('HTTP server closed');
 
-    try {
-      // 2. Close database connections
-      await disconnectFromDatabase();
-      console.log('Database connection closed');
+        try {
+            // 2. Close database connections
+            await disconnectFromDatabase();
+            console.log('Database connection closed');
 
-      // 3. Close other resources (Redis, etc.)
-      await closeOtherConnections();
+            // 3. Close other resources (Redis, etc.)
+            await closeOtherConnections();
 
-      console.log('Graceful shutdown complete');
-      process.exit(0);
-    } catch (error) {
-      console.error('Error during shutdown:', error);
-      process.exit(1);
-    }
-  });
+            console.log('Graceful shutdown complete');
+            process.exit(0);
+        } catch (error) {
+            console.error('Error during shutdown:', error);
+            process.exit(1);
+        }
+    });
 
-  // Force close after timeout
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
-    process.exit(1);
-  }, 10000);
+    // Force close after timeout
+    setTimeout(() => {
+        console.error(
+            'Could not close connections in time, forcefully shutting down'
+        );
+        process.exit(1);
+    }, 10000);
 };
 
 // Signal handlers
@@ -557,28 +611,30 @@ process.on('SIGINT', () => gracefulShutdown(server, 'SIGINT'));
 ```typescript
 // Basic health check
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+    });
 });
 
 // Detailed health check
 app.get('/health/detailed', async (req, res) => {
-  const health = {
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: await checkDatabaseHealth(),
-      redis: await checkRedisHealth(),
-      external_api: await checkExternalAPIHealth()
-    }
-  };
+    const health = {
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        services: {
+            database: await checkDatabaseHealth(),
+            redis: await checkRedisHealth(),
+            external_api: await checkExternalAPIHealth(),
+        },
+    };
 
-  const hasFailures = Object.values(health.services).some(service => service.status !== 'OK');
+    const hasFailures = Object.values(health.services).some(
+        (service) => service.status !== 'OK'
+    );
 
-  res.status(hasFailures ? 503 : 200).json(health);
+    res.status(hasFailures ? 503 : 200).json(health);
 });
 ```
 
@@ -589,62 +645,74 @@ app.get('/health/detailed', async (req, res) => {
 ### Error Handling Strategy
 
 #### **1. Synchronous Error Handling**
+
 ```typescript
 app.get('/sync-route', (req, res, next) => {
-  try {
-    // Synchronous operation that might throw
-    const result = riskyOperation();
-    res.json({ result });
-  } catch (error) {
-    next(error); // Pass to error handler
-  }
+    try {
+        // Synchronous operation that might throw
+        const result = riskyOperation();
+        res.json({ result });
+    } catch (error) {
+        next(error); // Pass to error handler
+    }
 });
 ```
 
 #### **2. Asynchronous Error Handling**
+
 ```typescript
 // Using async/await with try/catch
 app.get('/async-route', async (req, res, next) => {
-  try {
-    const result = await riskyAsyncOperation();
-    res.json({ result });
-  } catch (error) {
-    next(error); // Pass to error handler
-  }
+    try {
+        const result = await riskyAsyncOperation();
+        res.json({ result });
+    } catch (error) {
+        next(error); // Pass to error handler
+    }
 });
 
 // Using async error wrapper
-const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+const asyncHandler =
+    (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
 
-app.get('/wrapped-route', asyncHandler(async (req, res) => {
-  const result = await riskyAsyncOperation(); // Errors automatically caught
-  res.json({ result });
-}));
+app.get(
+    '/wrapped-route',
+    asyncHandler(async (req, res) => {
+        const result = await riskyAsyncOperation(); // Errors automatically caught
+        res.json({ result });
+    })
+);
 ```
 
 #### **3. Global Error Handler**
+
 ```typescript
 // Must be the last middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled error:', err);
+    console.error('Unhandled error:', err);
 
-  // Handle specific error types
-  if (err instanceof ValidationError) {
-    return sendError(res, 400, err.message, 'VALIDATION_ERROR');
-  }
+    // Handle specific error types
+    if (err instanceof ValidationError) {
+        return sendError(res, 400, err.message, 'VALIDATION_ERROR');
+    }
 
-  if (err instanceof DatabaseError) {
-    return sendError(res, 500, 'Database operation failed', 'DATABASE_ERROR');
-  }
+    if (err instanceof DatabaseError) {
+        return sendError(
+            res,
+            500,
+            'Database operation failed',
+            'DATABASE_ERROR'
+        );
+    }
 
-  if (err.name === 'JsonWebTokenError') {
-    return sendError(res, 401, 'Invalid token', 'AUTH_TOKEN_INVALID');
-  }
+    if (err.name === 'JsonWebTokenError') {
+        return sendError(res, 401, 'Invalid token', 'AUTH_TOKEN_INVALID');
+    }
 
-  // Default error response
-  sendError(res, 500, 'Internal server error', 'INTERNAL_ERROR');
+    // Default error response
+    sendError(res, 500, 'Internal server error', 'INTERNAL_ERROR');
 });
 ```
 
@@ -652,33 +720,36 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 
 ```typescript
 export class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
+    constructor(
+        message: string,
+        public field?: string
+    ) {
+        super(message);
+        this.name = 'ValidationError';
+    }
 }
 
 export class NotFoundError extends Error {
-  constructor(resource: string, id: string | number) {
-    super(`${resource} with id ${id} not found`);
-    this.name = 'NotFoundError';
-  }
+    constructor(resource: string, id: string | number) {
+        super(`${resource} with id ${id} not found`);
+        this.name = 'NotFoundError';
+    }
 }
 
 export class ConflictError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ConflictError';
-  }
+    constructor(message: string) {
+        super(message);
+        this.name = 'ConflictError';
+    }
 }
 
 // Usage in controllers
 if (!user) {
-  throw new NotFoundError('User', userId);
+    throw new NotFoundError('User', userId);
 }
 
 if (existingUser) {
-  throw new ConflictError('User with this email already exists');
+    throw new ConflictError('User with this email already exists');
 }
 ```
 
@@ -691,38 +762,41 @@ if (existingUser) {
 ```typescript
 import compression from 'compression';
 
-app.use(compression({
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  },
-  level: 6 // Compression level (1-9)
-}));
+app.use(
+    compression({
+        filter: (req, res) => {
+            if (req.headers['x-no-compression']) {
+                return false;
+            }
+            return compression.filter(req, res);
+        },
+        level: 6, // Compression level (1-9)
+    })
+);
 ```
 
 ### Caching Strategies
 
 ```typescript
 // Response caching middleware
-const cache = (duration: number) => (req: Request, res: Response, next: NextFunction) => {
-  const key = req.originalUrl;
-  const cachedResponse = responseCache.get(key);
+const cache =
+    (duration: number) => (req: Request, res: Response, next: NextFunction) => {
+        const key = req.originalUrl;
+        const cachedResponse = responseCache.get(key);
 
-  if (cachedResponse) {
-    return res.json(cachedResponse);
-  }
+        if (cachedResponse) {
+            return res.json(cachedResponse);
+        }
 
-  // Override res.json to cache response
-  const originalJson = res.json;
-  res.json = function(body) {
-    responseCache.set(key, body, duration);
-    return originalJson.call(this, body);
-  };
+        // Override res.json to cache response
+        const originalJson = res.json;
+        res.json = function (body) {
+            responseCache.set(key, body, duration);
+            return originalJson.call(this, body);
+        };
 
-  next();
-};
+        next();
+    };
 
 // Use caching on expensive routes
 app.get('/api/expensive-operation', cache(300), expensiveController); // 5 minute cache
@@ -754,4 +828,4 @@ app.use(hpp());
 
 ---
 
-*Understanding Node.js and Express architecture is fundamental for building scalable, maintainable web applications. These patterns form the backbone of modern web development.*
+_Understanding Node.js and Express architecture is fundamental for building scalable, maintainable web applications. These patterns form the backbone of modern web development._

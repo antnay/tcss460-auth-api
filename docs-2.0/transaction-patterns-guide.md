@@ -3,6 +3,7 @@
 A comprehensive guide to implementing database transactions in TCSS-460-auth-squared for maintaining data consistency and integrity.
 
 > **Related Code**: This guide references implementations in:
+>
 > - [`/src/core/utilities/transactionUtils.ts`](../src/core/utilities/transactionUtils.ts) - Transaction utility functions
 > - [`/src/controllers/authController.ts`](../src/controllers/authController.ts) - User authentication transactions
 > - [`/src/controllers/adminController.ts`](../src/controllers/adminController.ts) - Administrative transactions
@@ -54,6 +55,7 @@ In authentication systems like TCSS-460-auth-squared, we frequently need to upda
 3. **Admin User Creation**: Create account + create credentials + set role
 
 If these multi-step operations are interrupted (network failure, server crash, database error), we could end up with:
+
 - Users without credentials (can never log in)
 - Credentials without users (orphaned data)
 - Inconsistent timestamps
@@ -92,30 +94,30 @@ export const withTransaction = async <T>(
     operation: (client: PoolClient) => Promise<T>
 ): Promise<TransactionResult<T>> => {
     const pool = getPool();
-    const client = await pool.connect();  // Get connection from pool
+    const client = await pool.connect(); // Get connection from pool
 
     try {
-        await client.query('BEGIN');       // Start transaction
-        const result = await operation(client);  // Execute your operations
-        await client.query('COMMIT');      // Success: save changes
+        await client.query('BEGIN'); // Start transaction
+        const result = await operation(client); // Execute your operations
+        await client.query('COMMIT'); // Success: save changes
 
         return {
             success: true,
-            data: result
+            data: result,
         };
     } catch (error) {
         try {
-            await client.query('ROLLBACK');  // Failure: undo all changes
+            await client.query('ROLLBACK'); // Failure: undo all changes
         } catch (rollbackError) {
             console.error('Rollback error:', rollbackError);
         }
 
         return {
             success: false,
-            error: error as Error
+            error: error as Error,
         };
     } finally {
-        client.release();  // ALWAYS return connection to pool
+        client.release(); // ALWAYS return connection to pool
     }
 };
 ```
@@ -131,6 +133,7 @@ export const withTransaction = async <T>(
 #### When to Use `withTransaction()`
 
 Use when you need:
+
 - Custom response formatting
 - Additional processing before sending response
 - Multiple validation steps after transaction
@@ -223,6 +226,7 @@ export const executeTransactionWithResponse = async <T>(
 #### When to Use `executeTransactionWithResponse()`
 
 Use when:
+
 - Transaction result should directly become HTTP response
 - No additional processing needed after transaction
 - Consistent response format is acceptable
@@ -330,7 +334,7 @@ await executeTransactionWithResponse(
         const token = generateAccessToken({
             id: accountId,
             email,
-            role: 1
+            role: 1,
         });
 
         return {
@@ -355,6 +359,7 @@ await executeTransactionWithResponse(
 ```
 
 **What Happens on Failure**:
+
 1. Step 1 succeeds, account inserted
 2. Step 2 or 3 fails (constraint violation, network error, etc.)
 3. Transaction automatically executes ROLLBACK
@@ -422,6 +427,7 @@ If we only updated credentials without updating `Updated_At`, administrators cou
 **Location**: `/src/controllers/authController.ts` - `resetPassword()` method
 
 **Why Transaction Needed**: Must handle two possible scenarios atomically:
+
 1. Credentials exist → UPDATE them
 2. Credentials don't exist → INSERT them
 
@@ -536,6 +542,7 @@ await executeTransactionWithResponse(
 ```
 
 **Key Difference from Registration**:
+
 - Account starts with `'active'` status (not `'pending'`)
 - Role is admin-specified (not default role 1)
 - Response includes role information for admin confirmation
@@ -607,7 +614,7 @@ try {
     return { success: true, data: result };
 } catch (error) {
     try {
-        await client.query('ROLLBACK');  // Undo all changes
+        await client.query('ROLLBACK'); // Undo all changes
     } catch (rollbackError) {
         console.error('Rollback error:', rollbackError);
         // Even if rollback fails, connection is released in finally block
@@ -615,7 +622,7 @@ try {
 
     return { success: false, error: error as Error };
 } finally {
-    client.release();  // ALWAYS return connection to pool
+    client.release(); // ALWAYS return connection to pool
 }
 ```
 
@@ -640,11 +647,12 @@ await executeTransactionWithResponse(
     },
     response,
     'User created',
-    'Failed to create user'  // This message is sent
+    'Failed to create user' // This message is sent
 );
 ```
 
 **What Happens**:
+
 1. First INSERT fails with unique constraint violation
 2. Exception thrown, caught by transaction wrapper
 3. ROLLBACK executed (nothing to rollback since first operation failed)
@@ -659,7 +667,7 @@ await executeTransactionWithResponse(
         // Insert credential for non-existent account
         await client.query(
             'INSERT INTO Account_Credential (Account_ID, Salted_Hash, Salt) VALUES ($1, $2, $3)',
-            [999999, hash, salt]  // Account ID 999999 doesn't exist
+            [999999, hash, salt] // Account ID 999999 doesn't exist
         );
     },
     response,
@@ -669,6 +677,7 @@ await executeTransactionWithResponse(
 ```
 
 **What Happens**:
+
 1. INSERT fails with foreign key constraint violation
 2. ROLLBACK executed
 3. Error response sent
@@ -680,14 +689,10 @@ await executeTransactionWithResponse(
 await executeTransactionWithResponse(
     async (client) => {
         // First operation succeeds
-        await client.query(
-            'INSERT INTO Account (...) VALUES (...)'
-        );
+        await client.query('INSERT INTO Account (...) VALUES (...)');
 
         // Network fails here - connection to database lost
-        await client.query(
-            'INSERT INTO Account_Credential (...) VALUES (...)'
-        );
+        await client.query('INSERT INTO Account_Credential (...) VALUES (...)');
     },
     response,
     'User created',
@@ -696,6 +701,7 @@ await executeTransactionWithResponse(
 ```
 
 **What Happens**:
+
 1. First INSERT succeeds and is held in transaction
 2. Network failure prevents second INSERT
 3. Exception thrown
@@ -720,7 +726,7 @@ await executeTransactionWithResponse(
         // Bug: Typo in variable name
         await client.query(
             'INSERT INTO Account_Credential (Account_ID, ...) VALUES ($1, ...)',
-            [accountID]  // ReferenceError: accountID is not defined (should be accountId)
+            [accountID] // ReferenceError: accountID is not defined (should be accountId)
         );
     },
     response,
@@ -730,6 +736,7 @@ await executeTransactionWithResponse(
 ```
 
 **What Happens**:
+
 1. First INSERT succeeds
 2. JavaScript ReferenceError thrown
 3. Transaction wrapper catches error
@@ -778,22 +785,34 @@ Not every database operation needs a transaction. Using transactions unnecessari
 
 ```typescript
 // YES - User registration (multiple tables)
-await executeTransactionWithResponse(async (client) => {
-    await client.query('INSERT INTO Account ...');
-    await client.query('INSERT INTO Account_Credential ...');
-}, response, 'User created', 'Registration failed');
+await executeTransactionWithResponse(
+    async (client) => {
+        await client.query('INSERT INTO Account ...');
+        await client.query('INSERT INTO Account_Credential ...');
+    },
+    response,
+    'User created',
+    'Registration failed'
+);
 ```
 
 #### 2. Conditional Operations
 
 ```typescript
 // YES - Update or insert based on condition
-await executeTransactionWithResponse(async (client) => {
-    const result = await client.query('UPDATE Account_Credential SET ... WHERE ...');
-    if (result.rowCount === 0) {
-        await client.query('INSERT INTO Account_Credential ...');
-    }
-}, response, 'Credential updated', 'Update failed');
+await executeTransactionWithResponse(
+    async (client) => {
+        const result = await client.query(
+            'UPDATE Account_Credential SET ... WHERE ...'
+        );
+        if (result.rowCount === 0) {
+            await client.query('INSERT INTO Account_Credential ...');
+        }
+    },
+    response,
+    'Credential updated',
+    'Update failed'
+);
 ```
 
 #### 3. Operations That Must Happen Together
@@ -801,8 +820,14 @@ await executeTransactionWithResponse(async (client) => {
 ```typescript
 // YES - Transfer (subtract from one, add to another)
 await withTransaction(async (client) => {
-    await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [amount, fromId]);
-    await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [amount, toId]);
+    await client.query(
+        'UPDATE accounts SET balance = balance - $1 WHERE id = $2',
+        [amount, fromId]
+    );
+    await client.query(
+        'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
+        [amount, toId]
+    );
 });
 ```
 
@@ -811,9 +836,18 @@ await withTransaction(async (client) => {
 ```typescript
 // YES - Order processing (inventory, order record, payment)
 await withTransaction(async (client) => {
-    await client.query('UPDATE inventory SET quantity = quantity - $1 WHERE product_id = $2', [qty, productId]);
-    await client.query('INSERT INTO orders (user_id, product_id, quantity) VALUES ($1, $2, $3)', [userId, productId, qty]);
-    await client.query('INSERT INTO payments (order_id, amount) VALUES ($1, $2)', [orderId, total]);
+    await client.query(
+        'UPDATE inventory SET quantity = quantity - $1 WHERE product_id = $2',
+        [qty, productId]
+    );
+    await client.query(
+        'INSERT INTO orders (user_id, product_id, quantity) VALUES ($1, $2, $3)',
+        [userId, productId, qty]
+    );
+    await client.query(
+        'INSERT INTO payments (order_id, amount) VALUES ($1, $2)',
+        [orderId, total]
+    );
 });
 ```
 
@@ -838,10 +872,9 @@ sendSuccess(response, null, 'Email verified');
 
 ```typescript
 // NO - Read operations don't modify data
-const result = await pool.query(
-    'SELECT * FROM Account WHERE Email = $1',
-    [email]
-);
+const result = await pool.query('SELECT * FROM Account WHERE Email = $1', [
+    email,
+]);
 sendSuccess(response, result.rows);
 ```
 
@@ -851,8 +884,14 @@ sendSuccess(response, result.rows);
 
 ```typescript
 // NO - Logging can partially fail without corrupting application state
-await pool.query('INSERT INTO activity_log (user_id, action) VALUES ($1, $2)', [userId, action]);
-await pool.query('INSERT INTO audit_log (user_id, action) VALUES ($1, $2)', [userId, action]);
+await pool.query('INSERT INTO activity_log (user_id, action) VALUES ($1, $2)', [
+    userId,
+    action,
+]);
+await pool.query('INSERT INTO audit_log (user_id, action) VALUES ($1, $2)', [
+    userId,
+    action,
+]);
 // If audit_log fails, activity_log can still be recorded
 ```
 
@@ -860,8 +899,14 @@ await pool.query('INSERT INTO audit_log (user_id, action) VALUES ($1, $2)', [use
 
 ```typescript
 // NO - These operations aren't related
-await pool.query('UPDATE user_preferences SET theme = $1 WHERE user_id = $2', [theme, userId]);
-await pool.query('INSERT INTO notifications (user_id, message) VALUES ($1, $2)', [userId, msg]);
+await pool.query('UPDATE user_preferences SET theme = $1 WHERE user_id = $2', [
+    theme,
+    userId,
+]);
+await pool.query(
+    'INSERT INTO notifications (user_id, message) VALUES ($1, $2)',
+    [userId, msg]
+);
 // If notification fails, preference update should still happen
 ```
 
@@ -869,16 +914,16 @@ await pool.query('INSERT INTO notifications (user_id, message) VALUES ($1, $2)',
 
 ### Decision Matrix
 
-| Scenario | Transaction Needed? | Why |
-|----------|-------------------|-----|
-| Create user account + credentials | ✅ Yes | Related data, must exist together |
-| Update user email | ❌ No | Single operation |
-| Search users by name | ❌ No | Read-only operation |
-| Password change + timestamp update | ✅ Yes | Audit trail consistency |
-| Log user activity | ❌ No | Can partially fail |
-| Create order + update inventory | ✅ Yes | Business logic consistency |
-| Get user profile | ❌ No | Read-only |
-| Delete user + delete credentials | ✅ Yes | Related data, should be removed together |
+| Scenario                           | Transaction Needed? | Why                                      |
+| ---------------------------------- | ------------------- | ---------------------------------------- |
+| Create user account + credentials  | ✅ Yes              | Related data, must exist together        |
+| Update user email                  | ❌ No               | Single operation                         |
+| Search users by name               | ❌ No               | Read-only operation                      |
+| Password change + timestamp update | ✅ Yes              | Audit trail consistency                  |
+| Log user activity                  | ❌ No               | Can partially fail                       |
+| Create order + update inventory    | ✅ Yes              | Business logic consistency               |
+| Get user profile                   | ❌ No               | Read-only                                |
+| Delete user + delete credentials   | ✅ Yes              | Related data, should be removed together |
 
 ---
 
@@ -892,10 +937,13 @@ await pool.query('INSERT INTO notifications (user_id, message) VALUES ($1, $2)',
 // BAD: Connection leak
 async function getUserData(userId: number) {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM Account WHERE Account_ID = $1', [userId]);
+    const result = await client.query(
+        'SELECT * FROM Account WHERE Account_ID = $1',
+        [userId]
+    );
 
     if (result.rowCount === 0) {
-        return null;  // Connection never released!
+        return null; // Connection never released!
     }
 
     client.release();
@@ -913,10 +961,13 @@ async function getUserData(userId: number) {
 async function getUserData(userId: number) {
     const client = await pool.connect();
     try {
-        const result = await client.query('SELECT * FROM Account WHERE Account_ID = $1', [userId]);
+        const result = await client.query(
+            'SELECT * FROM Account WHERE Account_ID = $1',
+            [userId]
+        );
         return result.rowCount > 0 ? result.rows[0] : null;
     } finally {
-        client.release();  // ALWAYS executed
+        client.release(); // ALWAYS executed
     }
 }
 ```
@@ -928,7 +979,10 @@ async function getUserData(userId: number) {
 ```typescript
 // BEST: Use transaction utilities
 const result = await withTransaction(async (client) => {
-    const data = await client.query('SELECT * FROM Account WHERE Account_ID = $1', [userId]);
+    const data = await client.query(
+        'SELECT * FROM Account WHERE Account_ID = $1',
+        [userId]
+    );
     return data.rows[0];
 });
 // Connection automatically released
@@ -1046,6 +1100,7 @@ await executeTransactionWithResponse(
 ```
 
 **Problems**:
+
 - Holds database connection for long time
 - Blocks other transactions waiting for same rows
 - Connection pool exhaustion
@@ -1059,7 +1114,9 @@ let userId;
 
 await executeTransactionWithResponse(
     async (client) => {
-        const result = await client.query('INSERT INTO Account ... RETURNING Account_ID');
+        const result = await client.query(
+            'INSERT INTO Account ... RETURNING Account_ID'
+        );
         userId = result.rows[0].account_id;
 
         await client.query('INSERT INTO Account_Credential ...');
@@ -1137,7 +1194,7 @@ await executeTransactionWithResponse(
 // BAD: Returning client instead of data
 const result = await withTransaction(async (client) => {
     await client.query('INSERT INTO Account ...');
-    return client;  // Wrong! Client will be released
+    return client; // Wrong! Client will be released
 });
 
 // result.data is a released client - can't use it
@@ -1151,7 +1208,7 @@ const result = await withTransaction(async (client) => {
     const accountResult = await client.query(
         'INSERT INTO Account ... RETURNING Account_ID, Email'
     );
-    return accountResult.rows[0];  // Return data, not client
+    return accountResult.rows[0]; // Return data, not client
 });
 
 // result.data is the account data
@@ -1177,7 +1234,7 @@ beforeAll(async () => {
     // Create connection pool to test database
     testPool = new Pool({
         host: 'localhost',
-        database: 'auth_test',  // Separate test database
+        database: 'auth_test', // Separate test database
         user: 'test_user',
         password: 'test_password',
     });
@@ -1212,11 +1269,11 @@ describe('Transaction Tests', () => {
 
     beforeEach(async () => {
         client = await testPool.connect();
-        await client.query('BEGIN');  // Start transaction
+        await client.query('BEGIN'); // Start transaction
     });
 
     afterEach(async () => {
-        await client.query('ROLLBACK');  // Rollback after each test
+        await client.query('ROLLBACK'); // Rollback after each test
         client.release();
         // Database returns to original state
     });
@@ -1250,7 +1307,7 @@ describe('Registration Rollback', () => {
                     // Force failure - invalid foreign key
                     await client.query(
                         'INSERT INTO Account_Credential (Account_ID, Salted_Hash, Salt) VALUES ($1, $2, $3)',
-                        [999999, 'hash', 'salt']  // Non-existent account ID
+                        [999999, 'hash', 'salt'] // Non-existent account ID
                     );
                 },
                 mockResponse,
@@ -1266,7 +1323,7 @@ describe('Registration Rollback', () => {
             'SELECT * FROM Account WHERE Email = $1',
             [email]
         );
-        expect(checkResult.rowCount).toBe(0);  // Should be rolled back
+        expect(checkResult.rowCount).toBe(0); // Should be rolled back
     });
 });
 ```
@@ -1282,16 +1339,16 @@ describe('Full Registration Flow', () => {
             email: 'john@email.com',
             username: 'johndoe',
             password: 'SecurePass123!',
-            phone: '555-1234'
+            phone: '555-1234',
         };
 
         // Mock request and response
         const mockRequest = {
-            body: userData
+            body: userData,
         };
         const mockResponse = {
             status: jest.fn().mockReturnThis(),
-            json: jest.fn()
+            json: jest.fn(),
         };
 
         // Call actual controller method
@@ -1331,14 +1388,14 @@ Every transaction has overhead:
 ```typescript
 // Transaction: ~2-5ms overhead
 await withTransaction(async (client) => {
-    await client.query('INSERT INTO Account ...');  // ~3ms
-    await client.query('INSERT INTO Account_Credential ...');  // ~3ms
+    await client.query('INSERT INTO Account ...'); // ~3ms
+    await client.query('INSERT INTO Account_Credential ...'); // ~3ms
 });
 // Total: ~8-11ms
 
 // Without transaction: ~6ms total
-await pool.query('INSERT INTO Account ...');  // ~3ms
-await pool.query('INSERT INTO Account_Credential ...');  // ~3ms
+await pool.query('INSERT INTO Account ...'); // ~3ms
+await pool.query('INSERT INTO Account_Credential ...'); // ~3ms
 // But: No atomicity guarantee!
 ```
 
@@ -1351,15 +1408,22 @@ Transactions hold locks on rows being modified:
 ```typescript
 // Transaction 1: Holds lock on Account ID 42
 await withTransaction(async (client) => {
-    await client.query('UPDATE Account SET Email = $1 WHERE Account_ID = 42', [newEmail]);
-    await performSlowOperation();  // Holds lock during this!
-    await client.query('UPDATE Account_Credential SET ... WHERE Account_ID = 42');
+    await client.query('UPDATE Account SET Email = $1 WHERE Account_ID = 42', [
+        newEmail,
+    ]);
+    await performSlowOperation(); // Holds lock during this!
+    await client.query(
+        'UPDATE Account_Credential SET ... WHERE Account_ID = 42'
+    );
 });
 
 // Transaction 2: Waits for lock on Account ID 42
 await withTransaction(async (client) => {
     // This blocks until Transaction 1 commits or rolls back
-    await client.query('UPDATE Account SET Username = $1 WHERE Account_ID = 42', [newUsername]);
+    await client.query(
+        'UPDATE Account SET Username = $1 WHERE Account_ID = 42',
+        [newUsername]
+    );
 });
 ```
 
@@ -1372,7 +1436,7 @@ Transactions consume connection pool resources:
 ```typescript
 // Pool configuration
 const pool = new Pool({
-    max: 20  // Maximum 20 concurrent connections
+    max: 20, // Maximum 20 concurrent connections
 });
 
 // If 20 transactions are running, 21st request waits
@@ -1382,6 +1446,7 @@ await withTransaction(async (client) => {
 ```
 
 **Best Practices**:
+
 - Size pool based on expected concurrent transactions
 - Monitor pool usage: `pool.totalCount`, `pool.idleCount`, `pool.waitingCount`
 - Default max=10 is good for small apps, increase for high concurrency
@@ -1400,10 +1465,10 @@ for (let i = 0; i < 100; i++) {
 // FAST: Single transaction with batch insert
 await withTransaction(async (client) => {
     // Build values array: ($1, $2), ($3, $4), ...
-    const values = users.flatMap(u => [u.email, u.username]);
-    const placeholders = users.map((_, i) =>
-        `($${i*2+1}, $${i*2+2})`
-    ).join(', ');
+    const values = users.flatMap((u) => [u.email, u.username]);
+    const placeholders = users
+        .map((_, i) => `($${i * 2 + 1}, $${i * 2 + 2})`)
+        .join(', ');
 
     await client.query(
         `INSERT INTO Account (Email, Username) VALUES ${placeholders}`,
@@ -1421,9 +1486,13 @@ For read-heavy operations across multiple tables:
 
 ```typescript
 // Read-only transaction: Can use query optimizations
-await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+await client.query(
+    'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY'
+);
 const accounts = await client.query('SELECT * FROM Account WHERE ...');
-const credentials = await client.query('SELECT * FROM Account_Credential WHERE ...');
+const credentials = await client.query(
+    'SELECT * FROM Account_Credential WHERE ...'
+);
 await client.query('COMMIT');
 
 // Ensures consistent snapshot of data across queries
@@ -1442,7 +1511,8 @@ const result = await withTransaction(async (client) => {
 });
 const duration = Date.now() - startTime;
 
-if (duration > 100) {  // Log slow transactions
+if (duration > 100) {
+    // Log slow transactions
     console.warn(`Slow transaction: ${duration}ms`);
 }
 ```
@@ -1466,54 +1536,54 @@ SELECT pg_terminate_backend(pid);
 ### Do's ✅
 
 1. **Use `executeTransactionWithResponse()` for standard CRUD operations**
-   - Simplest pattern for most use cases
-   - Automatic error handling and HTTP responses
+    - Simplest pattern for most use cases
+    - Automatic error handling and HTTP responses
 
 2. **Use `withTransaction()` when you need custom response handling**
-   - Gives you control over response format
-   - Useful for complex validation logic
+    - Gives you control over response format
+    - Useful for complex validation logic
 
 3. **Keep transactions SHORT**
-   - Only include database operations
-   - No external API calls, file uploads, or long computations
+    - Only include database operations
+    - No external API calls, file uploads, or long computations
 
 4. **Use transactions for related operations**
-   - Multi-table inserts/updates that must succeed together
-   - Operations where partial success corrupts data
+    - Multi-table inserts/updates that must succeed together
+    - Operations where partial success corrupts data
 
 5. **Let errors propagate**
-   - Don't catch exceptions inside transaction operations
-   - Transaction wrapper handles rollback automatically
+    - Don't catch exceptions inside transaction operations
+    - Transaction wrapper handles rollback automatically
 
 6. **Use the `client` parameter inside transactions**
-   - Never use `pool.query()` inside transaction callback
-   - All operations must use same connection
+    - Never use `pool.query()` inside transaction callback
+    - All operations must use same connection
 
 ### Don'ts ❌
 
 1. **Don't use transactions for single operations**
-   - Single INSERT/UPDATE is already atomic
-   - Transaction adds overhead without benefit
+    - Single INSERT/UPDATE is already atomic
+    - Transaction adds overhead without benefit
 
 2. **Don't use transactions for read-only operations**
-   - SELECT queries don't modify data
-   - No consistency concerns
+    - SELECT queries don't modify data
+    - No consistency concerns
 
 3. **Don't nest transactions**
-   - PostgreSQL doesn't support nested BEGIN/COMMIT
-   - Use single transaction for all related operations
+    - PostgreSQL doesn't support nested BEGIN/COMMIT
+    - Use single transaction for all related operations
 
 4. **Don't hold connections without releasing**
-   - Always use `finally` block to release
-   - Or use transaction utilities that handle it
+    - Always use `finally` block to release
+    - Or use transaction utilities that handle it
 
 5. **Don't include external operations in transactions**
-   - API calls, file I/O, email sending belong OUTSIDE transactions
-   - Keep transactions fast
+    - API calls, file I/O, email sending belong OUTSIDE transactions
+    - Keep transactions fast
 
 6. **Don't ignore transaction results**
-   - Check `result.success` when using `withTransaction()`
-   - Log errors for debugging
+    - Check `result.success` when using `withTransaction()`
+    - Log errors for debugging
 
 ---
 

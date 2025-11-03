@@ -5,6 +5,7 @@ A comprehensive educational guide comparing API key authentication and JWT (JSON
 > **💡 Related Code**: See implementations in [`/src/core/middleware/jwt.ts`](../src/core/middleware/jwt.ts), [`/src/controllers/authController.ts`](../src/controllers/authController.ts), and [`/src/routes/closed/`](../src/routes/closed/)
 
 ## Quick Navigation
+
 - 🔑 **Login/Register**: [`/auth/login`](http://localhost:8000/auth/login) & [`/auth/register`](http://localhost:8000/auth/register) - Authentication endpoints
 - 🛡️ **Protected Endpoints**: [`/auth/user/*`](http://localhost:8000/api-docs) - Authenticated user operations
 - 📝 **Authentication Middleware**: [`jwt.ts`](../src/core/middleware/jwt.ts) - JWT token validation
@@ -59,6 +60,7 @@ This guide focuses on **JWT** (implemented in TCSS-460-auth-squared) and **API K
 API keys are **unique identifiers** (typically UUIDs or random strings) assigned to users or applications to authenticate API requests.
 
 **Key Characteristics:**
+
 - Long random strings (e.g., UUID v4: `550e8400-e29b-41d4-a716-446655440000`)
 - Stored in database with associated metadata
 - Sent in HTTP headers (e.g., `X-API-Key`)
@@ -72,7 +74,10 @@ API keys are **unique identifiers** (typically UUIDs or random strings) assigned
 // src/controllers/apiKeyController.ts
 import { randomUUID } from 'crypto';
 
-export const generateApiKeyController = async (request: Request, response: Response) => {
+export const generateApiKeyController = async (
+    request: Request,
+    response: Response
+) => {
     const { name, email } = request.body;
     const apiKey = randomUUID(); // Generates UUID v4
 
@@ -89,6 +94,7 @@ export const generateApiKeyController = async (request: Request, response: Respo
 ```
 
 **What happens:**
+
 1. User submits name and email
 2. Server generates cryptographically secure UUID v4
 3. Key is stored in `api_keys` table with metadata
@@ -98,13 +104,22 @@ export const generateApiKeyController = async (request: Request, response: Respo
 
 ```typescript
 // src/core/middleware/apiKeyAuth.ts
-export const apiKeyAuth = async (request: Request, response: Response, next: NextFunction) => {
+export const apiKeyAuth = async (
+    request: Request,
+    response: Response,
+    next: NextFunction
+) => {
     // 1. Extract key from header
     const apiKey = request.headers['x-api-key'];
 
     // 2. Validate format (UUID v4)
     if (!isValidApiKeyFormat(apiKey)) {
-        return sendError(response, 401, 'Invalid API key format', 'AUTH_KEY_INVALID');
+        return sendError(
+            response,
+            401,
+            'Invalid API key format',
+            'AUTH_KEY_INVALID'
+        );
     }
 
     // 3. Query database for key
@@ -115,7 +130,12 @@ export const apiKeyAuth = async (request: Request, response: Response, next: Nex
 
     // 4. Check if key exists and is active
     if (result.rows.length === 0 || !result.rows[0].is_active) {
-        return sendError(response, 401, 'Invalid or revoked API key', 'AUTH_KEY_INVALID');
+        return sendError(
+            response,
+            401,
+            'Invalid or revoked API key',
+            'AUTH_KEY_INVALID'
+        );
     }
 
     // 5. Update usage tracking
@@ -131,6 +151,7 @@ export const apiKeyAuth = async (request: Request, response: Response, next: Nex
 ```
 
 **Request Flow:**
+
 ```
 Client Request
      ↓
@@ -185,18 +206,21 @@ curl -H "X-API-Key: 550e8400-e29b-41d4-a716-446655440000" \
 ### API Key Security Considerations
 
 **✅ Advantages:**
+
 - Simple to implement and understand
 - Easy to revoke (update database flag)
 - Request tracking built-in (last_used_at, request_count)
 - No client-side cryptography required
 
 **⚠️ Security Risks:**
+
 - **No expiration** - Keys valid forever unless manually revoked
 - **Database dependency** - Every request requires DB query (performance impact)
 - **Theft risk** - If leaked, valid until manually revoked
 - **No user identity** - Keys identify applications, not specific users
 
 **🔒 Best Practices:**
+
 - **HTTPS only** - Never send keys over unencrypted HTTP
 - **Environment variables** - Never hardcode keys in source code
 - **Rate limiting** - Prevent abuse from compromised keys
@@ -214,6 +238,7 @@ curl -H "X-API-Key: 550e8400-e29b-41d4-a716-446655440000" \
 JWTs are **self-contained, cryptographically signed tokens** that encode user identity and claims. Unlike API keys, JWTs don't require database lookups for validation.
 
 **Key Characteristics:**
+
 - Base64-encoded JSON with cryptographic signature
 - Contain user claims (identity, permissions, expiration)
 - Stateless (server doesn't store them)
@@ -230,25 +255,28 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 ```
 
 #### **1. Header** (Algorithm and Token Type)
+
 ```json
 {
-  "alg": "HS256",  // Signing algorithm (HMAC SHA-256)
-  "typ": "JWT"     // Token type
+    "alg": "HS256", // Signing algorithm (HMAC SHA-256)
+    "typ": "JWT" // Token type
 }
 ```
 
 #### **2. Payload** (Claims - User Data)
+
 ```json
 {
-  "sub": "1234567890",        // Subject (user ID)
-  "name": "John Doe",         // Custom claim
-  "email": "john@example.com", // Custom claim
-  "iat": 1516239022,          // Issued at (timestamp)
-  "exp": 1516242622           // Expiration (timestamp)
+    "sub": "1234567890", // Subject (user ID)
+    "name": "John Doe", // Custom claim
+    "email": "john@example.com", // Custom claim
+    "iat": 1516239022, // Issued at (timestamp)
+    "exp": 1516242622 // Expiration (timestamp)
 }
 ```
 
 **Standard Claims:**
+
 - `sub` (subject) - User identifier
 - `iat` (issued at) - Timestamp when token was created
 - `exp` (expiration) - Timestamp when token expires
@@ -256,11 +284,9 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 - `aud` (audience) - Who the token is intended for
 
 #### **3. Signature** (Cryptographic Verification)
+
 ```javascript
-HMACSHA256(
-  base64UrlEncode(header) + "." + base64UrlEncode(payload),
-  secret
-)
+HMACSHA256(base64UrlEncode(header) + '.' + base64UrlEncode(payload), secret);
 ```
 
 The signature ensures the token hasn't been tampered with. Only the server with the secret key can create valid signatures.
@@ -279,7 +305,7 @@ const generateJWT = (user) => {
         name: user.name,
         email: user.email,
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (60 * 60) // Expires in 1 hour
+        exp: Math.floor(Date.now() / 1000) + 60 * 60, // Expires in 1 hour
     };
 
     const secret = process.env.JWT_SECRET; // Stored securely
@@ -290,6 +316,7 @@ const generateJWT = (user) => {
 ```
 
 **What happens:**
+
 1. User logs in with username/password
 2. Server verifies credentials against database
 3. Server generates JWT with user claims
@@ -323,7 +350,7 @@ export const jwtAuth = (request, response, next) => {
         request.user = {
             id: decoded.sub,
             name: decoded.name,
-            email: decoded.email
+            email: decoded.email,
         };
 
         next();
@@ -337,6 +364,7 @@ export const jwtAuth = (request, response, next) => {
 ```
 
 **Request Flow:**
+
 ```
 Client Request
      ↓
@@ -392,18 +420,21 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 ### JWT Security Considerations
 
 **✅ Advantages:**
+
 - **Stateless** - No database lookups required (scales easily)
 - **Built-in expiration** - Tokens automatically expire
 - **Self-contained** - All claims encoded in token
 - **Standard** - RFC 7519, widely supported
 
 **⚠️ Security Risks:**
+
 - **Cannot be revoked** - Valid until expiration (unless using blacklist)
 - **Theft risk** - If stolen, valid until expiration
 - **Size** - Larger than API keys (sent with every request)
 - **Secret management** - Compromised secret invalidates all tokens
 
 **🔒 Best Practices:**
+
 - **Short expiration** - Use refresh tokens for long sessions
 - **HTTPS only** - Never send JWTs over unencrypted HTTP
 - **Secure storage** - httpOnly cookies or secure localStorage
@@ -416,29 +447,30 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 
 ### Feature Comparison Table
 
-| Feature | API Keys (Educational) | JWT (TCSS-460-auth-squared) |
-|---------|------------------------|---------------------|
-| **Storage** | Database (api_keys table) | Self-contained token |
-| **State** | Stateful (DB lookup) | Stateless (verify signature) |
-| **Validation** | Query database on each request | Verify cryptographic signature |
-| **Performance** | DB query per request (~10-50ms) | No DB query (~1ms) |
-| **Scalability** | Limited by database capacity | Highly scalable (no DB) |
-| **Revocation** | Easy (update `is_active = false`) | Difficult (need blacklist or short expiration) |
-| **Expiration** | Manual (no built-in expiration) | Automatic (`exp` claim) |
-| **Size** | ~36 characters (UUID) | ~200-500 characters (encoded JSON) |
-| **Metadata** | Stored in database | Encoded in token payload |
-| **Use Case** | Service APIs, internal tools | User sessions, distributed systems |
-| **Complexity** | Simple to implement | More complex (crypto, claims) |
-| **Security Model** | Shared secret in DB | Signed with secret key |
-| **Request Tracking** | Built-in (last_used_at, request_count) | Requires separate analytics |
-| **Header** | `X-API-Key: <uuid>` | `Authorization: Bearer <jwt>` |
-| **Standards** | No formal standard (custom) | RFC 7519 (industry standard) |
+| Feature              | API Keys (Educational)                 | JWT (TCSS-460-auth-squared)                    |
+| -------------------- | -------------------------------------- | ---------------------------------------------- |
+| **Storage**          | Database (api_keys table)              | Self-contained token                           |
+| **State**            | Stateful (DB lookup)                   | Stateless (verify signature)                   |
+| **Validation**       | Query database on each request         | Verify cryptographic signature                 |
+| **Performance**      | DB query per request (~10-50ms)        | No DB query (~1ms)                             |
+| **Scalability**      | Limited by database capacity           | Highly scalable (no DB)                        |
+| **Revocation**       | Easy (update `is_active = false`)      | Difficult (need blacklist or short expiration) |
+| **Expiration**       | Manual (no built-in expiration)        | Automatic (`exp` claim)                        |
+| **Size**             | ~36 characters (UUID)                  | ~200-500 characters (encoded JSON)             |
+| **Metadata**         | Stored in database                     | Encoded in token payload                       |
+| **Use Case**         | Service APIs, internal tools           | User sessions, distributed systems             |
+| **Complexity**       | Simple to implement                    | More complex (crypto, claims)                  |
+| **Security Model**   | Shared secret in DB                    | Signed with secret key                         |
+| **Request Tracking** | Built-in (last_used_at, request_count) | Requires separate analytics                    |
+| **Header**           | `X-API-Key: <uuid>`                    | `Authorization: Bearer <jwt>`                  |
+| **Standards**        | No formal standard (custom)            | RFC 7519 (industry standard)                   |
 
 ### Pros and Cons
 
 #### **API Keys**
 
 **✅ Pros:**
+
 - **Simplicity** - Easy to understand and implement
 - **Revocation** - Instantly revoke access by updating database
 - **Request tracking** - Built-in usage analytics (last_used_at, request_count)
@@ -446,6 +478,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 - **No client complexity** - Just send UUID in header
 
 **❌ Cons:**
+
 - **Database dependency** - Every request requires DB query (performance bottleneck)
 - **No expiration** - Keys valid forever unless manually revoked
 - **Scalability** - Database can become bottleneck with high traffic
@@ -455,6 +488,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 #### **JWT**
 
 **✅ Pros:**
+
 - **Stateless** - No database lookups (scales horizontally)
 - **Built-in expiration** - Tokens automatically expire (`exp` claim)
 - **Self-contained** - All user info in token (no DB queries for user data)
@@ -462,6 +496,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 - **Microservices-friendly** - Shared secret allows distributed validation
 
 **❌ Cons:**
+
 - **Cannot revoke** - Valid until expiration (unless using token blacklist)
 - **Larger size** - 200-500 bytes vs 36 bytes for UUID
 - **Secret management** - Compromised secret invalidates all tokens
@@ -483,6 +518,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 7. **Internal tools** - Admin dashboards, internal microservices
 
 **Real-World Examples:**
+
 - **Google Maps API** - API keys for geolocation services
 - **Stripe API** - Secret keys for payment processing
 - **SendGrid** - API keys for email sending
@@ -500,6 +536,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 7. **Third-party authorization** - OAuth 2.0, social login (Google, Facebook)
 
 **Real-World Examples:**
+
 - **Auth0** - Identity-as-a-service using JWT
 - **Firebase Authentication** - User sessions with JWT
 - **Okta** - Enterprise SSO with JWT
@@ -527,6 +564,7 @@ Many production systems use **both**:
 ```
 
 **Example: Stripe**
+
 - **Publishable Key** (public, client-side) - Create payment forms
 - **Secret Key** (private, server-side) - Complete charges (API key style)
 - **JWT** (for Connect platform) - Delegated access between accounts
@@ -576,7 +614,8 @@ export const generateApiKey = (): string => {
  * @returns True if key matches UUID v4 format
  */
 export const isValidApiKeyFormat = (key: string): boolean => {
-    const uuidV4Pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidV4Pattern =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidV4Pattern.test(key);
 };
 ```
@@ -598,13 +637,23 @@ export const apiKeyAuth = async (
     const apiKey = request.headers['x-api-key'] as string | undefined;
 
     if (!apiKey) {
-        sendError(response, 401, 'API key required - visit /api-key to generate one', 'AUTH_KEY_REQUIRED');
+        sendError(
+            response,
+            401,
+            'API key required - visit /api-key to generate one',
+            'AUTH_KEY_REQUIRED'
+        );
         return;
     }
 
     // 2. Validate UUID format (fast client-side check before DB query)
     if (!isValidApiKeyFormat(apiKey)) {
-        sendError(response, 401, 'Invalid API key format - must be a valid UUID', 'AUTH_KEY_INVALID');
+        sendError(
+            response,
+            401,
+            'Invalid API key format - must be a valid UUID',
+            'AUTH_KEY_INVALID'
+        );
         return;
     }
 
@@ -617,7 +666,12 @@ export const apiKeyAuth = async (
 
         // 4. Verify key exists
         if (result.rows.length === 0) {
-            sendError(response, 401, 'Invalid API key - please check your key or generate a new one', 'AUTH_KEY_INVALID');
+            sendError(
+                response,
+                401,
+                'Invalid API key - please check your key or generate a new one',
+                'AUTH_KEY_INVALID'
+            );
             return;
         }
 
@@ -625,7 +679,12 @@ export const apiKeyAuth = async (
 
         // 5. Check if key is active (revocation check)
         if (!keyRecord.is_active) {
-            sendError(response, 401, 'API key has been revoked - please generate a new one', 'AUTH_KEY_REVOKED');
+            sendError(
+                response,
+                401,
+                'API key has been revoked - please generate a new one',
+                'AUTH_KEY_REVOKED'
+            );
             return;
         }
 
@@ -636,20 +695,27 @@ export const apiKeyAuth = async (
                  request_count = request_count + 1
              WHERE id = $1`,
             [keyRecord.id]
-        ).catch(error => console.error('Failed to update API key usage:', error));
+        ).catch((error) =>
+            console.error('Failed to update API key usage:', error)
+        );
 
         // 7. Attach key metadata to request for use in controllers
         const authenticatedReq = request as AuthenticatedRequest;
         authenticatedReq.apiKey = {
             id: keyRecord.id,
             name: keyRecord.name,
-            email: keyRecord.email
+            email: keyRecord.email,
         };
 
         next();
     } catch (error) {
         console.error('API key authentication error:', error);
-        sendError(response, 500, 'Internal server error during authentication', 'AUTH_ERROR');
+        sendError(
+            response,
+            500,
+            'Internal server error during authentication',
+            'AUTH_ERROR'
+        );
     }
 };
 ```
@@ -719,7 +785,7 @@ export const login = async (request, response) => {
 
     // Verify credentials (database lookup)
     const user = await getUserByUsername(username);
-    if (!user || !await verifyPassword(password, user.password_hash)) {
+    if (!user || !(await verifyPassword(password, user.password_hash))) {
         return sendError(response, 401, 'Invalid credentials');
     }
 
@@ -730,14 +796,16 @@ export const login = async (request, response) => {
         email: user.email,
         role: user.role,
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hour
+        exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { algorithm: 'HS256' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        algorithm: 'HS256',
+    });
 
     response.json({
         success: true,
-        data: { token, expiresIn: 3600 }
+        data: { token, expiresIn: 3600 },
     });
 };
 
@@ -752,7 +820,11 @@ export const jwtAuth = (request, response, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        request.user = { id: decoded.sub, name: decoded.name, role: decoded.role };
+        request.user = {
+            id: decoded.sub,
+            name: decoded.name,
+            role: decoded.role,
+        };
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
@@ -772,67 +844,80 @@ export const jwtAuth = (request, response, next) => {
 **Objective**: Understand the full API key lifecycle.
 
 1. **Generate an API key**:
-   - Visit http://localhost:4000/api-key in your browser
-   - Fill out the form with your name and email
-   - Click "Generate API Key" and copy the key
+    - Visit http://localhost:4000/api-key in your browser
+    - Fill out the form with your name and email
+    - Click "Generate API Key" and copy the key
 
 2. **Test without authentication**:
-   ```bash
-   curl http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 401 Unauthorized with error code `AUTH_KEY_REQUIRED`
+
+    ```bash
+    curl http://localhost:4000/protected/message/all
+    ```
+
+    **Expected**: 401 Unauthorized with error code `AUTH_KEY_REQUIRED`
 
 3. **Test with valid key**:
-   ```bash
-   curl -H "X-API-Key: YOUR_KEY_HERE" \
-        http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 200 Success with list of messages
+
+    ```bash
+    curl -H "X-API-Key: YOUR_KEY_HERE" \
+         http://localhost:4000/protected/message/all
+    ```
+
+    **Expected**: 200 Success with list of messages
 
 4. **Test with invalid key**:
-   ```bash
-   curl -H "X-API-Key: invalid-key-123" \
-        http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 401 Unauthorized with error code `AUTH_KEY_INVALID`
+
+    ```bash
+    curl -H "X-API-Key: invalid-key-123" \
+         http://localhost:4000/protected/message/all
+    ```
+
+    **Expected**: 401 Unauthorized with error code `AUTH_KEY_INVALID`
 
 5. **Examine database**:
-   ```sql
-   -- Connect to database
-   docker exec -it tcss-460-message-api-postgres-1 psql -U postgres -d postgres
 
-   -- View your API key record
-   SELECT api_key, name, email, is_active, created_at, last_used_at, request_count
-   FROM api_keys
-   WHERE name = 'Your Name';
-   ```
-   **Observe**: Notice `last_used_at` updated and `request_count` incremented
+    ```sql
+    -- Connect to database
+    docker exec -it tcss-460-message-api-postgres-1 psql -U postgres -d postgres
+
+    -- View your API key record
+    SELECT api_key, name, email, is_active, created_at, last_used_at, request_count
+    FROM api_keys
+    WHERE name = 'Your Name';
+    ```
+
+    **Observe**: Notice `last_used_at` updated and `request_count` incremented
 
 ### Exercise 2: Compare Public vs Protected Endpoints
 
 **Objective**: Understand the difference between public and protected APIs.
 
 1. **Test public endpoint** (no authentication required):
-   ```bash
-   curl http://localhost:4000/message/all
-   ```
-   **Expected**: 200 Success (no API key needed)
+
+    ```bash
+    curl http://localhost:4000/message/all
+    ```
+
+    **Expected**: 200 Success (no API key needed)
 
 2. **Test protected endpoint** (authentication required):
-   ```bash
-   curl http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 401 Unauthorized
+
+    ```bash
+    curl http://localhost:4000/protected/message/all
+    ```
+
+    **Expected**: 401 Unauthorized
 
 3. **Compare in Swagger UI**:
-   - Visit http://localhost:4000/api-docs
-   - Find `GET /message/all` (Messages tag) - No lock icon
-   - Find `GET /protected/message/all` (Protected Messages tag) - Lock icon 🔒
-   - Click "Authorize" button, enter your API key
-   - Try both endpoints in Swagger UI
+    - Visit http://localhost:4000/api-docs
+    - Find `GET /message/all` (Messages tag) - No lock icon
+    - Find `GET /protected/message/all` (Protected Messages tag) - Lock icon 🔒
+    - Click "Authorize" button, enter your API key
+    - Try both endpoints in Swagger UI
 
 **Question**: Why would you offer both public and protected versions of the same endpoint?
 **Answer**: Educational demonstration. Real-world scenarios might be:
+
 - Public endpoint with rate limiting (100 req/hour)
 - Protected endpoint with higher limits (10,000 req/hour)
 - Public endpoint with cached/delayed data
@@ -845,25 +930,28 @@ export const jwtAuth = (request, response, next) => {
 1. **Generate a second API key** (using the form or curl)
 
 2. **Test the new key works**:
-   ```bash
-   curl -H "X-API-Key: NEW_KEY_HERE" \
-        http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 200 Success
+
+    ```bash
+    curl -H "X-API-Key: NEW_KEY_HERE" \
+         http://localhost:4000/protected/message/all
+    ```
+
+    **Expected**: 200 Success
 
 3. **Revoke the key in database**:
-   ```sql
-   UPDATE api_keys
-   SET is_active = false
-   WHERE api_key = 'NEW_KEY_HERE';
-   ```
+
+    ```sql
+    UPDATE api_keys
+    SET is_active = false
+    WHERE api_key = 'NEW_KEY_HERE';
+    ```
 
 4. **Test revoked key**:
-   ```bash
-   curl -H "X-API-Key: NEW_KEY_HERE" \
-        http://localhost:4000/protected/message/all
-   ```
-   **Expected**: 401 Unauthorized with error code `AUTH_KEY_REVOKED`
+    ```bash
+    curl -H "X-API-Key: NEW_KEY_HERE" \
+         http://localhost:4000/protected/message/all
+    ```
+    **Expected**: 401 Unauthorized with error code `AUTH_KEY_REVOKED`
 
 **Reflection**: How does this compare to JWT? Can you revoke a JWT instantly?
 **Answer**: No! JWTs are valid until expiration. You'd need a token blacklist (database of revoked tokens), which defeats the stateless advantage.
@@ -873,32 +961,35 @@ export const jwtAuth = (request, response, next) => {
 **Objective**: Understand built-in usage analytics.
 
 1. **Make multiple requests** with your API key (10+ times):
-   ```bash
-   for i in {1..10}; do
-     curl -H "X-API-Key: YOUR_KEY_HERE" \
-          http://localhost:4000/protected/message/all
-     sleep 1
-   done
-   ```
+
+    ```bash
+    for i in {1..10}; do
+      curl -H "X-API-Key: YOUR_KEY_HERE" \
+           http://localhost:4000/protected/message/all
+      sleep 1
+    done
+    ```
 
 2. **Check usage metrics**:
-   ```sql
-   SELECT name, request_count, last_used_at, created_at
-   FROM api_keys
-   WHERE api_key = 'YOUR_KEY_HERE';
-   ```
-   **Observe**: `request_count` incremented to 10+, `last_used_at` shows recent timestamp
+
+    ```sql
+    SELECT name, request_count, last_used_at, created_at
+    FROM api_keys
+    WHERE api_key = 'YOUR_KEY_HERE';
+    ```
+
+    **Observe**: `request_count` incremented to 10+, `last_used_at` shows recent timestamp
 
 3. **Calculate usage rate**:
-   ```sql
-   SELECT
-       name,
-       request_count,
-       EXTRACT(EPOCH FROM (last_used_at - created_at)) / 60 AS minutes_active,
-       ROUND(request_count / NULLIF(EXTRACT(EPOCH FROM (last_used_at - created_at)) / 60, 0), 2) AS requests_per_minute
-   FROM api_keys
-   WHERE api_key = 'YOUR_KEY_HERE';
-   ```
+    ```sql
+    SELECT
+        name,
+        request_count,
+        EXTRACT(EPOCH FROM (last_used_at - created_at)) / 60 AS minutes_active,
+        ROUND(request_count / NULLIF(EXTRACT(EPOCH FROM (last_used_at - created_at)) / 60, 0), 2) AS requests_per_minute
+    FROM api_keys
+    WHERE api_key = 'YOUR_KEY_HERE';
+    ```
 
 **Question**: How would you implement rate limiting based on this data?
 **Answer**: Add a `daily_request_limit` column, check `request_count` in middleware, reset counter daily with a cron job.
@@ -908,29 +999,34 @@ export const jwtAuth = (request, response, next) => {
 **Objective**: Measure the performance cost of database lookups.
 
 1. **Test API key performance** (with database query):
-   ```bash
-   time for i in {1..100}; do
-     curl -s -H "X-API-Key: YOUR_KEY_HERE" \
-          http://localhost:4000/protected/message/all > /dev/null
-   done
-   ```
-   **Record time**: ~X seconds for 100 requests
+
+    ```bash
+    time for i in {1..100}; do
+      curl -s -H "X-API-Key: YOUR_KEY_HERE" \
+           http://localhost:4000/protected/message/all > /dev/null
+    done
+    ```
+
+    **Record time**: ~X seconds for 100 requests
 
 2. **Test public endpoint performance** (no authentication):
-   ```bash
-   time for i in {1..100}; do
-     curl -s http://localhost:4000/message/all > /dev/null
-   done
-   ```
-   **Record time**: ~Y seconds for 100 requests
+
+    ```bash
+    time for i in {1..100}; do
+      curl -s http://localhost:4000/message/all > /dev/null
+    done
+    ```
+
+    **Record time**: ~Y seconds for 100 requests
 
 3. **Calculate overhead**:
-   ```
-   Authentication overhead = (X - Y) / 100 seconds per request
-   ```
+    ```
+    Authentication overhead = (X - Y) / 100 seconds per request
+    ```
 
 **Reflection**: In production with thousands of requests per second, how would this scale?
 **Answer**: Database becomes bottleneck. Solutions:
+
 - Redis caching of API keys (check cache before DB)
 - Connection pooling (already implemented with `pg` pool)
 - Read replicas for database scaling
@@ -941,32 +1037,36 @@ export const jwtAuth = (request, response, next) => {
 **Objective**: Understand how JWT differs from API keys.
 
 1. **Decode a sample JWT** (using online tool: https://jwt.io):
-   ```
-   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDI2MjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-   ```
+
+    ```
+    eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDI2MjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+    ```
 
 2. **Observe the payload**:
-   ```json
-   {
-     "sub": "1234567890",
-     "name": "John Doe",
-     "iat": 1516239022,
-     "exp": 1516242622
-   }
-   ```
+
+    ```json
+    {
+        "sub": "1234567890",
+        "name": "John Doe",
+        "iat": 1516239022,
+        "exp": 1516242622
+    }
+    ```
 
 3. **Compare to API key database record**:
-   ```sql
-   SELECT id, api_key, name, email, created_at
-   FROM api_keys
-   WHERE api_key = 'YOUR_KEY_HERE';
-   ```
+    ```sql
+    SELECT id, api_key, name, email, created_at
+    FROM api_keys
+    WHERE api_key = 'YOUR_KEY_HERE';
+    ```
 
 **Question**: Where is the user data stored in each approach?
+
 - **API Key**: Database (requires query to retrieve)
 - **JWT**: Token payload (self-contained, no query needed)
 
 **Question**: How does each approach handle expiration?
+
 - **API Key**: No expiration (manual revocation via `is_active`)
 - **JWT**: Automatic expiration (`exp` claim checked during verification)
 
@@ -977,40 +1077,40 @@ export const jwtAuth = (request, response, next) => {
 ### Key Takeaways
 
 1. **API Keys (Stateful)**:
-   - Simple, database-backed authentication
-   - Easy revocation and usage tracking
-   - Best for service-to-service communication
-   - Performance limited by database queries
+    - Simple, database-backed authentication
+    - Easy revocation and usage tracking
+    - Best for service-to-service communication
+    - Performance limited by database queries
 
 2. **JWT (Stateless)**:
-   - Self-contained, cryptographically signed tokens
-   - No database queries for validation
-   - Built-in expiration and claims
-   - Best for user sessions and distributed systems
+    - Self-contained, cryptographically signed tokens
+    - No database queries for validation
+    - Built-in expiration and claims
+    - Best for user sessions and distributed systems
 
 3. **Choose based on requirements**:
-   - Need revocation? → API Keys
-   - Need scalability? → JWT
-   - Need usage analytics? → API Keys
-   - Need distributed validation? → JWT
-   - Simple internal tool? → API Keys
-   - User authentication app? → JWT
+    - Need revocation? → API Keys
+    - Need scalability? → JWT
+    - Need usage analytics? → API Keys
+    - Need distributed validation? → JWT
+    - Simple internal tool? → API Keys
+    - User authentication app? → JWT
 
 ### Further Learning
 
 - **Explore TCSS-460-auth-squared's JWT implementation**:
-  - [`/src/core/middleware/jwt.ts`](../src/core/middleware/jwt.ts) - JWT authentication middleware
-  - [`/src/controllers/authController.ts`](../src/controllers/authController.ts) - Login/register with JWT generation
-  - [`/src/core/utilities/tokenUtils.ts`](../src/core/utilities/tokenUtils.ts) - JWT token utilities
-  - [`/data/init.sql`](../data/init.sql) - Database schema (Account, Account_Credential tables)
+    - [`/src/core/middleware/jwt.ts`](../src/core/middleware/jwt.ts) - JWT authentication middleware
+    - [`/src/controllers/authController.ts`](../src/controllers/authController.ts) - Login/register with JWT generation
+    - [`/src/core/utilities/tokenUtils.ts`](../src/core/utilities/tokenUtils.ts) - JWT token utilities
+    - [`/data/init.sql`](../data/init.sql) - Database schema (Account, Account_Credential tables)
 
 - **Deep dive into JWT**:
-  - Read RFC 7519 (JWT specification): https://tools.ietf.org/html/rfc7519
-  - Explore Auth0 documentation: https://auth0.com/docs/tokens/json-web-tokens
+    - Read RFC 7519 (JWT specification): https://tools.ietf.org/html/rfc7519
+    - Explore Auth0 documentation: https://auth0.com/docs/tokens/json-web-tokens
 
 - **Security deep dive**:
-  - [Web Security Guide](./web-security-guide.md#authentication-vs-authorization) - Authentication security
-  - OWASP API Security Top 10: https://owasp.org/www-project-api-security/
+    - [Web Security Guide](./web-security-guide.md#authentication-vs-authorization) - Authentication security
+    - OWASP API Security Top 10: https://owasp.org/www-project-api-security/
 
 ### Related Documentation
 
