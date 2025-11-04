@@ -5,6 +5,7 @@ import {
     validateRegister,
     validatePasswordReset,
     validatePasswordResetRequest,
+    checkToken,
 } from '@middleware';
 
 const openRoutes: Router = express.Router();
@@ -68,6 +69,6 @@ openRoutes.get(
  * Simple test endpoint (no authentication required)
  * GET /jwt_test
  */
-openRoutes.get('/jwt_test', AuthController.testJWT);
+openRoutes.get('/jwt_test', checkToken, AuthController.testJWT);
 
 export { openRoutes };

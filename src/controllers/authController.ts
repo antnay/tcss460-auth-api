@@ -472,16 +472,14 @@ export class AuthController {
     }
 
     /**
-     * Simple test endpoint (no authentication required)
-     */
+  * Test JWT token validity
+  */
     static async testJWT(
         request: IJwtRequest,
         response: Response
     ): Promise<void> {
         response.status(200).json({
-            message: 'Hello World! API is working correctly.',
-            timestamp: new Date().toISOString(),
-            service: 'TCSS-460-auth-squared',
+            message: 'Your token is valid'
         });
     }
 }
