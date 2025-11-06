@@ -23,6 +23,20 @@ import dotenv from 'dotenv';
 
 const PORT = parseInt(process.env.PORT || '8000');
 
+const TIMEOUTS = {
+    // Maximum time for server to gracefully shutdown (cloud platforms typically give 30s)
+    SHUTDOWN: parseInt(process.env.SHUTDOWN_TIMEOUT || '25000'), // 25 seconds
+
+    // Maximum time a request can take before being terminated
+    REQUEST: parseInt(process.env.REQUEST_TIMEOUT || '30000'), // 30 seconds
+
+    // Maximum time server waits for headers to be received
+    HEADERS: parseInt(process.env.HEADERS_TIMEOUT || '60000'), // 60 seconds
+
+    // Keep-alive timeout (should be higher than load balancer's timeout)
+    KEEPALIVE: parseInt(process.env.KEEPALIVE_TIMEOUT || '65000'), // 65 seconds
+} as const;
+
 /**
  * Start the Express server with complete application lifecycle management
  * Handles database connection, HTTP server startup, and graceful shutdown
@@ -68,7 +82,7 @@ const PORT = parseInt(process.env.PORT || '8000');
  */
 async function startServer() {
     try {
-        dotenv.config()
+        dotenv.config();
         // Validate environment variables first
         validateEnv();
 
@@ -81,6 +95,10 @@ async function startServer() {
 
         // Start HTTP server
         const server = app.listen(PORT);
+
+        server.keepAliveTimeout = TIMEOUTS.KEEPALIVE;
+        server.headersTimeout = TIMEOUTS.HEADERS;
+        server.requestTimeout = TIMEOUTS.REQUEST;
 
         // Handle server errors (e.g., port already in use)
         server.on('error', (error: NodeJS.ErrnoException) => {

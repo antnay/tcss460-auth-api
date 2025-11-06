@@ -9,18 +9,27 @@ let pool: Pool | null = null;
 const getDatabaseConfig = (): PoolConfig => {
     return process.env.PGHOST !== undefined
         ? {
-              host: process.env.PGHOST,
-              port: parseInt(process.env.PGPORT || '5432'),
-              user: process.env.PGUSER,
-              database: process.env.PGDATABASE,
-              password: process.env.PGPASSWORD,
-          }
+            host: process.env.PGHOST,
+            port: parseInt(process.env.PGPORT || '5432'),
+            user: process.env.PGUSER,
+            database: process.env.PGDATABASE,
+            password: process.env.PGPASSWORD,
+            ssl: {
+                rejectUnauthorized: false,
+            },
+            max: 20,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
+        }
         : {
-              connectionString: process.env.DATABASE_URL,
-              ssl: {
-                  rejectUnauthorized: false,
-              },
-          };
+            connectionString: process.env.DATABASE_URL,
+            ssl: {
+                rejectUnauthorized: false,
+            },
+            max: 20,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
+        };
 };
 
 /**
